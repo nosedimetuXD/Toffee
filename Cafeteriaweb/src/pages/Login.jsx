@@ -58,7 +58,7 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 p-3 rounded-2xl text-xs font-bold text-center">
-              ⚠️ {error}
+              {error}
             </div>
           )}
 

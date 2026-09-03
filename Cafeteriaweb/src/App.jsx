@@ -12,6 +12,7 @@ import Stats from './pages/Stats'
 import Tasks from './pages/Tasks'
 import Recipe from './pages/Recipe'
 import Profile from './pages/Profile'
+import Customers from './pages/Customers'
 import Layout from './components/Layout'
 
 function ProtectedRoute({ children, roles }) {
@@ -53,6 +54,7 @@ function AppRoutes() {
         <Route path="inventory" element={<Inventory />} />
         <Route path="products" element={<Products />} />
         <Route path="tasks" element={<Tasks />} />
+        <Route path="customers" element={<Customers />} />
         <Route path="profile" element={<Profile />} />
 
         <Route

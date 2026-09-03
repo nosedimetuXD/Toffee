@@ -51,7 +51,7 @@ export function convertQuantity(value, fromUnit, toUnit) {
 
 /**
  * Retorna un texto explicativo de la conversión automática si las unidades difieren.
- * Ej: formatConvertedHint(200, 'ml', 'L') => "200 ml ➔ 0.2 L"
+ * Ej: formatConvertedHint(200, 'ml', 'L') => "200 ml -> 0.2 L"
  */
 export function formatConvertedHint(value, fromUnit, toUnit) {
   const val = Number(value)
@@ -59,5 +59,5 @@ export function formatConvertedHint(value, fromUnit, toUnit) {
   if (fromUnit.trim().toLowerCase() === toUnit.trim().toLowerCase()) return null
   const converted = convertQuantity(val, fromUnit, toUnit)
   const formattedConverted = converted % 1 === 0 ? converted : Number(converted.toFixed(4))
-  return `${val} ${fromUnit} ➔ ${formattedConverted} ${toUnit}`
+  return `${val} ${fromUnit} -> ${formattedConverted} ${toUnit}`
 }

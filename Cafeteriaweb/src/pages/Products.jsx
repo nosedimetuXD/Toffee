@@ -177,7 +177,7 @@ export default function Products() {
 
       {pageError && (
         <div className="p-3.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 text-xs font-bold">
-          ⚠️ {pageError}
+          {pageError}
         </div>
       )}
 
@@ -328,7 +328,7 @@ export default function Products() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {formError && (
             <div className="p-3.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 text-xs font-bold">
-              ⚠️ {formError}
+              {formError}
             </div>
           )}
 

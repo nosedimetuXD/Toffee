@@ -611,7 +611,7 @@ export default function Users() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {formError && (
             <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 text-xs font-bold">
-              ⚠️ {formError}
+              {formError}
             </div>
           )}
 

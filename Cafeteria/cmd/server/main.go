@@ -61,8 +61,8 @@ func main() {
 	userHandler := handlers.NewUserHandler(pool)
 	comandaHandler := handlers.NewComandaHandler(pool, hub)
 	accountingHandler := handlers.NewAccountingHandler(pool, hub)
-
 	wasteHandler := handlers.NewWasteHandler(pool, hub)
+	customerHandler := handlers.NewCustomerHandler(pool, hub)
 
 	r.Group(func(r chi.Router) {
 		r.Use(custommw.RequireAuthSSE)
@@ -81,6 +81,18 @@ func main() {
 		r.Put("/users/me", userHandler.UpdateSelf)
 		r.Get("/waste", wasteHandler.List)
 		r.Post("/waste", wasteHandler.Create)
+
+		// CRM de Clientes accesible para todos los usuarios
+		r.Get("/customers", customerHandler.List)
+		r.Get("/customers/{id}", customerHandler.Get)
+		r.Post("/customers", customerHandler.Create)
+		r.Put("/customers/{id}", customerHandler.Update)
+		r.Delete("/customers/{id}", customerHandler.Delete)
+
+		// Cancelación de ventas y comandas: accesible para cualquier rol
+		r.Post("/sales/{id}/cancel", comandaHandler.CancelComanda)
+		r.Post("/comandas/{id}/cancel", comandaHandler.CancelComanda)
+		r.Patch("/comandas/{id}/cancel", comandaHandler.CancelComanda)
 	})
 
 	// Crear/editar/borrar productos y recetas: solo owner y admin
@@ -102,7 +114,7 @@ func main() {
 		r.Delete("/users/{id}", userHandler.Delete)
 	})
 
-	// Modificar inventario directamente: solo dueño y admin (empleados ya NO pueden editar inventario libremente)
+	// Modificar inventario directamente: solo dueño y admin
 	r.Group(func(r chi.Router) {
 		r.Use(custommw.RequireAuth)
 		r.Use(custommw.RequireRole(models.RoleOwner, models.RoleAdmin))
@@ -116,9 +128,6 @@ func main() {
 		r.Use(custommw.RequireAuth)
 		r.Get("/comandas", comandaHandler.List)
 		r.Patch("/comandas/{id}/status", comandaHandler.UpdateStatus)
-		r.Post("/comandas/{id}/cancel", comandaHandler.CancelComanda)
-		r.Patch("/comandas/{id}/cancel", comandaHandler.CancelComanda)
-		r.Post("/sales/{id}/cancel", comandaHandler.CancelComanda)
 	})
 
 	// Ver tareas y cambiar su propio estado: cualquier usuario logueado
@@ -137,7 +146,7 @@ func main() {
 		r.Delete("/tasks/{id}", taskHandler.Delete)
 	})
 
-	// Ventas: cualquier rol puede vender
+	// Ventas: cualquier rol puede vender y listar
 	r.Group(func(r chi.Router) {
 		r.Use(custommw.RequireAuth)
 		r.Use(custommw.RequireRole(models.RoleOwner, models.RoleAdmin, models.RoleEmployee))
@@ -146,15 +155,23 @@ func main() {
 		r.Post("/sales", saleHandler.Create)
 	})
 
-	// Contabilidad y Gastos: solo el Dueño (Owner)
+	// Edición/eliminación de ventas, Contabilidad y Gastos: solo el Dueño (Owner)
 	r.Group(func(r chi.Router) {
 		r.Use(custommw.RequireAuth)
 		r.Use(custommw.RequireRole(models.RoleOwner))
+		r.Put("/sales/{id}", saleHandler.Update)
+		r.Delete("/sales/{id}", saleHandler.Delete)
+
 		r.Get("/accounting/summary", accountingHandler.GetSummary)
 		r.Get("/expenses", accountingHandler.ListExpenses)
 		r.Post("/expenses", accountingHandler.CreateExpense)
+		r.Put("/expenses/{id}", accountingHandler.UpdateExpense)
+		r.Delete("/expenses/{id}", accountingHandler.DeleteExpense)
+
 		r.Get("/incomes", accountingHandler.ListIncomes)
 		r.Post("/incomes", accountingHandler.CreateIncome)
+		r.Put("/incomes/{id}", accountingHandler.UpdateIncome)
+		r.Delete("/incomes/{id}", accountingHandler.DeleteIncome)
 	})
 
 	log.Println("servidor corriendo en :8080")

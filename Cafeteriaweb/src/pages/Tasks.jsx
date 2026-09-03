@@ -214,7 +214,7 @@ export default function Tasks() {
 
               {isDone && (
                 <span className="text-[10px] text-emerald-600 font-extrabold shrink-0">
-                  ✓ Completada
+                  Completada
                 </span>
               )}
             </div>
@@ -232,7 +232,7 @@ export default function Tasks() {
         <form onSubmit={handleCreateTask} className="space-y-4">
           {formError && (
             <div className="p-3.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 text-xs font-bold">
-              ⚠️ {formError}
+              {formError}
             </div>
           )}
 

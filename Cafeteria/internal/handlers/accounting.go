@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -36,7 +37,8 @@ func NewAccountingHandler(db *pgxpool.Pool, hub *events.Hub) *AccountingHandler 
 			payment_method VARCHAR(255) NOT NULL DEFAULT 'efectivo',
 			registered_by UUID REFERENCES users(id) ON DELETE SET NULL,
 			created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-		)
+		);
+		CREATE INDEX IF NOT EXISTS idx_incomes_created_at ON incomes(created_at DESC);
 	`)
 
 	return &AccountingHandler{DB: db, Hub: hub}
@@ -102,7 +104,6 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 		ExpensesByCategory:   make(map[string]float64),
 	}
 
-	// 1. Ingresos totales de ventas (excluyendo canceladas)
 	var cashIncome, transferIncome float64
 	salesQuery := "SELECT COALESCE(SUM(s.total), 0), COUNT(s.id), COALESCE(SUM(s.cash_amount), 0), COALESCE(SUM(s.transfer_amount), 0) FROM sales s LEFT JOIN comandas c ON c.sale_id = s.id WHERE (c.status IS NULL OR c.status != 'cancelado') AND " + timeCondSales
 	err := h.DB.QueryRow(r.Context(), salesQuery).Scan(&summary.TotalIncome, &summary.SalesCount, &cashIncome, &transferIncome)
@@ -114,7 +115,6 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	summary.IncomeByPaymentMethod["efectivo"] = cashIncome
 	summary.IncomeByPaymentMethod["transferencia"] = transferIncome
 
-	// 2. Gastos totales
 	expensesQuery := "SELECT COALESCE(SUM(amount), 0), COUNT(id) FROM expenses WHERE " + timeCondition
 	err = h.DB.QueryRow(r.Context(), expensesQuery).Scan(&summary.TotalExpenses, &summary.ExpensesCount)
 	if err != nil {
@@ -123,7 +123,6 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. Gastos por categoría
 	catQuery := "SELECT category, COALESCE(SUM(amount), 0) FROM expenses WHERE " + timeCondition + " GROUP BY category"
 	rows, err := h.DB.Query(r.Context(), catQuery)
 	if err == nil {
@@ -139,7 +138,6 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 
 	summary.NetBalance = summary.TotalIncome - summary.TotalExpenses
 
-	// 4. Estadísticas Ejecutivas (exclusivas para dueño)
 	roleVal := r.Context().Value(custommw.ContextRole)
 	var userRole models.UserRole
 	if r, ok := roleVal.(models.UserRole); ok {
@@ -148,28 +146,24 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 		userRole = models.UserRole(rStr)
 	}
 
-	if userRole == models.RoleOwner {
+	if userRole == models.RoleOwner || string(userRole) == "dueño" {
 		mStats := &models.MonthlyStats{
 			TopCustomers: []models.CustomerStat{},
 			TopProducts:  []models.TopProductStat{},
 			TopBanks:     []models.TopBankStat{},
 		}
 
-		// Ventas del período (excluyendo canceladas)
 		_ = h.DB.QueryRow(r.Context(),
 			"SELECT COALESCE(SUM(s.total), 0) FROM sales s LEFT JOIN comandas c ON c.sale_id = s.id WHERE (c.status IS NULL OR c.status != 'cancelado') AND "+timeCondSales).Scan(&mStats.MonthlyIncome)
 
-		// Gastos del período
 		_ = h.DB.QueryRow(r.Context(),
 			"SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE "+timeCondition).Scan(&mStats.MonthlyExpenses)
 
 		mStats.NetProfit = mStats.MonthlyIncome - mStats.MonthlyExpenses
 
-		// Tiempo Promedio de Salida de Comandas en minutos
 		_ = h.DB.QueryRow(r.Context(),
 			"SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (COALESCE(c.ready_at, c.updated_at) - c.created_at))/60), 0) FROM comandas c WHERE c.status IN ('listo', 'entregado') AND "+timeCondComandas).Scan(&mStats.AvgPrepTimeMinutes)
 
-		// Mejor vendedor del período (excluyendo ventas canceladas)
 		var topSeller models.TopSellerStat
 		errSeller := h.DB.QueryRow(r.Context(),
 			`SELECT u.username, u.role, COALESCE(SUM(s.total), 0) as total_amount, COUNT(s.id) as sales_count
@@ -182,11 +176,8 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 			 LIMIT 1`).Scan(&topSeller.Username, &topSeller.Role, &topSeller.TotalAmount, &topSeller.SalesCount)
 		if errSeller == nil {
 			mStats.TopSeller = &topSeller
-		} else {
-			log.Printf("error mejor vendedor query: %v", errSeller)
 		}
 
-		// Top 10 Productos más vendidos del período (excluyendo ventas canceladas)
 		prodRows, errProdList := h.DB.Query(r.Context(),
 			`SELECT COALESCE(NULLIF(si.product_name, ''), p.name, 'Producto Eliminado') as prod_name,
 			        COALESCE(SUM(si.quantity), 0) as total_qty, 
@@ -207,14 +198,11 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			prodRows.Close()
-		} else {
-			log.Printf("error top productos query: %v", errProdList)
 		}
 		if len(mStats.TopProducts) > 0 {
 			mStats.TopProduct = &mStats.TopProducts[0]
 		}
 
-		// Top 10 Clientes del período (excluyendo ventas canceladas)
 		custRows, errCust := h.DB.Query(r.Context(),
 			`SELECT s.customer_name, COALESCE(SUM(s.total), 0) as total_spent, COUNT(s.id) as orders_count
 			 FROM sales s
@@ -233,7 +221,6 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 			custRows.Close()
 		}
 
-		// Top 5 Bancos del período (excluyendo ventas canceladas)
 		bankRows, errBank := h.DB.Query(r.Context(),
 			`SELECT 
 				COALESCE(NULLIF(TRIM(s.bank_details), ''), 'Transferencia General') as bank_name,
@@ -263,24 +250,34 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(summary)
 }
 
-// GET /expenses?period=today|week|month|all
+// GET /expenses?period=today|week|month|all&start_date=...&end_date=...
 func (h *AccountingHandler) ListExpenses(w http.ResponseWriter, r *http.Request) {
 	period := r.URL.Query().Get("period")
-	var timeCondition string
+	startDate := strings.TrimSpace(r.URL.Query().Get("start_date"))
+	endDate := strings.TrimSpace(r.URL.Query().Get("end_date"))
 
-	switch period {
-	case "today":
-		timeCondition = "WHERE e.created_at >= ((now() AT TIME ZONE 'America/Bogota')::date AT TIME ZONE 'America/Bogota')"
-	case "week":
-		timeCondition = "WHERE e.created_at >= (now() - INTERVAL '7 days')"
-	case "month":
-		timeCondition = "WHERE e.created_at >= (now() - INTERVAL '30 days')"
-	default:
-		timeCondition = ""
+	var timeCondition string
+	if startDate != "" && endDate != "" {
+		timeCondition = fmt.Sprintf("WHERE e.created_at >= '%s 00:00:00' AND e.created_at <= '%s 23:59:59'", startDate, endDate)
+	} else {
+		switch period {
+		case "today":
+			timeCondition = "WHERE (e.created_at AT TIME ZONE 'America/Bogota')::date = (now() AT TIME ZONE 'America/Bogota')::date"
+		case "week":
+			timeCondition = "WHERE e.created_at >= (now() - INTERVAL '7 days')"
+		case "month":
+			timeCondition = "WHERE e.created_at >= date_trunc('month', now())"
+		case "prev_month":
+			timeCondition = "WHERE e.created_at >= date_trunc('month', now() - INTERVAL '1 month') AND e.created_at < date_trunc('month', now())"
+		case "year":
+			timeCondition = "WHERE e.created_at >= date_trunc('year', now())"
+		default: // "all"
+			timeCondition = ""
+		}
 	}
 
 	query := fmt.Sprintf(`SELECT e.id, e.description, e.amount, e.category, e.payment_method, e.registered_by, 
-		        COALESCE(u.username, ''), e.ingredient_id, COALESCE(i.name, ''), e.quantity_added, e.created_at 
+		        COALESCE(u.username, 'Personal'), e.ingredient_id, COALESCE(i.name, ''), e.quantity_added, e.created_at 
 		 FROM expenses e
 		 LEFT JOIN users u ON e.registered_by = u.id
 		 LEFT JOIN ingredients i ON e.ingredient_id = i.id
@@ -307,11 +304,14 @@ func (h *AccountingHandler) ListExpenses(w http.ResponseWriter, r *http.Request)
 		expenses = append(expenses, e)
 	}
 
+	if expenses == nil {
+		expenses = []models.Expense{}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(expenses)
 }
 
-// POST /expenses — si se especifica un ingredient_id y quantity_added > 0, reabastece el inventario
 type createExpenseRequest struct {
 	Description   string     `json:"description"`
 	Amount        float64    `json:"amount"`
@@ -319,8 +319,10 @@ type createExpenseRequest struct {
 	PaymentMethod string     `json:"payment_method"`
 	IngredientID  *uuid.UUID `json:"ingredient_id,omitempty"`
 	QuantityAdded float64    `json:"quantity_added,omitempty"`
+	CreatedAt     string     `json:"created_at,omitempty"`
 }
 
+// POST /expenses
 func (h *AccountingHandler) CreateExpense(w http.ResponseWriter, r *http.Request) {
 	var req createExpenseRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -363,7 +365,6 @@ func (h *AccountingHandler) CreateExpense(w http.ResponseWriter, r *http.Request
 	}
 	defer tx.Rollback(ctx)
 
-	// 1. Si incluye insumo, reabastecer inventario
 	if req.IngredientID != nil && req.QuantityAdded > 0 {
 		tag, err := tx.Exec(ctx,
 			`UPDATE ingredients SET quantity = quantity + $1, updated_at = now() WHERE id = $2`,
@@ -379,14 +380,28 @@ func (h *AccountingHandler) CreateExpense(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	// 2. Registrar el gasto
 	var expID uuid.UUID
 	var createdAt time.Time
-	err = tx.QueryRow(ctx,
-		`INSERT INTO expenses (description, amount, category, payment_method, registered_by, ingredient_id, quantity_added)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at`,
-		desc, req.Amount, category, paymentMethod, registeredBy, req.IngredientID, req.QuantityAdded,
-	).Scan(&expID, &createdAt)
+
+	if req.CreatedAt != "" {
+		parsedDate, err := time.Parse(time.RFC3339, req.CreatedAt)
+		if err == nil {
+			err = tx.QueryRow(ctx,
+				`INSERT INTO expenses (description, amount, category, payment_method, registered_by, ingredient_id, quantity_added, created_at)
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at`,
+				desc, req.Amount, category, paymentMethod, registeredBy, req.IngredientID, req.QuantityAdded, parsedDate,
+			).Scan(&expID, &createdAt)
+		}
+	}
+
+	if expID == uuid.Nil {
+		err = tx.QueryRow(ctx,
+			`INSERT INTO expenses (description, amount, category, payment_method, registered_by, ingredient_id, quantity_added, created_at)
+			 VALUES ($1, $2, $3, $4, $5, $6, $7, now()) RETURNING id, created_at`,
+			desc, req.Amount, category, paymentMethod, registeredBy, req.IngredientID, req.QuantityAdded,
+		).Scan(&expID, &createdAt)
+	}
+
 	if err != nil {
 		log.Printf("error creando gasto: %v", err)
 		http.Error(w, "error registrando gasto", http.StatusInternalServerError)
@@ -421,24 +436,119 @@ func (h *AccountingHandler) CreateExpense(w http.ResponseWriter, r *http.Request
 	})
 }
 
-// GET /incomes?period=today|week|month|all
+// PUT /expenses/{id} — edición de gasto (Exclusivo Owner)
+func (h *AccountingHandler) UpdateExpense(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	expID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "id inválido", http.StatusBadRequest)
+		return
+	}
+
+	var req createExpenseRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "cuerpo inválido", http.StatusBadRequest)
+		return
+	}
+
+	desc := strings.TrimSpace(req.Description)
+	if desc == "" || req.Amount <= 0 {
+		http.Error(w, "descripción y monto válido son requeridos", http.StatusBadRequest)
+		return
+	}
+
+	category := strings.ToLower(strings.TrimSpace(req.Category))
+	if category == "" {
+		category = "otros"
+	}
+
+	paymentMethod := strings.ToLower(strings.TrimSpace(req.PaymentMethod))
+	if paymentMethod == "" {
+		paymentMethod = "efectivo"
+	}
+
+	var parsedDate *time.Time
+	if req.CreatedAt != "" {
+		if t, err := time.Parse(time.RFC3339, req.CreatedAt); err == nil {
+			parsedDate = &t
+		}
+	}
+
+	var errUpd error
+	if parsedDate != nil {
+		_, errUpd = h.DB.Exec(r.Context(),
+			`UPDATE expenses SET description = $1, amount = $2, category = $3, payment_method = $4, created_at = $5 WHERE id = $6`,
+			desc, req.Amount, category, paymentMethod, *parsedDate, expID)
+	} else {
+		_, errUpd = h.DB.Exec(r.Context(),
+			`UPDATE expenses SET description = $1, amount = $2, category = $3, payment_method = $4 WHERE id = $5`,
+			desc, req.Amount, category, paymentMethod, expID)
+	}
+
+	if errUpd != nil {
+		log.Printf("error actualizando gasto: %v", errUpd)
+		http.Error(w, "error actualizando gasto", http.StatusInternalServerError)
+		return
+	}
+
+	h.Hub.Publish("expense_updated", map[string]interface{}{"id": expID})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{"id": expID, "status": "updated"})
+}
+
+// DELETE /expenses/{id} — eliminación de gasto (Exclusivo Owner)
+func (h *AccountingHandler) DeleteExpense(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	expID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "id inválido", http.StatusBadRequest)
+		return
+	}
+
+	tag, err := h.DB.Exec(r.Context(), `DELETE FROM expenses WHERE id = $1`, expID)
+	if err != nil {
+		log.Printf("error eliminando gasto: %v", err)
+		http.Error(w, "error eliminando gasto", http.StatusInternalServerError)
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		http.Error(w, "gasto no encontrado", http.StatusNotFound)
+		return
+	}
+
+	h.Hub.Publish("expense_deleted", map[string]string{"id": idStr})
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// GET /incomes?period=today|week|month|all&start_date=...&end_date=...
 func (h *AccountingHandler) ListIncomes(w http.ResponseWriter, r *http.Request) {
 	period := r.URL.Query().Get("period")
-	var timeCondition string
+	startDate := strings.TrimSpace(r.URL.Query().Get("start_date"))
+	endDate := strings.TrimSpace(r.URL.Query().Get("end_date"))
 
-	switch period {
-	case "today":
-		timeCondition = "WHERE i.created_at >= ((now() AT TIME ZONE 'America/Bogota')::date AT TIME ZONE 'America/Bogota')"
-	case "week":
-		timeCondition = "WHERE i.created_at >= (now() - INTERVAL '7 days')"
-	case "month":
-		timeCondition = "WHERE i.created_at >= (now() - INTERVAL '30 days')"
-	default:
-		timeCondition = ""
+	var timeCondition string
+	if startDate != "" && endDate != "" {
+		timeCondition = fmt.Sprintf("WHERE i.created_at >= '%s 00:00:00' AND i.created_at <= '%s 23:59:59'", startDate, endDate)
+	} else {
+		switch period {
+		case "today":
+			timeCondition = "WHERE (i.created_at AT TIME ZONE 'America/Bogota')::date = (now() AT TIME ZONE 'America/Bogota')::date"
+		case "week":
+			timeCondition = "WHERE i.created_at >= (now() - INTERVAL '7 days')"
+		case "month":
+			timeCondition = "WHERE i.created_at >= date_trunc('month', now())"
+		case "prev_month":
+			timeCondition = "WHERE i.created_at >= date_trunc('month', now() - INTERVAL '1 month') AND i.created_at < date_trunc('month', now())"
+		case "year":
+			timeCondition = "WHERE i.created_at >= date_trunc('year', now())"
+		default: // "all"
+			timeCondition = ""
+		}
 	}
 
 	query := fmt.Sprintf(`SELECT i.id, i.description, i.amount, i.category, i.payment_method, i.registered_by, 
-		        COALESCE(u.username, ''), i.created_at 
+		        COALESCE(u.username, 'Personal'), i.created_at 
 		 FROM incomes i
 		 LEFT JOIN users u ON i.registered_by = u.id
 		 %s
@@ -464,18 +574,23 @@ func (h *AccountingHandler) ListIncomes(w http.ResponseWriter, r *http.Request) 
 		incomes = append(incomes, inc)
 	}
 
+	if incomes == nil {
+		incomes = []models.Income{}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(incomes)
 }
 
-// POST /incomes
 type createIncomeRequest struct {
 	Description   string  `json:"description"`
 	Amount        float64 `json:"amount"`
 	Category      string  `json:"category"`
 	PaymentMethod string  `json:"payment_method"`
+	CreatedAt     string  `json:"created_at,omitempty"`
 }
 
+// POST /incomes
 func (h *AccountingHandler) CreateIncome(w http.ResponseWriter, r *http.Request) {
 	var req createIncomeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -512,15 +627,29 @@ func (h *AccountingHandler) CreateIncome(w http.ResponseWriter, r *http.Request)
 
 	var incID uuid.UUID
 	var createdAt time.Time
-	err := h.DB.QueryRow(ctx,
-		`INSERT INTO incomes (description, amount, category, payment_method, registered_by)
-		 VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`,
-		desc, req.Amount, category, paymentMethod, registeredBy,
-	).Scan(&incID, &createdAt)
-	if err != nil {
-		log.Printf("error creando ingreso manual: %v", err)
-		http.Error(w, "error registrando ingreso", http.StatusInternalServerError)
-		return
+
+	if req.CreatedAt != "" {
+		parsedDate, err := time.Parse(time.RFC3339, req.CreatedAt)
+		if err == nil {
+			err = h.DB.QueryRow(ctx,
+				`INSERT INTO incomes (description, amount, category, payment_method, registered_by, created_at)
+				 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at`,
+				desc, req.Amount, category, paymentMethod, registeredBy, parsedDate,
+			).Scan(&incID, &createdAt)
+		}
+	}
+
+	if incID == uuid.Nil {
+		err := h.DB.QueryRow(ctx,
+			`INSERT INTO incomes (description, amount, category, payment_method, registered_by, created_at)
+			 VALUES ($1, $2, $3, $4, $5, now()) RETURNING id, created_at`,
+			desc, req.Amount, category, paymentMethod, registeredBy,
+		).Scan(&incID, &createdAt)
+		if err != nil {
+			log.Printf("error creando ingreso manual: %v", err)
+			http.Error(w, "error registrando ingreso", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	h.Hub.Publish("income_created", map[string]interface{}{
@@ -538,3 +667,87 @@ func (h *AccountingHandler) CreateIncome(w http.ResponseWriter, r *http.Request)
 	})
 }
 
+// PUT /incomes/{id} — edición de ingreso (Exclusivo Owner)
+func (h *AccountingHandler) UpdateIncome(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	incID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "id inválido", http.StatusBadRequest)
+		return
+	}
+
+	var req createIncomeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "cuerpo inválido", http.StatusBadRequest)
+		return
+	}
+
+	desc := strings.TrimSpace(req.Description)
+	if desc == "" || req.Amount <= 0 {
+		http.Error(w, "descripción y monto válido son requeridos", http.StatusBadRequest)
+		return
+	}
+
+	category := strings.ToLower(strings.TrimSpace(req.Category))
+	if category == "" {
+		category = "otros"
+	}
+
+	paymentMethod := strings.ToLower(strings.TrimSpace(req.PaymentMethod))
+	if paymentMethod == "" {
+		paymentMethod = "efectivo"
+	}
+
+	var parsedDate *time.Time
+	if req.CreatedAt != "" {
+		if t, err := time.Parse(time.RFC3339, req.CreatedAt); err == nil {
+			parsedDate = &t
+		}
+	}
+
+	var errUpd error
+	if parsedDate != nil {
+		_, errUpd = h.DB.Exec(r.Context(),
+			`UPDATE incomes SET description = $1, amount = $2, category = $3, payment_method = $4, created_at = $5 WHERE id = $6`,
+			desc, req.Amount, category, paymentMethod, *parsedDate, incID)
+	} else {
+		_, errUpd = h.DB.Exec(r.Context(),
+			`UPDATE incomes SET description = $1, amount = $2, category = $3, payment_method = $4 WHERE id = $5`,
+			desc, req.Amount, category, paymentMethod, incID)
+	}
+
+	if errUpd != nil {
+		log.Printf("error actualizando ingreso: %v", errUpd)
+		http.Error(w, "error actualizando ingreso", http.StatusInternalServerError)
+		return
+	}
+
+	h.Hub.Publish("income_updated", map[string]interface{}{"id": incID})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{"id": incID, "status": "updated"})
+}
+
+// DELETE /incomes/{id} — eliminación de ingreso (Exclusivo Owner)
+func (h *AccountingHandler) DeleteIncome(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	incID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "id inválido", http.StatusBadRequest)
+		return
+	}
+
+	tag, err := h.DB.Exec(r.Context(), `DELETE FROM incomes WHERE id = $1`, incID)
+	if err != nil {
+		log.Printf("error eliminando ingreso: %v", err)
+		http.Error(w, "error eliminando ingreso", http.StatusInternalServerError)
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		http.Error(w, "ingreso no encontrado", http.StatusNotFound)
+		return
+	}
+
+	h.Hub.Publish("income_deleted", map[string]string{"id": idStr})
+	w.WriteHeader(http.StatusNoContent)
+}

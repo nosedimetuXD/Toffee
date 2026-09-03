@@ -276,7 +276,7 @@ export default function Inventory() {
 
       {pageError && (
         <div className="p-3.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 text-xs font-bold">
-          ⚠️ {pageError}
+          {pageError}
         </div>
       )}
 
@@ -464,7 +464,7 @@ export default function Inventory() {
         <form onSubmit={handleSubmitWaste} className="space-y-4">
           {formError && (
             <div className="p-3.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 text-xs font-bold">
-              ⚠️ {formError}
+              {formError}
             </div>
           )}
           <div>
@@ -514,7 +514,7 @@ export default function Inventory() {
         <form onSubmit={handleSubmitIngredient} className="space-y-4">
           {formError && (
             <div className="p-3.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 text-xs font-bold">
-              ⚠️ {formError}
+              {formError}
             </div>
           )}
           <div>

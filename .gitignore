@@ -19,6 +19,9 @@
 .env.local
 *.env
 seed.sql
+*.sql
+*.backup
+*_backup*
 
 # Directorio de dependencias vendor (si lo llegas a usar)
 vendor/

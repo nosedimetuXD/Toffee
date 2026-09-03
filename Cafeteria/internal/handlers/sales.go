@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -32,7 +33,13 @@ func NewSaleHandler(db *pgxpool.Pool, hub *events.Hub) *SaleHandler {
 
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS bank_details TEXT DEFAULT ''`)
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS sold_by_name TEXT DEFAULT ''`)
+	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS subtotal NUMERIC(10,2) DEFAULT 0`)
+	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS discount_percent NUMERIC(5,2) DEFAULT 0`)
+	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(10,2) DEFAULT 0`)
+	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS discount_reason TEXT DEFAULT ''`)
+	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_id UUID`)
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ALTER COLUMN sold_by DROP NOT NULL`)
+	_, _ = db.Exec(ctx, `UPDATE sales SET subtotal = total WHERE (subtotal = 0 OR subtotal IS NULL) AND total > 0`)
 
 	_, _ = db.Exec(ctx, `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS product_name TEXT DEFAULT ''`)
 	_, _ = db.Exec(ctx, `UPDATE sale_items si SET product_name = p.name FROM products p WHERE si.product_id = p.id AND (si.product_name IS NULL OR si.product_name = '')`)
@@ -92,9 +99,17 @@ func (h *SaleHandler) List(w http.ResponseWriter, r *http.Request) {
 		timeCondition = "WHERE " + rawCond
 	}
 
-	query := fmt.Sprintf(`SELECT s.id, s.sold_by, COALESCE(NULLIF(s.sold_by_name, ''), u.username, 'Personal'), COALESCE(s.customer_name, 'Cliente General'), 
+	query := fmt.Sprintf(`SELECT s.id, COALESCE(s.sold_by, '00000000-0000-0000-0000-000000000000'::uuid), 
+		        COALESCE(NULLIF(s.sold_by_name, ''), u.username, 'Personal'),
+		        s.customer_id,
+		        COALESCE(s.customer_name, 'Cliente General'), 
 		        COALESCE(s.payment_method, 'efectivo'), COALESCE(s.cash_amount, 0), COALESCE(s.transfer_amount, 0), 
-		        COALESCE(s.bank_details, ''), s.total, COALESCE(c.status, 'completada') AS status, s.created_at,
+		        COALESCE(s.bank_details, ''),
+		        COALESCE(s.subtotal, s.total),
+		        COALESCE(s.discount_percent, 0),
+		        COALESCE(s.discount_amount, 0),
+		        COALESCE(s.discount_reason, ''),
+		        s.total, COALESCE(c.status, 'completada') AS status, s.created_at,
 		        COALESCE(
 		          (SELECT json_agg(json_build_object(
 		             'product_id', si.product_id,
@@ -122,8 +137,10 @@ func (h *SaleHandler) List(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var s models.Sale
 		var itemsJSON []byte
-		if err := rows.Scan(&s.ID, &s.SoldBy, &s.SoldByUsername, &s.CustomerName,
-			&s.PaymentMethod, &s.CashAmount, &s.TransferAmount, &s.BankDetails, &s.Total, &s.Status, &s.CreatedAt, &itemsJSON); err != nil {
+		if err := rows.Scan(&s.ID, &s.SoldBy, &s.SoldByUsername, &s.CustomerID, &s.CustomerName,
+			&s.PaymentMethod, &s.CashAmount, &s.TransferAmount, &s.BankDetails,
+			&s.Subtotal, &s.DiscountPercent, &s.DiscountAmount, &s.DiscountReason,
+			&s.Total, &s.Status, &s.CreatedAt, &itemsJSON); err != nil {
 			log.Printf("error leyendo ventas: %v", err)
 			http.Error(w, "error leyendo ventas", http.StatusInternalServerError)
 			return
@@ -134,11 +151,15 @@ func (h *SaleHandler) List(w http.ResponseWriter, r *http.Request) {
 		sales = append(sales, s)
 	}
 
+	if sales == nil {
+		sales = []models.Sale{}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(sales)
 }
 
-// GET /sales/{id} — incluye los items de esa venta con el nombre del producto
+// GET /sales/{id}
 func (h *SaleHandler) Get(w http.ResponseWriter, r *http.Request) {
 	id, err := uuid.Parse(chi.URLParam(r, "id"))
 	if err != nil {
@@ -148,14 +169,24 @@ func (h *SaleHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	var s models.Sale
 	err = h.DB.QueryRow(r.Context(),
-		`SELECT s.id, s.sold_by, COALESCE(u.username, ''), COALESCE(s.customer_name, 'Cliente General'), 
+		`SELECT s.id, COALESCE(s.sold_by, '00000000-0000-0000-0000-000000000000'::uuid), 
+		        COALESCE(NULLIF(s.sold_by_name, ''), u.username, 'Personal'), 
+		        s.customer_id,
+		        COALESCE(s.customer_name, 'Cliente General'), 
 		        COALESCE(s.payment_method, 'efectivo'), COALESCE(s.cash_amount, 0), COALESCE(s.transfer_amount, 0), 
-		        COALESCE(s.bank_details, ''), s.total, s.created_at 
+		        COALESCE(s.bank_details, ''),
+		        COALESCE(s.subtotal, s.total),
+		        COALESCE(s.discount_percent, 0),
+		        COALESCE(s.discount_amount, 0),
+		        COALESCE(s.discount_reason, ''),
+		        s.total, s.created_at 
 		 FROM sales s
 		 LEFT JOIN users u ON s.sold_by = u.id
 		 WHERE s.id = $1`, id,
-	).Scan(&s.ID, &s.SoldBy, &s.SoldByUsername, &s.CustomerName,
-		&s.PaymentMethod, &s.CashAmount, &s.TransferAmount, &s.BankDetails, &s.Total, &s.CreatedAt)
+	).Scan(&s.ID, &s.SoldBy, &s.SoldByUsername, &s.CustomerID, &s.CustomerName,
+		&s.PaymentMethod, &s.CashAmount, &s.TransferAmount, &s.BankDetails,
+		&s.Subtotal, &s.DiscountPercent, &s.DiscountAmount, &s.DiscountReason,
+		&s.Total, &s.CreatedAt)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		http.Error(w, "venta no encontrada", http.StatusNotFound)
@@ -193,14 +224,17 @@ func (h *SaleHandler) Get(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(s)
 }
 
-// POST /sales — crea venta, descuenta insumos y genera comanda en tiempo real
 type createSaleRequest struct {
-	CustomerName   string  `json:"customer_name"`
-	PaymentMethod  string  `json:"payment_method"`
-	CashAmount     float64 `json:"cash_amount"`
-	TransferAmount float64 `json:"transfer_amount"`
-	BankDetails    string  `json:"bank_details"`
-	Items          []struct {
+	CustomerID      *uuid.UUID `json:"customer_id"`
+	CustomerName    string     `json:"customer_name"`
+	PaymentMethod   string     `json:"payment_method"`
+	CashAmount      float64    `json:"cash_amount"`
+	TransferAmount  float64    `json:"transfer_amount"`
+	BankDetails     string     `json:"bank_details"`
+	DiscountPercent float64    `json:"discount_percent"`
+	DiscountAmount  float64    `json:"discount_amount"`
+	DiscountReason  string     `json:"discount_reason"`
+	Items           []struct {
 		ProductID uuid.UUID `json:"product_id"`
 		Quantity  int       `json:"quantity"`
 		Notes     string    `json:"notes"`
@@ -224,7 +258,20 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	ctx := r.Context()
+	userRole, _ := ctx.Value(custommw.ContextRole).(models.UserRole)
+	isOwner := userRole == models.RoleOwner || string(userRole) == "dueño"
+
+	if (req.DiscountPercent > 0 || req.DiscountAmount > 0) && !isOwner {
+		http.Error(w, "solo los dueños pueden aplicar descuentos", http.StatusForbidden)
+		return
+	}
+
 	customerName := strings.TrimSpace(req.CustomerName)
+	if customerName == "" && req.CustomerID != nil {
+		_ = h.DB.QueryRow(ctx, `SELECT CONCAT(first_name, ' ', last_name) FROM customers WHERE id = $1`, req.CustomerID).Scan(&customerName)
+	}
+	customerName = strings.TrimSpace(customerName)
 	if customerName == "" {
 		customerName = "Cliente General"
 	}
@@ -238,7 +285,6 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := r.Context()
 	soldByVal := ctx.Value(custommw.ContextUserID)
 	var soldBy uuid.UUID
 	if soldByVal != nil {
@@ -257,7 +303,7 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback(ctx)
 
-	var total float64
+	var subtotal float64
 	type resolvedItem struct {
 		ProductID   uuid.UUID
 		ProductName string
@@ -267,7 +313,6 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	var resolved []resolvedItem
 
-	// 1. Verificar que cada producto existe, está activo y calcular el total
 	for _, item := range req.Items {
 		var name string
 		var price float64
@@ -289,7 +334,7 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		total += price * float64(item.Quantity)
+		subtotal += price * float64(item.Quantity)
 		resolved = append(resolved, resolvedItem{
 			ProductID:   item.ProductID,
 			ProductName: name,
@@ -299,7 +344,13 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// Determinar montos abonados según forma de pago
+	discountPercent := math.Max(0, req.DiscountPercent)
+	discountAmount := math.Max(0, req.DiscountAmount)
+	if discountPercent > 0 {
+		discountAmount = subtotal * (discountPercent / 100.0)
+	}
+	total := math.Max(0, subtotal-discountAmount)
+
 	cashAmount := req.CashAmount
 	transferAmount := req.TransferAmount
 	if paymentMethod == "efectivo" {
@@ -315,7 +366,6 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 2. Descontar insumos del inventario según receta
 	for _, item := range resolved {
 		rows, err := tx.Query(ctx,
 			`SELECT ingredient_id, quantity_used FROM product_ingredients WHERE product_id = $1`,
@@ -365,13 +415,15 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if soldBy != uuid.Nil {
 		_ = tx.QueryRow(ctx, `SELECT COALESCE(username, '') FROM users WHERE id = $1`, soldBy).Scan(&soldByName)
 	}
+	if soldByName == "" {
+		soldByName = "Personal"
+	}
 
-	// 3. Insertar la venta
 	var saleID uuid.UUID
 	err = tx.QueryRow(ctx,
-		`INSERT INTO sales (sold_by, sold_by_name, total, customer_name, payment_method, cash_amount, transfer_amount, bank_details) 
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-		soldBy, soldByName, total, customerName, paymentMethod, cashAmount, transferAmount, strings.TrimSpace(req.BankDetails),
+		`INSERT INTO sales (sold_by, sold_by_name, customer_id, customer_name, payment_method, cash_amount, transfer_amount, bank_details, subtotal, discount_percent, discount_amount, discount_reason, total, created_at) 
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now()) RETURNING id`,
+		soldBy, soldByName, req.CustomerID, customerName, paymentMethod, cashAmount, transferAmount, strings.TrimSpace(req.BankDetails), subtotal, discountPercent, discountAmount, strings.TrimSpace(req.DiscountReason), total,
 	).Scan(&saleID)
 	if err != nil {
 		log.Printf("error creando venta: %v", err)
@@ -379,7 +431,6 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4. Insertar los items de la venta
 	for _, item := range resolved {
 		_, err = tx.Exec(ctx,
 			`INSERT INTO sale_items (sale_id, product_id, product_name, quantity, unit_price)
@@ -392,7 +443,6 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 5. Crear la Comanda (Kitchen ticket) automáticamente
 	_, _ = tx.Exec(ctx, `
 		DO $$
 		DECLARE
@@ -441,18 +491,19 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// 6. Confirmar la transacción
 	if err := tx.Commit(ctx); err != nil {
 		log.Printf("error confirmando venta y comanda: %v", err)
 		http.Error(w, "error interno", http.StatusInternalServerError)
 		return
 	}
 
-	// Notificar vía eventos SSE
 	h.Hub.Publish("sale_created", map[string]interface{}{
 		"id":              saleID,
+		"customer_id":     req.CustomerID,
 		"customer_name":   customerName,
 		"payment_method":  paymentMethod,
+		"subtotal":        subtotal,
+		"discount_amount": discountAmount,
 		"total":           total,
 	})
 
@@ -465,16 +516,287 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		"items":         comandaItems,
 	})
 
-	// Publicar actualización de inventario también
 	h.Hub.Publish("inventory_updated", map[string]interface{}{"action": "sale_deduction"})
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"id":            saleID,
-		"comanda_id":    comandaID,
-		"order_number":  orderNumber,
-		"customer_name": customerName,
-		"total":         total,
+		"id":              saleID,
+		"comanda_id":      comandaID,
+		"order_number":    orderNumber,
+		"customer_name":   customerName,
+		"subtotal":        subtotal,
+		"discount_amount": discountAmount,
+		"total":           total,
 	})
+}
+
+// PUT /sales/{id} — edición de venta (Exclusivo Owner)
+func (h *SaleHandler) Update(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	saleID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "id inválido", http.StatusBadRequest)
+		return
+	}
+
+	var req createSaleRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "cuerpo inválido", http.StatusBadRequest)
+		return
+	}
+	if len(req.Items) == 0 {
+		http.Error(w, "la venta debe tener al menos un producto", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	tx, err := h.DB.Begin(ctx)
+	if err != nil {
+		log.Printf("error iniciando transacción: %v", err)
+		http.Error(w, "error interno", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback(ctx)
+
+	oldItemsRows, err := tx.Query(ctx, `SELECT product_id, quantity FROM sale_items WHERE sale_id = $1`, saleID)
+	if err != nil {
+		log.Printf("error consultando items anteriores: %v", err)
+		http.Error(w, "error interno", http.StatusInternalServerError)
+		return
+	}
+	type itemPair struct {
+		productID uuid.UUID
+		qty       int
+	}
+	var oldItems []itemPair
+	for oldItemsRows.Next() {
+		var ip itemPair
+		if err := oldItemsRows.Scan(&ip.productID, &ip.qty); err == nil {
+			oldItems = append(oldItems, ip)
+		}
+	}
+	oldItemsRows.Close()
+
+	for _, oi := range oldItems {
+		rows, err := tx.Query(ctx, `SELECT ingredient_id, quantity_used FROM product_ingredients WHERE product_id = $1`, oi.productID)
+		if err == nil {
+			for rows.Next() {
+				var ingID uuid.UUID
+				var qtyUsed float64
+				if err := rows.Scan(&ingID, &qtyUsed); err == nil {
+					toReturn := qtyUsed * float64(oi.qty)
+					_, _ = tx.Exec(ctx, `UPDATE ingredients SET quantity = quantity + $1 WHERE id = $2`, toReturn, ingID)
+				}
+			}
+			rows.Close()
+		}
+	}
+
+	var subtotal float64
+	type resolvedItem struct {
+		ProductID   uuid.UUID
+		ProductName string
+		Quantity    int
+		UnitPrice   float64
+		Notes       string
+	}
+	var resolved []resolvedItem
+
+	for _, item := range req.Items {
+		var name string
+		var price float64
+		err := tx.QueryRow(ctx, `SELECT name, price FROM products WHERE id = $1`, item.ProductID).Scan(&name, &price)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("producto no encontrado: %s", item.ProductID), http.StatusBadRequest)
+			return
+		}
+		subtotal += price * float64(item.Quantity)
+		resolved = append(resolved, resolvedItem{
+			ProductID:   item.ProductID,
+			ProductName: name,
+			Quantity:    item.Quantity,
+			UnitPrice:   price,
+			Notes:       item.Notes,
+		})
+	}
+
+	discountPercent := math.Max(0, req.DiscountPercent)
+	discountAmount := math.Max(0, req.DiscountAmount)
+	if discountPercent > 0 {
+		discountAmount = subtotal * (discountPercent / 100.0)
+	}
+	total := math.Max(0, subtotal-discountAmount)
+
+	customerName := strings.TrimSpace(req.CustomerName)
+	if customerName == "" && req.CustomerID != nil {
+		_ = tx.QueryRow(ctx, `SELECT CONCAT(first_name, ' ', last_name) FROM customers WHERE id = $1`, req.CustomerID).Scan(&customerName)
+	}
+	if customerName == "" {
+		customerName = "Cliente General"
+	}
+
+	paymentMethod := strings.ToLower(strings.TrimSpace(req.PaymentMethod))
+	if paymentMethod == "" {
+		paymentMethod = "efectivo"
+	}
+
+	cashAmount := req.CashAmount
+	transferAmount := req.TransferAmount
+	if paymentMethod == "efectivo" {
+		cashAmount = total
+		transferAmount = 0
+	} else if paymentMethod == "transferencia" {
+		cashAmount = 0
+		transferAmount = total
+	}
+
+	for _, item := range resolved {
+		rows, err := tx.Query(ctx, `SELECT ingredient_id, quantity_used FROM product_ingredients WHERE product_id = $1`, item.ProductID)
+		if err == nil {
+			for rows.Next() {
+				var ingID uuid.UUID
+				var qtyUsed float64
+				if err := rows.Scan(&ingID, &qtyUsed); err == nil {
+					needed := qtyUsed * float64(item.Quantity)
+					tag, err := tx.Exec(ctx, `UPDATE ingredients SET quantity = quantity - $1 WHERE id = $2 AND quantity >= $1`, needed, ingID)
+					if err != nil || tag.RowsAffected() == 0 {
+						http.Error(w, "insumos insuficientes al actualizar la venta", http.StatusConflict)
+						return
+					}
+				}
+			}
+			rows.Close()
+		}
+	}
+
+	_, err = tx.Exec(ctx, `
+		UPDATE sales
+		SET customer_id = $1, customer_name = $2, payment_method = $3, cash_amount = $4, transfer_amount = $5,
+		    bank_details = $6, subtotal = $7, discount_percent = $8, discount_amount = $9, discount_reason = $10, total = $11
+		WHERE id = $12
+	`, req.CustomerID, customerName, paymentMethod, cashAmount, transferAmount, strings.TrimSpace(req.BankDetails), subtotal, discountPercent, discountAmount, strings.TrimSpace(req.DiscountReason), total, saleID)
+
+	if err != nil {
+		log.Printf("error actualizando venta: %v", err)
+		http.Error(w, "error actualizando venta", http.StatusInternalServerError)
+		return
+	}
+
+	_, _ = tx.Exec(ctx, `DELETE FROM sale_items WHERE sale_id = $1`, saleID)
+	for _, item := range resolved {
+		_, _ = tx.Exec(ctx, `
+			INSERT INTO sale_items (sale_id, product_id, product_name, quantity, unit_price)
+			VALUES ($1, $2, $3, $4, $5)
+		`, saleID, item.ProductID, item.ProductName, item.Quantity, item.UnitPrice)
+	}
+
+	var comandaID uuid.UUID
+	err = tx.QueryRow(ctx, `UPDATE comandas SET customer_name = $1 WHERE sale_id = $2 RETURNING id`, customerName, saleID).Scan(&comandaID)
+	if err == nil {
+		_, _ = tx.Exec(ctx, `DELETE FROM comanda_items WHERE comanda_id = $1`, comandaID)
+		for _, item := range resolved {
+			_, _ = tx.Exec(ctx, `
+				INSERT INTO comanda_items (comanda_id, product_id, product_name, quantity, notes)
+				VALUES ($1, $2, $3, $4, $5)
+			`, comandaID, item.ProductID, item.ProductName, item.Quantity, item.Notes)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Printf("error confirmando transacción: %v", err)
+		http.Error(w, "error confirmando actualización", http.StatusInternalServerError)
+		return
+	}
+
+	h.Hub.Publish("sale_updated", map[string]interface{}{"id": saleID, "total": total})
+	h.Hub.Publish("inventory_updated", map[string]interface{}{"action": "sale_edited"})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"id":              saleID,
+		"customer_name":   customerName,
+		"subtotal":        subtotal,
+		"discount_amount": discountAmount,
+		"total":           total,
+	})
+}
+
+// DELETE /sales/{id} — eliminación de venta (Exclusivo Owner)
+func (h *SaleHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	saleID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "id inválido", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	tx, err := h.DB.Begin(ctx)
+	if err != nil {
+		log.Printf("error iniciando transacción: %v", err)
+		http.Error(w, "error interno", http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback(ctx)
+
+	var status string
+	_ = tx.QueryRow(ctx, `SELECT COALESCE(status, 'completada') FROM comandas WHERE sale_id = $1`, saleID).Scan(&status)
+
+	if status != "cancelado" && status != "cancelada" {
+		rows, err := tx.Query(ctx, `SELECT product_id, quantity FROM sale_items WHERE sale_id = $1`, saleID)
+		if err == nil {
+			type ip struct {
+				pid uuid.UUID
+				qty int
+			}
+			var items []ip
+			for rows.Next() {
+				var i ip
+				if err := rows.Scan(&i.pid, &i.qty); err == nil {
+					items = append(items, i)
+				}
+			}
+			rows.Close()
+
+			for _, item := range items {
+				recRows, err := tx.Query(ctx, `SELECT ingredient_id, quantity_used FROM product_ingredients WHERE product_id = $1`, item.pid)
+				if err == nil {
+					for recRows.Next() {
+						var ingID uuid.UUID
+						var qUsed float64
+						if err := recRows.Scan(&ingID, &qUsed); err == nil {
+							toReturn := qUsed * float64(item.qty)
+							_, _ = tx.Exec(ctx, `UPDATE ingredients SET quantity = quantity + $1 WHERE id = $2`, toReturn, ingID)
+						}
+					}
+					recRows.Close()
+				}
+			}
+		}
+	}
+
+	_, _ = tx.Exec(ctx, `DELETE FROM comandas WHERE sale_id = $1`, saleID)
+	_, _ = tx.Exec(ctx, `DELETE FROM sale_items WHERE sale_id = $1`, saleID)
+	tag, err := tx.Exec(ctx, `DELETE FROM sales WHERE id = $1`, saleID)
+	if err != nil {
+		log.Printf("error eliminando venta: %v", err)
+		http.Error(w, "error eliminando venta", http.StatusInternalServerError)
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		http.Error(w, "venta no encontrada", http.StatusNotFound)
+		return
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.Printf("error confirmando eliminación: %v", err)
+		http.Error(w, "error interno", http.StatusInternalServerError)
+		return
+	}
+
+	h.Hub.Publish("sale_deleted", map[string]string{"id": idStr})
+	h.Hub.Publish("inventory_updated", map[string]interface{}{"action": "sale_deleted"})
+
+	w.WriteHeader(http.StatusNoContent)
 }

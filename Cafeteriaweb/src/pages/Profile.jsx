@@ -258,7 +258,7 @@ export default function Profile() {
                 <span className="font-semibold flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Cuenta:
                 </span>
-                <strong className="text-emerald-600 font-extrabold">✓ Activa</strong>
+                <strong className="text-emerald-600 font-extrabold">Activa</strong>
               </div>
             </div>
 
@@ -394,7 +394,7 @@ export default function Profile() {
         <form onSubmit={handleSaveProfile} className="space-y-4">
           {formError && (
             <div className="p-3.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 text-xs font-bold">
-              ⚠️ {formError}
+              {formError}
             </div>
           )}
 

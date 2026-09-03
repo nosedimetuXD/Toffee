@@ -9,7 +9,6 @@ import {
   TrendingUp,
   Calendar,
   CalendarDays,
-  Zap,
   Sun,
   Building2,
   Globe,
@@ -17,8 +16,22 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
-  XCircle
+  XCircle,
+  Download,
+  Edit2,
+  Trash2,
+  Ban,
+  MessageCircle,
+  CreditCard,
+  DollarSign,
+  ShoppingBag,
+  AlertCircle,
+  Tag,
+  Users
 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { exportSalesToCSV } from '../utils/csvExport'
+import { downloadReceiptPDF, printReceiptPDF, shareReceiptPDFToWhatsApp } from '../utils/pdfReceipt'
 
 const MONTH_NAMES = [
   { num: 1, short: 'ene.', full: 'Enero' },
@@ -35,23 +48,40 @@ const MONTH_NAMES = [
   { num: 12, short: 'dic.', full: 'Diciembre' }
 ]
 
-import { useAuth } from '../context/AuthContext'
+const COMMON_BANKS = ['Bre-B/Llave', 'Nequi', 'Daviplata', 'Bancolombia', 'Nu', 'Davivienda', 'BBVA', 'Banco de Bogotá']
 
 export default function SalesHistory() {
-  const { user, isOwner: isOwnerFromAuth } = useAuth()
+  const { user } = useAuth()
   const userRole = String(user?.role || '').toLowerCase()
-  const isOwner = Boolean(isOwnerFromAuth || userRole === 'owner' || userRole === 'dueño')
+  const isOwner = userRole === 'owner' || userRole === 'dueño'
+
   const [sales, setSales] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMethod, setSelectedMethod] = useState('Todos')
   const [loading, setLoading] = useState(true)
   const [pageError, setPageError] = useState('')
 
-  // Modal Recibo impreso
+  // Modal Recibo
   const [selectedSale, setSelectedSale] = useState(null)
   const [isReceiptOpen, setIsReceiptOpen] = useState(false)
 
-  // Control de filtro de periodos (Predeterminado: Histórico Total)
+  // Modal Editar Venta (Exclusivo Dueño)
+  const [editingSale, setEditingSale] = useState(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editFormData, setEditFormData] = useState({
+    customer_name: '',
+    payment_method: 'efectivo',
+    cash_amount: 0,
+    transfer_amount: 0,
+    bank_details: '',
+    discount_percent: 0,
+    discount_amount: 0,
+    discount_reason: '',
+    items: []
+  })
+  const [savingEdit, setSavingEdit] = useState(false)
+
+  // Filtros de Fecha
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('preset')
   const [displayLabel, setDisplayLabel] = useState('Histórico Total')
@@ -75,7 +105,7 @@ export default function SalesHistory() {
       }
 
       const data = await api.get(`/sales?${queryStr}`)
-      setSales(data || [])
+      setSales(Array.isArray(data) ? data : [])
     } catch (err) {
       setPageError('No se pudo cargar el historial de ventas')
     } finally {
@@ -116,31 +146,38 @@ export default function SalesHistory() {
   const filteredSales = useMemo(() => {
     return sales.filter((s) => {
       const matchSearch =
-        s.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.sold_by_username?.toLowerCase().includes(searchQuery.toLowerCase())
+        (s.customer_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.sold_by_username || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.id || '').toLowerCase().includes(searchQuery.toLowerCase())
 
       const matchMethod = selectedMethod === 'Todos' || s.payment_method === selectedMethod
       return matchSearch && matchMethod
     })
   }, [sales, searchQuery, selectedMethod])
 
-  const totalSalesVolume = useMemo(() => {
-    return filteredSales.reduce((acc, s) => {
-      if (s.status === 'cancelado' || s.status === 'cancelada') return acc
-      return acc + s.total
-    }, 0)
+  // Estadísticas Header
+  const activeSales = useMemo(() => {
+    return filteredSales.filter((s) => s.status !== 'cancelado' && s.status !== 'cancelada')
   }, [filteredSales])
 
-  function handlePrintReceipt(sale) {
-    setSelectedSale(sale)
-    setIsReceiptOpen(true)
-  }
+  const totalBilled = useMemo(() => {
+    return activeSales.reduce((sum, s) => sum + (s.total || 0), 0)
+  }, [activeSales])
+
+  const totalCollectedInCash = useMemo(() => {
+    return activeSales.reduce((sum, s) => sum + (s.cash_amount || (s.payment_method === 'efectivo' ? s.total : 0)), 0)
+  }, [activeSales])
+
+  const totalCollectedInTransfer = useMemo(() => {
+    return activeSales.reduce((sum, s) => sum + (s.transfer_amount || (s.payment_method === 'transferencia' ? s.total : 0)), 0)
+  }, [activeSales])
+
+  const totalSalesCount = activeSales.length
+
+  // Manejo de Cancelación (Abierto a cualquier usuario)
   async function handleCancelSale(sale) {
-    if (!isOwner) {
-      alert('Solo los usuarios con rol Dueño pueden cancelar ventas.')
-      return
-    }
-    if (!window.confirm(`¿Estás seguro de cancelar la venta de ${sale.customer_name || 'Cliente General'} por $${sale.total.toLocaleString()}?`)) return
+    const customerLabel = sale.customer_name || 'Cliente General'
+    if (!window.confirm(`¿Confirmas la cancelación de la venta de ${customerLabel} por $${Number(sale.total).toLocaleString('es-CO')}? La comanda pasará a cancelada.`)) return
     try {
       await api.post(`/sales/${sale.id}/cancel`)
       await loadSales({ period })
@@ -149,423 +186,675 @@ export default function SalesHistory() {
     }
   }
 
-  function executeBrowserPrint() {
-    window.print()
+  // Manejo de Eliminación (Solo Dueño)
+  async function handleDeleteSale(sale) {
+    if (!isOwner) return
+    if (!window.confirm(`¿Eliminar definitivamente la venta #${sale.id.substring(0, 8)}? Se devolverán los insumos al inventario.`)) return
+    try {
+      await api.delete(`/sales/${sale.id}`)
+      setSales((prev) => prev.filter((s) => s.id !== sale.id))
+    } catch (err) {
+      alert(err.message || 'Error al eliminar la venta')
+    }
   }
 
-  if (loading) return <p className="p-4 text-sm font-semibold text-[#9F6839]">Cargando historial de ventas...</p>
+  // Manejo de Edición (Solo Dueño)
+  function handleOpenEditSale(sale) {
+    if (!isOwner) return
+    setEditingSale(sale)
+    setEditFormData({
+      customer_name: sale.customer_name || '',
+      payment_method: sale.payment_method || 'efectivo',
+      cash_amount: sale.cash_amount || (sale.payment_method === 'efectivo' ? sale.total : 0),
+      transfer_amount: sale.transfer_amount || (sale.payment_method === 'transferencia' ? sale.total : 0),
+      bank_details: sale.bank_details || '',
+      discount_percent: sale.discount_percent || 0,
+      discount_amount: sale.discount_amount || 0,
+      discount_reason: sale.discount_reason || '',
+      items: (sale.items || []).map((i) => ({
+        product_id: i.product_id,
+        product_name: i.product_name,
+        quantity: i.quantity,
+        unit_price: i.unit_price,
+        notes: ''
+      }))
+    })
+    setIsEditModalOpen(true)
+  }
+
+  async function handleSaveEditSale(e) {
+    e.preventDefault()
+    if (!editingSale) return
+    try {
+      setSavingEdit(true)
+      const payload = {
+        customer_name: editFormData.customer_name,
+        payment_method: editFormData.payment_method,
+        cash_amount: Number(editFormData.cash_amount) || 0,
+        transfer_amount: Number(editFormData.transfer_amount) || 0,
+        bank_details: editFormData.bank_details,
+        discount_percent: Number(editFormData.discount_percent) || 0,
+        discount_amount: Number(editFormData.discount_amount) || 0,
+        discount_reason: editFormData.discount_reason,
+        items: editFormData.items.map((it) => ({
+          product_id: it.product_id,
+          quantity: it.quantity,
+          notes: ''
+        }))
+      }
+
+      await api.put(`/sales/${editingSale.id}`, payload)
+      setIsEditModalOpen(false)
+      loadSales({ period })
+    } catch (err) {
+      alert('Error actualizando venta: ' + (err.message || 'Error interno'))
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  function handleOpenReceiptModal(sale) {
+    setSelectedSale(sale)
+    setIsReceiptOpen(true)
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Cabecera Principal y Filtros */}
+      <div className="bg-white dark:bg-zinc-900 border border-amber-200/60 dark:border-zinc-800 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-[#432414] dark:text-[#FEE4D7] tracking-tight">
-            Historial de Ventas & Recibos
-          </h2>
-          <p className="text-xs font-semibold text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
-            Registro cronológico de ventas, cobros y comprobantes de la cafetería
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Botón Selector de Período */}
-          <button
-            onClick={() => setIsFilterModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-3xl bg-white dark:bg-[#201009] hover:bg-[#FEE4D7]/50 border border-[#D4B28E] dark:border-[#9F6839]/40 text-xs font-bold text-[#432414] dark:text-[#FEE4D7] shadow-xs transition-all cursor-pointer"
-          >
-            <Calendar className="w-4 h-4 text-[#9F6839]" />
-            <span>{displayLabel}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-[#9F6839]" />
-          </button>
-
-          {/* Tarjeta Total Facturado */}
-          <div className="flex items-center gap-3 bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 px-4 py-2.5 rounded-3xl shadow-xs">
-            <div className="p-2 rounded-2xl bg-[#432414] text-[#DABA8C]">
-              <TrendingUp className="w-5 h-5" />
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-amber-100 dark:bg-amber-950/50 rounded-2xl text-amber-800 dark:text-amber-300">
+              <FileText className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-[10px] text-[#9F6839] uppercase font-bold tracking-wider block">Total Facturado</span>
-              <span className="text-base font-extrabold text-[#432414] dark:text-[#FEE4D7]">
-                ${totalSalesVolume.toLocaleString()}
-              </span>
+              <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-100">
+                Historial de Ventas
+              </h1>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">
+                Auditoría de transacciones, tickets y comprobantes
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* Selector de Período */}
+          <button
+            onClick={() => setIsFilterModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-2xl text-sm font-bold transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-700"
+          >
+            <Calendar className="w-4 h-4 text-amber-700" />
+            <span>{displayLabel}</span>
+            <ChevronDown className="w-4 h-4 text-zinc-400" />
+          </button>
+
+          {/* Exportar a CSV */}
+          <button
+            onClick={() => exportSalesToCSV(filteredSales)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-2xl text-sm font-bold transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-700"
+          >
+            <Download className="w-4 h-4 text-zinc-500" />
+            <span>Exportar CSV</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Tarjetas de Métricas Resumen (Sin Deuda) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 rounded-2xl">
+            <DollarSign className="w-6 h-6" />
+          </div>
+          <div>
+            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Total Facturado</span>
+            <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100">
+              ${Number(totalBilled).toLocaleString('es-CO')}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-2xl">
+            <CreditCard className="w-6 h-6" />
+          </div>
+          <div>
+            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Recaudado en Caja</span>
+            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+              ${Number(totalCollectedInCash + totalCollectedInTransfer).toLocaleString('es-CO')}
+            </div>
+            <span className="text-[10px] text-zinc-400 font-semibold block">
+              Efec: ${Number(totalCollectedInCash).toLocaleString('es-CO')} | Transf: ${Number(totalCollectedInTransfer).toLocaleString('es-CO')}
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 rounded-2xl">
+            <ShoppingBag className="w-6 h-6" />
+          </div>
+          <div>
+            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Ventas Realizadas</span>
+            <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100">
+              {totalSalesCount}
             </div>
           </div>
         </div>
       </div>
 
-      {pageError && (
-        <div className="p-3.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 text-xs font-bold flex items-center gap-2">
-          <XCircle className="w-4 h-4 text-red-600" />
-          <span>{pageError}</span>
-        </div>
-      )}
-
-      {/* Buscador & Filtro por Método de Pago */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 p-4 rounded-3xl shadow-xs">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9F6839]" />
+      {/* Buscador y Filtro por Método de Pago */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
           <input
             type="text"
-            placeholder="Buscar por cliente o vendedor..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-2xl bg-[#FEE4D7]/30 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 text-xs font-semibold text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
+            placeholder="Buscar por cliente, vendedor o ID..."
+            className="w-full pl-11 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-          {['Todos', 'efectivo', 'transferencia', 'mixto'].map((method) => (
+        <div className="flex items-center gap-1.5 overflow-x-auto">
+          {['Todos', 'efectivo', 'transferencia', 'mixto'].map((m) => (
             <button
-              key={method}
-              onClick={() => setSelectedMethod(method)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold capitalize transition-all cursor-pointer whitespace-nowrap ${
-                selectedMethod === method
-                  ? 'bg-[#9F6839] text-white shadow-xs'
-                  : 'bg-[#FEE4D7]/40 dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]'
+              key={m}
+              onClick={() => setSelectedMethod(m)}
+              className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold capitalize whitespace-nowrap transition-all cursor-pointer ${
+                selectedMethod === m
+                  ? 'bg-amber-700 text-white shadow-xs'
+                  : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100'
               }`}
             >
-              {method}
+              {m}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Tabla de Ventas */}
-      <div className="bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 rounded-3xl shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-[#432414] dark:text-[#FEE4D7]">
-            <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] font-extrabold text-[10px] uppercase tracking-wider border-b border-[#D4B28E]/60">
-              <tr>
-                <th className="py-3 px-4">Fecha / Hora</th>
-                <th className="py-3 px-4">Cliente</th>
-                <th className="py-3 px-4">Método Pago</th>
-                <th className="py-3 px-4">Vendedor</th>
-                <th className="py-3 px-4">Estado</th>
-                <th className="py-3 px-4 text-right">Total</th>
-                <th className="py-3 px-4 text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#D4B28E]/30 dark:divide-[#9F6839]/20">
-              {filteredSales.map((s) => {
-                const isCanceled = s.status === 'cancelado' || s.status === 'cancelada'
-
-                return (
-                  <tr key={s.id} className={`hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A150C]/50 transition-colors ${isCanceled ? 'bg-red-50/30 dark:bg-red-950/10' : ''}`}>
-                    <td className="py-3.5 px-4 font-medium whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-[#9F6839]" />
-                        <span>{new Date(s.created_at).toLocaleString()}</span>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-bold">{s.customer_name || 'Cliente General'}</td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="px-2.5 py-0.5 rounded-full bg-[#FEE4D7] dark:bg-[#34180D] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E] font-extrabold text-[10px] uppercase tracking-wider w-max">
-                          {s.payment_method}
-                        </span>
-                        {s.bank_details && (
-                          <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-bold">
-                            {s.bank_details}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-semibold">{s.sold_by_username || 'Vendedor'}</td>
-                    <td className="py-3.5 px-4 font-bold">
-                      {isCanceled ? (
-                        <span className="px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800 font-extrabold text-[10px] uppercase tracking-wider w-max inline-block">
-                          CANCELADA
-                        </span>
-                      ) : (
-                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-extrabold text-[10px] uppercase tracking-wider w-max inline-block">
-                          COMPLETADA
-                        </span>
-                      )}
-                    </td>
-                    <td className={`py-3.5 px-4 text-right font-extrabold text-sm ${isCanceled ? 'text-gray-400 line-through' : 'text-emerald-600'}`}>
-                      ${s.total.toLocaleString()}
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => handlePrintReceipt(s)}
-                          className="p-2 rounded-xl text-[#9F6839] hover:bg-[#FEE4D7] dark:hover:bg-[#2E180E] transition-colors cursor-pointer"
-                          title="Imprimir / Ver Ticket"
-                        >
-                          <Printer className="w-4 h-4" />
-                        </button>
-                        {!isCanceled && isOwner && (
-                          <button
-                            onClick={() => handleCancelSale(s)}
-                            className="p-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                            title="Cancelar Venta"
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-              {filteredSales.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="text-center py-8 text-[#9F6839] font-medium">
-                    No se encontraron ventas registradas en este período.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      {/* Tabla / Lista de Ventas */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-16 text-zinc-400 gap-3">
+          <div className="w-8 h-8 border-3 border-amber-600 border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm font-medium">Cargando ventas...</span>
         </div>
-      </div>
+      ) : filteredSales.length === 0 ? (
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-12 text-center shadow-sm">
+          <FileText className="w-12 h-12 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
+          <h3 className="text-lg font-bold text-zinc-800 dark:text-zinc-200 mb-1">No hay ventas registradas</h3>
+          <p className="text-sm text-zinc-400">No se encontraron ventas para los filtros seleccionados.</p>
+        </div>
+      ) : (
+        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 uppercase font-black text-[10px] tracking-wider">
+                <tr>
+                  <th className="px-5 py-3.5">Fecha / ID</th>
+                  <th className="px-4 py-3.5">Cliente & Vendedor</th>
+                  <th className="px-4 py-3.5">Método de Pago</th>
+                  <th className="px-4 py-3.5">Subtotal / Descuento</th>
+                  <th className="px-4 py-3.5">Total Pagado</th>
+                  <th className="px-4 py-3.5">Estado</th>
+                  <th className="px-5 py-3.5 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                {filteredSales.map((sale) => {
+                  const isCancelled = sale.status === 'cancelado' || sale.status === 'cancelada'
+                  return (
+                    <tr
+                      key={sale.id}
+                      className={`hover:bg-amber-50/30 dark:hover:bg-zinc-800/40 transition-colors ${
+                        isCancelled ? 'opacity-60 bg-zinc-50/50 dark:bg-zinc-900/50' : ''
+                      }`}
+                    >
+                      <td className="px-5 py-4">
+                        <div className="font-bold text-zinc-800 dark:text-zinc-200">
+                          {new Date(sale.created_at).toLocaleDateString('es-CO')}
+                        </div>
+                        <div className="text-[11px] text-zinc-400 font-mono">
+                          {new Date(sale.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })} • #{sale.id.substring(0, 8)}
+                        </div>
+                      </td>
 
-      {/* Modal Recibo Impreso */}
-      <Modal isOpen={isReceiptOpen} onClose={() => setIsReceiptOpen(false)} title="Recibo de Venta Toffee">
-        {selectedSale && (
+                      <td className="px-4 py-4">
+                        <div className="font-extrabold text-zinc-900 dark:text-zinc-100">
+                          {sale.customer_name || 'Cliente General'}
+                        </div>
+                        <div className="text-[11px] text-zinc-400">
+                          Vendido por: <strong>{sale.sold_by_username || 'Personal'}</strong>
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <span className="inline-block px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold uppercase text-[10px]">
+                          {sale.payment_method}
+                        </span>
+                        {sale.bank_details && (
+                          <div className="text-[10px] text-zinc-400 truncate max-w-xs mt-0.5">
+                            {sale.bank_details}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <div className="text-zinc-600 dark:text-zinc-400 font-medium">
+                          ${Number(sale.subtotal || sale.total).toLocaleString('es-CO')}
+                        </div>
+                        {(sale.discount_amount > 0 || sale.discount_percent > 0) && (
+                          <div className="text-red-500 text-[11px] font-bold">
+                            -${Number(sale.discount_amount).toLocaleString('es-CO')} ({sale.discount_percent}%)
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <span className="text-sm font-black text-zinc-900 dark:text-zinc-100">
+                          ${Number(sale.total).toLocaleString('es-CO')}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <span
+                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                            isCancelled
+                              ? 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300'
+                              : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
+                          }`}
+                        >
+                          {isCancelled ? 'Cancelada' : 'Completada'}
+                        </span>
+                      </td>
+
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {/* Ver Comprobante */}
+                          <button
+                            onClick={() => handleOpenReceiptModal(sale)}
+                            title="Ver / Imprimir Comprobante"
+                            className="p-2 text-zinc-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
+                          >
+                            <Printer className="w-4 h-4" />
+                          </button>
+
+                          {/* Cancelar Venta (Accesible para cualquier usuario) */}
+                          {!isCancelled && (
+                            <button
+                              onClick={() => handleCancelSale(sale)}
+                              title="Cancelar Venta"
+                              className="p-2 text-zinc-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/30 rounded-xl transition-colors cursor-pointer"
+                            >
+                              <Ban className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {/* Editar Venta (Exclusivo Dueño) */}
+                          {isOwner && (
+                            <button
+                              onClick={() => handleOpenEditSale(sale)}
+                              title="Editar Venta (Dueño)"
+                              className="p-2 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition-colors cursor-pointer"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {/* Eliminar Venta (Exclusivo Dueño) */}
+                          {isOwner && (
+                            <button
+                              onClick={() => handleDeleteSale(sale)}
+                              title="Eliminar Venta Definitivamente (Dueño)"
+                              className="p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL COMPROBANTE / TICKET OFICIAL */}
+      {isReceiptOpen && selectedSale && (
+        <Modal
+          isOpen={isReceiptOpen}
+          onClose={() => setIsReceiptOpen(false)}
+          title={`Ticket de Venta #${selectedSale.id.substring(0, 8)}`}
+        >
           <div className="space-y-4">
-            <div id="printable-receipt" className="p-6 bg-white border border-gray-200 rounded-2xl text-center space-y-3 font-mono text-xs text-gray-800">
-              <div className="flex flex-col items-center justify-center border-b border-[#D4B28E]/60 pb-3 text-center">
-                <img src="/icon-192.png" alt="Toffee Logo" className="w-12 h-12 rounded-2xl border border-[#9F6839] mb-1 object-cover" />
-                <h2 className="text-base font-black text-[#432414] uppercase tracking-wider">Toffee</h2>
-                <p className="text-[10px] text-[#9F6839] font-extrabold uppercase tracking-widest">"Hecho por y para estudiantes"</p>
+            <div className="p-4 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-2xl text-xs space-y-2">
+              <div className="flex justify-between">
+                <span className="text-zinc-400 font-bold">Cliente:</span>
+                <span className="font-extrabold text-zinc-900 dark:text-zinc-100">{selectedSale.customer_name || 'Cliente General'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400 font-bold">Fecha:</span>
+                <span className="font-bold text-zinc-800 dark:text-zinc-200">{new Date(selectedSale.created_at).toLocaleString('es-CO')}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400 font-bold">Método de Pago:</span>
+                <span className="font-bold uppercase text-zinc-800 dark:text-zinc-200">{selectedSale.payment_method}</span>
+              </div>
+              {selectedSale.bank_details && (
+                <div className="flex justify-between">
+                  <span className="text-zinc-400 font-bold">Bancos:</span>
+                  <span className="font-bold text-zinc-700 dark:text-zinc-300">{selectedSale.bank_details}</span>
+                </div>
+              )}
+              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700 flex justify-between text-sm font-black text-zinc-900 dark:text-zinc-100">
+                <span>Total:</span>
+                <span className="text-amber-700 dark:text-amber-400">${Number(selectedSale.total).toLocaleString('es-CO')}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <button
+                type="button"
+                onClick={() => printReceiptPDF(selectedSale)}
+                className="p-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-2xl text-xs font-bold text-zinc-800 dark:text-zinc-200 flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Printer className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
+                <span>Imprimir Ticket</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => downloadReceiptPDF(selectedSale)}
+                className="p-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-2xl text-xs font-bold text-zinc-800 dark:text-zinc-200 flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Download className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
+                <span>Descargar PDF</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => shareReceiptPDFToWhatsApp(selectedSale)}
+                className="p-3 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 rounded-2xl text-xs font-bold text-emerald-700 dark:text-emerald-300 flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <MessageCircle className="w-4 h-4 text-emerald-600" />
+                <span>Enviar WhatsApp</span>
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL EDITAR VENTA (DUEÑO) */}
+      {isEditModalOpen && editingSale && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => !savingEdit && setIsEditModalOpen(false)}
+          title={`Editar Venta #${editingSale.id.substring(0, 8)}`}
+        >
+          <form onSubmit={handleSaveEditSale} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                Cliente
+              </label>
+              <input
+                type="text"
+                value={editFormData.customer_name}
+                onChange={(e) => setEditFormData({ ...editFormData, customer_name: e.target.value })}
+                className="w-full px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                  Método de Pago
+                </label>
+                <select
+                  value={editFormData.payment_method}
+                  onChange={(e) => setEditFormData({ ...editFormData, payment_method: e.target.value })}
+                  className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100"
+                >
+                  <option value="efectivo">Efectivo</option>
+                  <option value="transferencia">Transferencia</option>
+                  <option value="mixto">Mixto</option>
+                </select>
               </div>
 
-              <div className="text-left space-y-1 text-xs">
-                <div><strong>Cliente:</strong> {selectedSale.customer_name || 'Cliente General'}</div>
-                <div><strong>Forma Pago:</strong> {selectedSale.payment_method}</div>
-                <div><strong>Cajero:</strong> {selectedSale.sold_by_username || 'Caja'}</div>
-                <div><strong>Fecha:</strong> {new Date(selectedSale.created_at).toLocaleString()}</div>
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                  Detalles Banco
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.bank_details}
+                  onChange={(e) => setEditFormData({ ...editFormData, bank_details: e.target.value })}
+                  placeholder="Ej. Nequi: $10.000"
+                  className="w-full px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                  Descuento (%)
+                </label>
+                <input
+                  type="number"
+                  value={editFormData.discount_percent}
+                  onChange={(e) => setEditFormData({ ...editFormData, discount_percent: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100"
+                />
               </div>
 
-              <div className="border-t border-b py-3 space-y-1 text-left">
-                {(selectedSale.items || []).map((it, idx) => (
-                  <div key={idx} className="flex justify-between text-xs">
-                    <span>{it.quantity}x {it.product_name}</span>
-                    <span>${(it.unit_price * it.quantity).toLocaleString()}</span>
+              <div>
+                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                  Motivo Descuento
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.discount_reason}
+                  onChange={(e) => setEditFormData({ ...editFormData, discount_reason: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100"
+                />
+              </div>
+            </div>
+
+            {/* Ítems */}
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                Cantidades de Productos
+              </label>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {editFormData.items.map((it, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl text-xs">
+                    <span className="font-bold text-zinc-800 dark:text-zinc-200">{it.product_name}</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={it.quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 1
+                        const next = [...editFormData.items]
+                        next[idx].quantity = val
+                        setEditFormData({ ...editFormData, items: next })
+                      }}
+                      className="w-16 px-2 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-center font-bold"
+                    />
                   </div>
                 ))}
               </div>
-
-              <div className="flex justify-between items-center text-sm font-bold pt-1">
-                <span>TOTAL FACTURADO:</span>
-                <span className="text-base">${selectedSale.total.toLocaleString()}</span>
-              </div>
-
-              <div className="pt-4 border-t border-dashed text-[10px] text-gray-500 text-center">
-                ¡Gracias por tu compra en Toffee! ☕<br />
-                Vuelve pronto.
-              </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
               <button
-                onClick={() => setIsReceiptOpen(false)}
-                className="px-4 py-2 rounded-2xl border border-gray-300 text-xs font-extrabold text-gray-600 hover:bg-gray-100 cursor-pointer"
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 text-zinc-600 dark:text-zinc-400 text-xs font-bold cursor-pointer"
               >
-                Cerrar
+                Cancelar
               </button>
               <button
-                onClick={executeBrowserPrint}
-                className="px-4 py-2 rounded-2xl bg-[#9F6839] text-white text-xs font-extrabold hover:bg-[#835229] shadow-xs cursor-pointer flex items-center gap-2"
+                type="submit"
+                disabled={savingEdit}
+                className="px-5 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all disabled:opacity-50"
               >
-                <Printer className="w-4 h-4" />
-                <span>Imprimir Ticket</span>
+                {savingEdit ? 'Guardando...' : 'Guardar Cambios'}
               </button>
             </div>
-          </div>
-        )}
-      </Modal>
+          </form>
+        </Modal>
+      )}
 
-      {/* Modal / Popover de Filtro de Período y Fechas */}
-      <Modal
-        isOpen={isFilterModalOpen}
-        onClose={() => setIsFilterModalOpen(false)}
-        title="Filtrar Período de Ventas"
-      >
-        <div className="space-y-5">
-          {/* Navegación por pestañas */}
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#FEE4D7]/50 dark:bg-[#2E180E] border border-[#D4B28E]">
-            <button
-              type="button"
-              onClick={() => setActiveTab('preset')}
-              className={`flex-1 py-2 px-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                activeTab === 'preset'
-                  ? 'bg-[#9F6839] text-white shadow-xs'
-                  : 'text-[#432414] dark:text-[#FEE4D7] hover:bg-[#9F6839]/10'
-              }`}
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Rápido</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('month_year')}
-              className={`flex-1 py-2 px-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                activeTab === 'month_year'
-                  ? 'bg-[#9F6839] text-white shadow-xs'
-                  : 'text-[#432414] dark:text-[#FEE4D7] hover:bg-[#9F6839]/10'
-              }`}
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Mes & Año</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('custom')}
-              className={`flex-1 py-2 px-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                activeTab === 'custom'
-                  ? 'bg-[#9F6839] text-white shadow-xs'
-                  : 'text-[#432414] dark:text-[#FEE4D7] hover:bg-[#9F6839]/10'
-              }`}
-            >
-              <CalendarDays className="w-3.5 h-3.5" />
-              <span>Rango Calendario</span>
-            </button>
-          </div>
-
-          {/* TAB 1: Opciones Rápidas */}
-          {activeTab === 'preset' && (
-            <div className="grid grid-cols-2 gap-3 p-1">
+      {/* MODAL FILTRO DE FECHAS */}
+      {isFilterModalOpen && (
+        <Modal
+          isOpen={isFilterModalOpen}
+          onClose={() => setIsFilterModalOpen(false)}
+          title="Filtrar Período de Ventas"
+        >
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2">
               <button
                 type="button"
-                onClick={() => handleSelectPreset('all', 'Histórico Total')}
-                className="p-3.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] hover:bg-[#FEE4D7]/50 text-xs font-bold text-[#432414] dark:text-[#FEE4D7] text-left cursor-pointer flex items-center gap-2"
+                onClick={() => setActiveTab('preset')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                  activeTab === 'preset'
+                    ? 'bg-amber-700 text-white'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100'
+                }`}
               >
-                <Globe className="w-4 h-4 text-blue-600" />
-                <span>Histórico Total</span>
+                Rápidos
               </button>
               <button
                 type="button"
-                onClick={() => handleSelectPreset('month', 'Mes Actual')}
-                className="p-3.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] hover:bg-[#FEE4D7]/50 text-xs font-bold text-[#432414] dark:text-[#FEE4D7] text-left cursor-pointer flex items-center gap-2"
+                onClick={() => setActiveTab('month')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                  activeTab === 'month'
+                    ? 'bg-amber-700 text-white'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100'
+                }`}
               >
-                <Calendar className="w-4 h-4 text-[#9F6839]" />
-                <span>Mes Actual</span>
+                Mes Específico
               </button>
               <button
                 type="button"
-                onClick={() => handleSelectPreset('prev_month', 'Mes Anterior')}
-                className="p-3.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] hover:bg-[#FEE4D7]/50 text-xs font-bold text-[#432414] dark:text-[#FEE4D7] text-left cursor-pointer flex items-center gap-2"
+                onClick={() => setActiveTab('custom')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                  activeTab === 'custom'
+                    ? 'bg-amber-700 text-white'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100'
+                }`}
               >
-                <Clock className="w-4 h-4 text-[#9F6839]" />
-                <span>Mes Anterior</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectPreset('week', 'Esta Semana')}
-                className="p-3.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] hover:bg-[#FEE4D7]/50 text-xs font-bold text-[#432414] dark:text-[#FEE4D7] text-left cursor-pointer flex items-center gap-2"
-              >
-                <TrendingUp className="w-4 h-4 text-[#9F6839]" />
-                <span>Esta Semana</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectPreset('today', 'Hoy')}
-                className="p-3.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] hover:bg-[#FEE4D7]/50 text-xs font-bold text-[#432414] dark:text-[#FEE4D7] text-left cursor-pointer flex items-center gap-2"
-              >
-                <Sun className="w-4 h-4 text-amber-500" />
-                <span>Hoy</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectPreset('year', 'Este Año')}
-                className="p-3.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] hover:bg-[#FEE4D7]/50 text-xs font-bold text-[#432414] dark:text-[#FEE4D7] text-left cursor-pointer flex items-center gap-2"
-              >
-                <Building2 className="w-4 h-4 text-[#9F6839]" />
-                <span>Este Año</span>
+                Rango Libre
               </button>
             </div>
-          )}
 
-          {/* TAB 2: Mes & Año */}
-          {activeTab === 'month_year' && (
-            <div className="space-y-4 p-4 rounded-3xl bg-white dark:bg-[#150904] border border-[#D4B28E] shadow-2xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/40">
+            {activeTab === 'preset' && (
+              <div className="grid grid-cols-2 gap-2">
                 <button
-                  type="button"
-                  onClick={() => setSelectedYear(selectedYear - 1)}
-                  className="p-2 rounded-xl border border-[#D4B28E] hover:bg-[#FEE4D7] dark:hover:bg-[#2E180E] text-[#432414] dark:text-[#FEE4D7] cursor-pointer"
+                  onClick={() => handleSelectPreset('today', 'Hoy')}
+                  className="p-3 bg-zinc-50 dark:bg-zinc-800 hover:bg-amber-50 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  Hoy
                 </button>
-                <span className="text-base font-extrabold text-[#432414] dark:text-[#FEE4D7]">
-                  {selectedYear}
-                </span>
                 <button
-                  type="button"
-                  onClick={() => setSelectedYear(selectedYear + 1)}
-                  className="p-2 rounded-xl border border-[#D4B28E] hover:bg-[#FEE4D7] dark:hover:bg-[#2E180E] text-[#432414] dark:text-[#FEE4D7] cursor-pointer"
+                  onClick={() => handleSelectPreset('week', 'Últimos 7 días')}
+                  className="p-3 bg-zinc-50 dark:bg-zinc-800 hover:bg-amber-50 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  Últimos 7 días
+                </button>
+                <button
+                  onClick={() => handleSelectPreset('month', 'Este Mes')}
+                  className="p-3 bg-zinc-50 dark:bg-zinc-800 hover:bg-amber-50 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
+                >
+                  Este Mes
+                </button>
+                <button
+                  onClick={() => handleSelectPreset('prev_month', 'Mes Anterior')}
+                  className="p-3 bg-zinc-50 dark:bg-zinc-800 hover:bg-amber-50 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
+                >
+                  Mes Anterior
+                </button>
+                <button
+                  onClick={() => handleSelectPreset('year', 'Este Año')}
+                  className="p-3 bg-zinc-50 dark:bg-zinc-800 hover:bg-amber-50 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
+                >
+                  Este Año
+                </button>
+                <button
+                  onClick={() => handleSelectPreset('all', 'Histórico Total')}
+                  className="p-3 bg-zinc-50 dark:bg-zinc-800 hover:bg-amber-50 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
+                >
+                  Histórico Total
                 </button>
               </div>
+            )}
 
-              <div className="grid grid-cols-4 gap-2.5 pt-1">
-                {MONTH_NAMES.map((m) => {
-                  const isSelected = selectedMonth === m.num
-
-                  return (
+            {activeTab === 'month' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => setSelectedYear(selectedYear - 1)}
+                    className="p-1 rounded-lg hover:bg-zinc-100"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="font-extrabold text-sm">{selectedYear}</span>
+                  <button
+                    onClick={() => setSelectedYear(selectedYear + 1)}
+                    className="p-1 rounded-lg hover:bg-zinc-100"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {MONTH_NAMES.map((m) => (
                     <button
                       key={m.num}
-                      type="button"
                       onClick={() => handleSelectMonthYear(selectedYear, m.num, m.full)}
-                      className={`py-3 rounded-xl text-xs font-bold text-center transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#0066FF] text-white font-black shadow-md border-2 border-black dark:border-white ring-2 ring-blue-400'
-                          : 'bg-gray-100 dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] hover:bg-blue-100 dark:hover:bg-blue-950/60 border border-gray-200 dark:border-[#9F6839]/40'
-                      }`}
+                      className="p-2.5 bg-zinc-50 dark:bg-zinc-800 hover:bg-amber-50 rounded-xl text-xs font-bold text-center cursor-pointer transition-colors"
                     >
-                      {m.short}
+                      {m.full}
                     </button>
-                  )
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* TAB 3: Rango Calendario */}
-          {activeTab === 'custom' && (
-            <form onSubmit={handleApplyCustomRange} className="space-y-4 p-4 rounded-3xl bg-white dark:bg-[#150904] border border-[#D4B28E]">
-              <div className="grid grid-cols-2 gap-3">
+            {activeTab === 'custom' && (
+              <form onSubmit={handleApplyCustomRange} className="space-y-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#432414] dark:text-[#DABA8C] uppercase mb-1">
-                    Fecha Inicio
-                  </label>
+                  <label className="block text-xs font-bold text-zinc-600 mb-1">Fecha Inicio</label>
                   <input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    required
-                    className="w-full px-3 py-2.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] text-xs font-bold text-[#432414] dark:text-[#FEE4D7]"
+                    className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border rounded-xl text-xs"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#432414] dark:text-[#DABA8C] uppercase mb-1">
-                    Fecha Fin
-                  </label>
+                  <label className="block text-xs font-bold text-zinc-600 mb-1">Fecha Fin</label>
                   <input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    required
-                    className="w-full px-3 py-2.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] text-xs font-bold text-[#432414] dark:text-[#FEE4D7]"
+                    className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border rounded-xl text-xs"
                   />
                 </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white text-xs font-extrabold shadow-md cursor-pointer transition-all flex items-center justify-center gap-2"
-              >
-                <Filter className="w-4 h-4" />
-                <span>Aplicar Rango de Fechas</span>
-              </button>
-            </form>
-          )}
-        </div>
-      </Modal>
+                <button
+                  type="submit"
+                  className="w-full py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  Aplicar Rango
+                </button>
+              </form>
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
