@@ -19,7 +19,10 @@ import {
   Download,
   MessageCircle,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  ChevronUp,
+  ChevronDown,
+  X
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { downloadReceiptPDF, printReceiptPDF, shareReceiptPDFToWhatsApp } from '../utils/pdfReceipt'
@@ -58,6 +61,9 @@ export default function Sales() {
   const [cartItems, setCartItems] = useState([])
   const [tableNumber, setTableNumber] = useState('')
   const [tipAmount, setTipAmount] = useState(0)
+
+  // Estado del drawer de carrito en móvil
+  const [isMobileCartOpen, setIsMobileCartOpen] = useState(false)
 
   // Descuentos (Solo Dueños)
   const [discountPercent, setDiscountPercent] = useState(0)
@@ -147,10 +153,15 @@ export default function Sales() {
     setDiscountReason('')
     setSelectedCustomerId(null)
     setSelectedCustomerObj(null)
+    setIsMobileCartOpen(false)
   }
 
   const cartSubtotal = useMemo(() => {
     return cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0)
+  }, [cartItems])
+
+  const totalCartCount = useMemo(() => {
+    return cartItems.reduce((sum, it) => sum + it.quantity, 0)
   }, [cartItems])
 
   const calculatedDiscountAmount = useMemo(() => {
@@ -205,6 +216,7 @@ export default function Sales() {
 
   function openCheckout() {
     if (cartItems.length === 0) return
+    setIsMobileCartOpen(false)
     setPaymentMethod('efectivo')
     setCashAmount(String(cartTotal))
     setTransferAmount('0')
@@ -369,9 +381,9 @@ export default function Sales() {
   }, [paymentMethod, cashAmount, cartTotal])
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-5.5rem)] gap-4 select-none text-[#432414] dark:text-[#FEE4D7]">
+    <div className="relative flex flex-col lg:flex-row h-[calc(100vh-5.5rem)] gap-4 select-none text-[#432414] dark:text-[#FEE4D7] pb-16 lg:pb-0">
       {/* SECCIÓN IZQUIERDA: Catálogo de Productos */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-4 shadow-sm overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-4 shadow-sm overflow-hidden h-full">
         {/* Cabecera y Buscador */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2.5">
@@ -441,7 +453,7 @@ export default function Sales() {
                     className="group bg-white dark:bg-[#25120B] hover:bg-[#FEE4D7]/40 dark:hover:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 hover:border-[#9F6839] rounded-2xl p-2.5 transition-all cursor-pointer flex flex-col justify-between relative shadow-xs"
                   >
                     {cartMatch && (
-                      <div className="absolute top-2 right-2 bg-[#9F6839] text-white font-black text-xs px-2 py-0.5 rounded-full shadow-md z-10">
+                      <div className="absolute top-2 right-2 bg-[#9F6839] text-white font-black text-xs px-2 py-0.5 rounded-full shadow-md z-10 animate-scale">
                         {cartMatch.quantity}
                       </div>
                     )}
@@ -478,8 +490,56 @@ export default function Sales() {
         </div>
       </div>
 
-      {/* SECCIÓN DERECHA: Carrito & Cobro */}
-      <div className="w-full lg:w-96 flex flex-col bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-4 shadow-sm">
+      {/* BACKDROP MÓVIL CUANDO EL CARRITO ESTÁ EXPANDIDO */}
+      {isMobileCartOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-40 transition-opacity animate-in fade-in"
+          onClick={() => setIsMobileCartOpen(false)}
+        />
+      )}
+
+      {/* BARRA FLOTANTE FIJA INFERIOR EN MÓVIL (CUANDO EL DRAWER ESTÁ MINIMIZADO) */}
+      <div className="lg:hidden fixed bottom-3 left-3 right-3 z-30 bg-[#201009] dark:bg-[#201009] border border-[#9F6839]/60 text-white rounded-3xl p-3 shadow-2xl flex items-center justify-between">
+        <button
+          onClick={() => setIsMobileCartOpen(true)}
+          className="flex items-center gap-3 flex-1 text-left cursor-pointer focus:outline-none"
+        >
+          <div className="relative p-2.5 bg-[#9F6839] rounded-2xl text-white shadow-xs">
+            <ShoppingBag className="w-5 h-5" />
+            {totalCartCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-[#FEE4D7] text-[#432414] text-[10px] font-black px-1.5 py-0.2 rounded-full border border-[#9F6839]">
+                {totalCartCount}
+              </span>
+            )}
+          </div>
+          <div>
+            <span className="text-xs font-bold text-[#DABA8C] flex items-center gap-1">
+              <span>{cartItems.length > 0 ? `Orden (${cartItems.length} tipos)` : 'Ver Orden'}</span>
+              <ChevronUp className="w-3.5 h-3.5" />
+            </span>
+            <span className="text-base font-black text-[#FEE4D7] block leading-tight">
+              ${Number(cartTotal).toLocaleString('es-CO')}
+            </span>
+          </div>
+        </button>
+
+        {cartItems.length > 0 && (
+          <button
+            onClick={openCheckout}
+            className="px-4 py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white text-xs font-black rounded-2xl shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <CreditCard className="w-4 h-4" />
+            <span>Cobrar</span>
+          </button>
+        )}
+      </div>
+
+      {/* CONTENEDOR DEL CARRITO (SIDEBAR EN DESKTOP / DRAWER DESPLEGABLE EN MÓVIL) */}
+      <div
+        className={`fixed lg:static bottom-0 left-0 right-0 z-50 lg:z-auto w-full lg:w-96 flex flex-col bg-white dark:bg-[#201009] border-t lg:border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-t-3xl lg:rounded-3xl p-4 shadow-2xl lg:shadow-sm max-h-[85vh] lg:max-h-full transition-transform duration-300 ease-out ${
+          isMobileCartOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'
+        }`}
+      >
         {/* Encabezado Carrito */}
         <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 mb-3">
           <div className="flex items-center gap-2">
@@ -488,14 +548,25 @@ export default function Sales() {
             <span className="text-xs font-bold text-[#9F6839] dark:text-[#DABA8C]">({cartItems.length})</span>
           </div>
 
-          {cartItems.length > 0 && (
+          <div className="flex items-center gap-2">
+            {cartItems.length > 0 && (
+              <button
+                onClick={clearCart}
+                className="text-xs text-red-600 dark:text-red-400 hover:underline font-bold transition-colors cursor-pointer"
+              >
+                Vaciar
+              </button>
+            )}
+
+            {/* Botón Minimizar en Móvil */}
             <button
-              onClick={clearCart}
-              className="text-xs text-red-600 dark:text-red-400 hover:underline font-bold transition-colors cursor-pointer"
+              onClick={() => setIsMobileCartOpen(false)}
+              className="lg:hidden p-1.5 text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#2A150C] rounded-xl transition-colors cursor-pointer"
+              title="Minimizar orden"
             >
-              Vaciar
+              <ChevronDown className="w-5 h-5" />
             </button>
-          )}
+          </div>
         </div>
 
         {/* Selector de Cliente Habitual (CRM) */}
@@ -536,9 +607,9 @@ export default function Sales() {
         </div>
 
         {/* Lista de Ítems del Carrito */}
-        <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-3">
+        <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-3 max-h-48 lg:max-h-none">
           {cartItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 text-[#9F6839] dark:text-[#DABA8C] text-center">
+            <div className="flex flex-col items-center justify-center h-40 text-[#9F6839] dark:text-[#DABA8C] text-center">
               <ShoppingBag className="w-8 h-8 text-[#9F6839]/40 mb-2" />
               <p className="text-xs font-bold">Tu orden está vacía</p>
               <p className="text-[11px] opacity-70">Selecciona productos del menú.</p>
