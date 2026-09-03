@@ -1,39 +1,23 @@
 import { useEffect, useState, useMemo } from 'react'
 import { api } from '../api/client'
 import Modal from '../components/Modal'
-import { AVAILABLE_UNITS, convertQuantity, formatConvertedHint } from '../utils/unitConverter'
+import { AVAILABLE_UNITS, convertQuantity } from '../utils/unitConverter'
 import {
   DollarSign,
   Plus,
   TrendingUp,
   TrendingDown,
-  Calendar,
   Wallet,
   Package,
   Zap,
   Wrench,
-  User,
-  FileText,
-  Banknote,
-  Smartphone,
-  CreditCard,
-  ArrowUpDown,
-  CircleDot,
   Building2,
-  RefreshCw,
-  ShieldAlert,
-  ArrowRightLeft,
-  Award,
   Users,
   Trash2,
   Edit2,
   Download,
   AlertCircle,
-  Tag,
-  Clock,
-  Coffee,
-  CheckCircle2,
-  X
+  Tag
 } from 'lucide-react'
 import { exportAccountingToCSV } from '../utils/csvExport'
 import { useAuth } from '../context/AuthContext'
@@ -61,8 +45,6 @@ export default function Accounting() {
   const [incomes, setIncomes] = useState([])
   const [sales, setSales] = useState([])
   const [ingredients, setIngredients] = useState([])
-  const [wasteReports, setWasteReports] = useState([])
-  const [period, setPeriod] = useState('month')
   const [activeTab, setActiveTab] = useState('expenses')
   const [loading, setLoading] = useState(true)
   const [pageError, setPageError] = useState('')
@@ -100,17 +82,15 @@ export default function Accounting() {
     setLoading(true)
     setPageError('')
     try {
-      const [expData, ingData, salesData, wasteData, incData] = await Promise.all([
+      const [expData, ingData, salesData, incData] = await Promise.all([
         api.get('/expenses?period=all').catch(() => []),
         api.get('/ingredients').catch(() => []),
         api.get('/sales?period=all').catch(() => []),
-        api.get('/waste').catch(() => []),
         api.get('/incomes?period=all').catch(() => [])
       ])
       setExpenses(Array.isArray(expData) ? expData : [])
       setIngredients(Array.isArray(ingData) ? ingData : [])
       setSales(Array.isArray(salesData) ? salesData : [])
-      setWasteReports(Array.isArray(wasteData) ? wasteData : [])
       setIncomes(Array.isArray(incData) ? incData : [])
     } catch (err) {
       console.error('Error cargando contabilidad:', err)
@@ -124,7 +104,6 @@ export default function Accounting() {
     loadData()
   }, [])
 
-  // Helpers Gastos
   function handleOpenCreateExpense() {
     setEditingExpense(null)
     setExpenseForm({
@@ -214,7 +193,6 @@ export default function Accounting() {
     }
   }
 
-  // Helpers Ingresos
   function handleOpenCreateIncome() {
     setEditingIncome(null)
     setIncomeForm({
@@ -287,7 +265,6 @@ export default function Accounting() {
     }
   }
 
-  // Cálculos de Totales y Balance
   const totalSalesIncome = useMemo(() => {
     return sales
       .filter((s) => s.status !== 'cancelado' && s.status !== 'cancelada')
@@ -307,19 +284,19 @@ export default function Accounting() {
   const netBalance = totalAllIncome - totalExpenses
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-[#432414] dark:text-[#FEE4D7]">
       {/* Header Principal */}
-      <div className="bg-white dark:bg-zinc-900 border border-amber-200/60 dark:border-zinc-800 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-amber-100 dark:bg-amber-950/50 rounded-2xl text-amber-800 dark:text-amber-300">
+            <div className="p-3 bg-[#FEE4D7] dark:bg-[#2A150C] rounded-2xl text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
               <DollarSign className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-100">
+              <h1 className="text-2xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7]">
                 Libros & Contabilidad
               </h1>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">
+              <p className="text-xs font-semibold text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
                 Flujo de caja, egresos operativos e ingresos extraordinarios
               </p>
             </div>
@@ -329,26 +306,26 @@ export default function Accounting() {
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <button
             onClick={() => exportAccountingToCSV(expenses, incomes)}
-            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 rounded-2xl text-sm font-bold transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-700"
+            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-[#2A150C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] text-[#432414] dark:text-[#FEE4D7] rounded-2xl text-xs font-bold transition-colors cursor-pointer border border-[#D4B28E]/70 dark:border-[#9F6839]/40 shadow-xs"
           >
-            <Download className="w-4 h-4 text-zinc-500" />
-            Exportar CSV
+            <Download className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
+            <span>Exportar CSV</span>
           </button>
 
           <button
             onClick={handleOpenCreateIncome}
-            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-extrabold shadow-md transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            Ingreso Extra
+            <span>Ingreso Extra</span>
           </button>
 
           <button
             onClick={handleOpenCreateExpense}
-            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-2xl text-sm font-bold shadow-md shadow-amber-700/20 transition-all cursor-pointer"
+            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-2xl text-xs font-extrabold shadow-md transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            Registrar Gasto
+            <span>Registrar Gasto</span>
           </button>
         </div>
       </div>
@@ -356,48 +333,48 @@ export default function Accounting() {
       {/* Tarjetas Resumen Financiero */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Ingresos Totales */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-2xl">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40">
             <TrendingUp className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Ingresos Totales</span>
+            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Ingresos Totales</span>
             <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
               ${Number(totalAllIncome).toLocaleString('es-CO')}
             </div>
-            <span className="text-[10px] text-zinc-400 font-semibold block">
+            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
               Ventas: ${Number(totalSalesIncome).toLocaleString('es-CO')} | Extra: ${Number(totalExtraIncome).toLocaleString('es-CO')}
             </span>
           </div>
         </div>
 
         {/* Gastos Totales */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 rounded-2xl">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 rounded-2xl border border-red-200/60 dark:border-red-900/40">
             <TrendingDown className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Egresos & Gastos</span>
+            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Egresos & Gastos</span>
             <div className="text-2xl font-black text-red-600 dark:text-red-400">
               ${Number(totalExpenses).toLocaleString('es-CO')}
             </div>
-            <span className="text-[10px] text-zinc-400 font-semibold block">
+            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
               {expenses.length} movimientos registrados
             </span>
           </div>
         </div>
 
         {/* Balance Neto */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className={`p-3 rounded-2xl ${netBalance >= 0 ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400' : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400'}`}>
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+          <div className={`p-3 rounded-2xl border ${netBalance >= 0 ? 'bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] border-[#D4B28E]/50 dark:border-[#9F6839]/30' : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200'}`}>
             <Wallet className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Balance Neto</span>
-            <div className={`text-2xl font-black ${netBalance >= 0 ? 'text-zinc-900 dark:text-zinc-100' : 'text-red-600'}`}>
+            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Balance Neto</span>
+            <div className={`text-2xl font-black ${netBalance >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-red-600 dark:text-red-400'}`}>
               ${Number(netBalance).toLocaleString('es-CO')}
             </div>
-            <span className="text-[10px] text-zinc-400 font-semibold block">
+            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
               Utilidad operativa acumulada
             </span>
           </div>
@@ -405,13 +382,13 @@ export default function Accounting() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 pb-2">
         <button
           onClick={() => setActiveTab('expenses')}
           className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'expenses'
-              ? 'bg-amber-700 text-white shadow-xs'
-              : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              ? 'bg-[#9F6839] text-white shadow-xs'
+              : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A150C]'
           }`}
         >
           Gastos & Egresos ({expenses.length})
@@ -420,8 +397,8 @@ export default function Accounting() {
           onClick={() => setActiveTab('incomes')}
           className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'incomes'
-              ? 'bg-emerald-700 text-white shadow-xs'
-              : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+              ? 'bg-emerald-600 text-white shadow-xs'
+              : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A150C]'
           }`}
         >
           Ingresos Extraordinarios ({incomes.length})
@@ -430,16 +407,16 @@ export default function Accounting() {
 
       {/* TAB GASTOS */}
       {activeTab === 'expenses' && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden shadow-sm">
           {expenses.length === 0 ? (
-            <div className="p-12 text-center text-zinc-400">
-              <Package className="w-10 h-10 mx-auto mb-2 text-zinc-300 dark:text-zinc-700" />
-              <p className="font-bold">No hay gastos registrados</p>
+            <div className="p-12 text-center text-[#9F6839] dark:text-[#DABA8C]">
+              <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
+              <p className="font-bold text-xs">No hay gastos registrados</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 uppercase font-black text-[10px] tracking-wider">
+                <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-bold text-[10px] tracking-wider">
                   <tr>
                     <th className="px-5 py-3.5">Fecha</th>
                     <th className="px-4 py-3.5">Descripción & Categoría</th>
@@ -450,38 +427,38 @@ export default function Accounting() {
                     <th className="px-5 py-3.5 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                <tbody className="divide-y divide-[#D4B28E]/40 dark:divide-[#9F6839]/20">
                   {expenses.map((e) => (
-                    <tr key={e.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
-                      <td className="px-5 py-4 font-bold text-zinc-800 dark:text-zinc-200">
+                    <tr key={e.id} className="hover:bg-[#FEE4D7]/30 dark:hover:bg-[#2A150C]/60 transition-colors">
+                      <td className="px-5 py-4 font-bold text-[#432414] dark:text-[#FEE4D7]">
                         {new Date(e.created_at).toLocaleDateString('es-CO')}
-                        <span className="block text-[10px] text-zinc-400 font-normal">
+                        <span className="block text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-normal">
                           {new Date(e.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="font-extrabold text-zinc-900 dark:text-zinc-100">{e.description}</div>
-                        <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-[10px] font-bold uppercase">
+                        <div className="font-extrabold text-[#432414] dark:text-[#FEE4D7]">{e.description}</div>
+                        <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] text-[10px] font-bold uppercase border border-[#D4B28E]/60 dark:border-[#9F6839]/30">
                           {e.category}
                         </span>
                       </td>
-                      <td className="px-4 py-4 capitalize text-zinc-700 dark:text-zinc-300 font-medium">
+                      <td className="px-4 py-4 capitalize text-[#432414] dark:text-[#FEE4D7] font-medium">
                         {e.payment_method}
                       </td>
                       <td className="px-4 py-4">
                         {e.ingredient_name ? (
-                          <div className="text-zinc-800 dark:text-zinc-200 font-bold">
+                          <div className="text-[#432414] dark:text-[#FEE4D7] font-bold">
                             {e.ingredient_name}
-                            <span className="text-emerald-600 text-[11px] block">+{e.quantity_added} agregados</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 text-[11px] block">+{e.quantity_added} agregados</span>
                           </div>
                         ) : (
-                          <span className="text-zinc-400">-</span>
+                          <span className="text-[#9F6839] dark:text-[#DABA8C]">-</span>
                         )}
                       </td>
-                      <td className="px-4 py-4 font-black text-red-600 text-sm">
+                      <td className="px-4 py-4 font-black text-red-600 dark:text-red-400 text-sm">
                         -${Number(e.amount).toLocaleString('es-CO')}
                       </td>
-                      <td className="px-4 py-4 text-zinc-500 font-medium">
+                      <td className="px-4 py-4 text-[#9F6839] dark:text-[#DABA8C] font-medium">
                         {e.registerer_name || 'Personal'}
                       </td>
                       <td className="px-5 py-4 text-right">
@@ -489,14 +466,14 @@ export default function Accounting() {
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => handleOpenEditExpense(e)}
-                              className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition-colors cursor-pointer"
+                              className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl transition-colors cursor-pointer"
                               title="Editar Gasto"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteExpense(e)}
-                              className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-colors cursor-pointer"
+                              className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
                               title="Eliminar Gasto"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -515,16 +492,16 @@ export default function Accounting() {
 
       {/* TAB INGRESOS */}
       {activeTab === 'incomes' && (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden shadow-sm">
           {incomes.length === 0 ? (
-            <div className="p-12 text-center text-zinc-400">
-              <DollarSign className="w-10 h-10 mx-auto mb-2 text-zinc-300 dark:text-zinc-700" />
-              <p className="font-bold">No hay ingresos extraordinarios registrados</p>
+            <div className="p-12 text-center text-[#9F6839] dark:text-[#DABA8C]">
+              <DollarSign className="w-10 h-10 mx-auto mb-2 opacity-50" />
+              <p className="font-bold text-xs">No hay ingresos extraordinarios registrados</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 uppercase font-black text-[10px] tracking-wider">
+                <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-bold text-[10px] tracking-wider">
                   <tr>
                     <th className="px-5 py-3.5">Fecha</th>
                     <th className="px-4 py-3.5">Descripción & Categoría</th>
@@ -534,28 +511,28 @@ export default function Accounting() {
                     <th className="px-5 py-3.5 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                <tbody className="divide-y divide-[#D4B28E]/40 dark:divide-[#9F6839]/20">
                   {incomes.map((i) => (
-                    <tr key={i.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors">
-                      <td className="px-5 py-4 font-bold text-zinc-800 dark:text-zinc-200">
+                    <tr key={i.id} className="hover:bg-[#FEE4D7]/30 dark:hover:bg-[#2A150C]/60 transition-colors">
+                      <td className="px-5 py-4 font-bold text-[#432414] dark:text-[#FEE4D7]">
                         {new Date(i.created_at).toLocaleDateString('es-CO')}
-                        <span className="block text-[10px] text-zinc-400 font-normal">
+                        <span className="block text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-normal">
                           {new Date(i.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="font-extrabold text-zinc-900 dark:text-zinc-100">{i.description}</div>
-                        <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase">
+                        <div className="font-extrabold text-[#432414] dark:text-[#FEE4D7]">{i.description}</div>
+                        <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase border border-emerald-200 dark:border-emerald-900/40">
                           {i.category}
                         </span>
                       </td>
-                      <td className="px-4 py-4 capitalize text-zinc-700 dark:text-zinc-300 font-medium">
+                      <td className="px-4 py-4 capitalize text-[#432414] dark:text-[#FEE4D7] font-medium">
                         {i.payment_method}
                       </td>
-                      <td className="px-4 py-4 font-black text-emerald-600 text-sm">
+                      <td className="px-4 py-4 font-black text-emerald-600 dark:text-emerald-400 text-sm">
                         +${Number(i.amount).toLocaleString('es-CO')}
                       </td>
-                      <td className="px-4 py-4 text-zinc-500 font-medium">
+                      <td className="px-4 py-4 text-[#9F6839] dark:text-[#DABA8C] font-medium">
                         {i.registerer_name || 'Personal'}
                       </td>
                       <td className="px-5 py-4 text-right">
@@ -563,14 +540,14 @@ export default function Accounting() {
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => handleOpenEditIncome(i)}
-                              className="p-1.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition-colors cursor-pointer"
+                              className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl transition-colors cursor-pointer"
                               title="Editar Ingreso"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteIncome(i)}
-                              className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-colors cursor-pointer"
+                              className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
                               title="Eliminar Ingreso"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -594,7 +571,7 @@ export default function Accounting() {
           onClose={() => !expenseSubmitting && setIsExpenseModalOpen(false)}
           title={editingExpense ? 'Editar Gasto' : 'Registrar Nuevo Gasto'}
         >
-          <form onSubmit={handleSaveExpense} className="space-y-4">
+          <form onSubmit={handleSaveExpense} className="space-y-4 text-[#432414] dark:text-[#FEE4D7]">
             {expenseError && (
               <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-2xl text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -603,7 +580,7 @@ export default function Accounting() {
             )}
 
             <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                 Descripción del Gasto *
               </label>
               <input
@@ -612,13 +589,13 @@ export default function Accounting() {
                 value={expenseForm.description}
                 onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
                 placeholder="Ej. Compra de 5 bolsas de café en grano"
-                className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                   Monto ($) *
                 </label>
                 <input
@@ -628,18 +605,18 @@ export default function Accounting() {
                   value={expenseForm.amount}
                   onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
                   placeholder="Ej. 120000"
-                  className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500 font-bold"
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839] font-bold"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                   Categoría
                 </label>
                 <select
                   value={expenseForm.category}
                   onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none"
                 >
                   {EXPENSE_CATEGORIES.map((c) => (
                     <option key={c.value} value={c.value}>{c.label}</option>
@@ -650,13 +627,13 @@ export default function Accounting() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                   Método de Pago
                 </label>
                 <select
                   value={expenseForm.payment_method}
                   onChange={(e) => setExpenseForm({ ...expenseForm, payment_method: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none"
                 >
                   <option value="efectivo">Efectivo</option>
                   <option value="transferencia">Transferencia</option>
@@ -664,28 +641,28 @@ export default function Accounting() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                   Fecha y Hora
                 </label>
                 <input
                   type="datetime-local"
                   value={expenseForm.created_at}
                   onChange={(e) => setExpenseForm({ ...expenseForm, created_at: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100"
+                  className="w-full px-3.5 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7]"
                 />
               </div>
             </div>
 
             {!editingExpense && (
-              <div className="p-3 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-900/40 rounded-2xl space-y-2">
-                <label className="block text-xs font-bold text-amber-900 dark:text-amber-200">
+              <div className="p-3 bg-[#FEE4D7]/40 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl space-y-2">
+                <label className="block text-xs font-bold text-[#9F6839] dark:text-[#DABA8C]">
                   Reabastecer Insumo de Inventario (Opcional)
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <select
                     value={expenseForm.ingredient_id}
                     onChange={(e) => setExpenseForm({ ...expenseForm, ingredient_id: e.target.value })}
-                    className="col-span-1 px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs"
+                    className="col-span-1 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7]"
                   >
                     <option value="">Ninguno</option>
                     {ingredients.map((ing) => (
@@ -699,13 +676,13 @@ export default function Accounting() {
                     placeholder="Cantidad"
                     value={expenseForm.quantity_added}
                     onChange={(e) => setExpenseForm({ ...expenseForm, quantity_added: e.target.value })}
-                    className="col-span-1 px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs"
+                    className="col-span-1 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7]"
                   />
 
                   <select
                     value={expenseForm.unit}
                     onChange={(e) => setExpenseForm({ ...expenseForm, unit: e.target.value })}
-                    className="col-span-1 px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs"
+                    className="col-span-1 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7]"
                   >
                     {AVAILABLE_UNITS.map((u) => (
                       <option key={u.value} value={u.value}>{u.label}</option>
@@ -715,18 +692,18 @@ export default function Accounting() {
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30">
               <button
                 type="button"
                 onClick={() => setIsExpenseModalOpen(false)}
-                className="px-4 py-2.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl text-xs font-bold cursor-pointer"
+                className="px-4 py-2.5 text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] rounded-xl text-xs font-bold cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={expenseSubmitting}
-                className="px-5 py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all disabled:opacity-50"
+                className="px-5 py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all disabled:opacity-50"
               >
                 {expenseSubmitting ? 'Guardando...' : editingExpense ? 'Guardar Cambios' : 'Registrar Gasto'}
               </button>
@@ -742,7 +719,7 @@ export default function Accounting() {
           onClose={() => !incomeSubmitting && setIsIncomeModalOpen(false)}
           title={editingIncome ? 'Editar Ingreso' : 'Registrar Ingreso Extraordinario'}
         >
-          <form onSubmit={handleSaveIncome} className="space-y-4">
+          <form onSubmit={handleSaveIncome} className="space-y-4 text-[#432414] dark:text-[#FEE4D7]">
             {incomeError && (
               <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-2xl text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -751,7 +728,7 @@ export default function Accounting() {
             )}
 
             <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                 Descripción del Ingreso *
               </label>
               <input
@@ -760,13 +737,13 @@ export default function Accounting() {
                 value={incomeForm.description}
                 onChange={(e) => setIncomeForm({ ...incomeForm, description: e.target.value })}
                 placeholder="Ej. Servicio de café para evento universitario"
-                className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                   Monto ($) *
                 </label>
                 <input
@@ -776,18 +753,18 @@ export default function Accounting() {
                   value={incomeForm.amount}
                   onChange={(e) => setIncomeForm({ ...incomeForm, amount: e.target.value })}
                   placeholder="Ej. 250000"
-                  className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold"
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839] font-bold"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                   Categoría
                 </label>
                 <select
                   value={incomeForm.category}
                   onChange={(e) => setIncomeForm({ ...incomeForm, category: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none"
                 >
                   {INCOME_CATEGORIES.map((c) => (
                     <option key={c.value} value={c.value}>{c.label}</option>
@@ -798,13 +775,13 @@ export default function Accounting() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                   Método de Pago
                 </label>
                 <select
                   value={incomeForm.payment_method}
                   onChange={(e) => setIncomeForm({ ...incomeForm, payment_method: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none"
                 >
                   <option value="efectivo">Efectivo</option>
                   <option value="transferencia">Transferencia</option>
@@ -812,23 +789,23 @@ export default function Accounting() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                   Fecha y Hora
                 </label>
                 <input
                   type="datetime-local"
                   value={incomeForm.created_at}
                   onChange={(e) => setIncomeForm({ ...incomeForm, created_at: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100"
+                  className="w-full px-3.5 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7]"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30">
               <button
                 type="button"
                 onClick={() => setIsIncomeModalOpen(false)}
-                className="px-4 py-2.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl text-xs font-bold cursor-pointer"
+                className="px-4 py-2.5 text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] rounded-xl text-xs font-bold cursor-pointer"
               >
                 Cancelar
               </button>

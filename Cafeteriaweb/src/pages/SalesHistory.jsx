@@ -5,18 +5,10 @@ import {
   Search,
   FileText,
   Printer,
-  Clock,
-  TrendingUp,
   Calendar,
-  CalendarDays,
-  Sun,
-  Building2,
-  Globe,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Filter,
-  XCircle,
   Download,
   Edit2,
   Trash2,
@@ -24,10 +16,7 @@ import {
   MessageCircle,
   CreditCard,
   DollarSign,
-  ShoppingBag,
-  AlertCircle,
-  Tag,
-  Users
+  ShoppingBag
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { exportSalesToCSV } from '../utils/csvExport'
@@ -47,8 +36,6 @@ const MONTH_NAMES = [
   { num: 11, short: 'nov.', full: 'Noviembre' },
   { num: 12, short: 'dic.', full: 'Diciembre' }
 ]
-
-const COMMON_BANKS = ['Bre-B/Llave', 'Nequi', 'Daviplata', 'Bancolombia', 'Nu', 'Davivienda', 'BBVA', 'Banco de Bogotá']
 
 export default function SalesHistory() {
   const { user } = useAuth()
@@ -259,19 +246,19 @@ export default function SalesHistory() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-[#432414] dark:text-[#FEE4D7]">
       {/* Cabecera Principal y Filtros */}
-      <div className="bg-white dark:bg-zinc-900 border border-amber-200/60 dark:border-zinc-800 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-amber-100 dark:bg-amber-950/50 rounded-2xl text-amber-800 dark:text-amber-300">
+            <div className="p-3 bg-[#FEE4D7] dark:bg-[#2A150C] rounded-2xl text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
               <FileText className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-zinc-100">
+              <h1 className="text-2xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7]">
                 Historial de Ventas
               </h1>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">
+              <p className="text-xs font-semibold text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
                 Auditoría de transacciones, tickets y comprobantes
               </p>
             </div>
@@ -282,19 +269,19 @@ export default function SalesHistory() {
           {/* Selector de Período */}
           <button
             onClick={() => setIsFilterModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-2xl text-sm font-bold transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-700"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#2A150C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] text-[#432414] dark:text-[#FEE4D7] rounded-2xl text-xs font-bold transition-colors cursor-pointer border border-[#D4B28E]/70 dark:border-[#9F6839]/40 shadow-xs"
           >
-            <Calendar className="w-4 h-4 text-amber-700" />
+            <Calendar className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
             <span>{displayLabel}</span>
-            <ChevronDown className="w-4 h-4 text-zinc-400" />
+            <ChevronDown className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
           </button>
 
           {/* Exportar a CSV */}
           <button
             onClick={() => exportSalesToCSV(filteredSales)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 rounded-2xl text-sm font-bold transition-colors cursor-pointer border border-zinc-200 dark:border-zinc-700"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-2xl text-xs font-extrabold transition-all cursor-pointer shadow-xs"
           >
-            <Download className="w-4 h-4 text-zinc-500" />
+            <Download className="w-4 h-4" />
             <span>Exportar CSV</span>
           </button>
         </div>
@@ -302,40 +289,40 @@ export default function SalesHistory() {
 
       {/* Tarjetas de Métricas Resumen (Sin Deuda) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 rounded-2xl">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] rounded-2xl border border-[#D4B28E]/50 dark:border-[#9F6839]/30">
             <DollarSign className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Total Facturado</span>
-            <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100">
+            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Total Facturado</span>
+            <div className="text-2xl font-black text-[#432414] dark:text-[#FEE4D7]">
               ${Number(totalBilled).toLocaleString('es-CO')}
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-2xl">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40">
             <CreditCard className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Recaudado en Caja</span>
+            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Recaudado en Caja</span>
             <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
               ${Number(totalCollectedInCash + totalCollectedInTransfer).toLocaleString('es-CO')}
             </div>
-            <span className="text-[10px] text-zinc-400 font-semibold block">
+            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
               Efec: ${Number(totalCollectedInCash).toLocaleString('es-CO')} | Transf: ${Number(totalCollectedInTransfer).toLocaleString('es-CO')}
             </span>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 rounded-2xl">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] rounded-2xl border border-[#D4B28E]/50 dark:border-[#9F6839]/30">
             <ShoppingBag className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Ventas Realizadas</span>
-            <div className="text-2xl font-black text-zinc-900 dark:text-zinc-100">
+            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Ventas Realizadas</span>
+            <div className="text-2xl font-black text-[#432414] dark:text-[#FEE4D7]">
               {totalSalesCount}
             </div>
           </div>
@@ -345,13 +332,13 @@ export default function SalesHistory() {
       {/* Buscador y Filtro por Método de Pago */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#9F6839] dark:text-[#DABA8C]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por cliente, vendedor o ID..."
-            className="w-full pl-11 pr-4 py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm"
+            className="w-full pl-11 pr-4 py-3 bg-white dark:bg-[#201009] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl text-xs text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:border-[#9F6839] shadow-xs"
           />
         </div>
 
@@ -362,8 +349,8 @@ export default function SalesHistory() {
               onClick={() => setSelectedMethod(m)}
               className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold capitalize whitespace-nowrap transition-all cursor-pointer ${
                 selectedMethod === m
-                  ? 'bg-amber-700 text-white shadow-xs'
-                  : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100'
+                  ? 'bg-[#9F6839] text-white shadow-xs'
+                  : 'bg-white dark:bg-[#201009] text-[#432414] dark:text-[#FEE4D7] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A150C]'
               }`}
             >
               {m}
@@ -374,21 +361,21 @@ export default function SalesHistory() {
 
       {/* Tabla / Lista de Ventas */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-16 text-zinc-400 gap-3">
-          <div className="w-8 h-8 border-3 border-amber-600 border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm font-medium">Cargando ventas...</span>
+        <div className="flex flex-col items-center justify-center py-16 text-[#9F6839] dark:text-[#DABA8C] gap-3">
+          <div className="w-8 h-8 border-3 border-[#9F6839] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-bold">Cargando historial de ventas...</span>
         </div>
       ) : filteredSales.length === 0 ? (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-12 text-center shadow-sm">
-          <FileText className="w-12 h-12 text-zinc-300 dark:text-zinc-700 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-zinc-800 dark:text-zinc-200 mb-1">No hay ventas registradas</h3>
-          <p className="text-sm text-zinc-400">No se encontraron ventas para los filtros seleccionados.</p>
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-12 text-center shadow-sm">
+          <FileText className="w-12 h-12 text-[#9F6839]/50 dark:text-[#DABA8C]/40 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-[#432414] dark:text-[#FEE4D7] mb-1">No hay ventas registradas</h3>
+          <p className="text-xs text-[#9F6839] dark:text-[#DABA8C]">No se encontraron transacciones para los filtros seleccionados.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-zinc-50 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 uppercase font-black text-[10px] tracking-wider">
+              <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-bold text-[10px] tracking-wider">
                 <tr>
                   <th className="px-5 py-3.5">Fecha / ID</th>
                   <th className="px-4 py-3.5">Cliente & Vendedor</th>
@@ -399,58 +386,58 @@ export default function SalesHistory() {
                   <th className="px-5 py-3.5 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+              <tbody className="divide-y divide-[#D4B28E]/40 dark:divide-[#9F6839]/20">
                 {filteredSales.map((sale) => {
                   const isCancelled = sale.status === 'cancelado' || sale.status === 'cancelada'
                   return (
                     <tr
                       key={sale.id}
-                      className={`hover:bg-amber-50/30 dark:hover:bg-zinc-800/40 transition-colors ${
-                        isCancelled ? 'opacity-60 bg-zinc-50/50 dark:bg-zinc-900/50' : ''
+                      className={`hover:bg-[#FEE4D7]/30 dark:hover:bg-[#2A150C]/60 transition-colors ${
+                        isCancelled ? 'opacity-60 bg-[#FEE4D7]/10 dark:bg-[#150904]/40' : ''
                       }`}
                     >
                       <td className="px-5 py-4">
-                        <div className="font-bold text-zinc-800 dark:text-zinc-200">
+                        <div className="font-bold text-[#432414] dark:text-[#FEE4D7]">
                           {new Date(sale.created_at).toLocaleDateString('es-CO')}
                         </div>
-                        <div className="text-[11px] text-zinc-400 font-mono">
+                        <div className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] font-mono">
                           {new Date(sale.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })} • #{sale.id.substring(0, 8)}
                         </div>
                       </td>
 
                       <td className="px-4 py-4">
-                        <div className="font-extrabold text-zinc-900 dark:text-zinc-100">
+                        <div className="font-extrabold text-[#432414] dark:text-[#FEE4D7]">
                           {sale.customer_name || 'Cliente General'}
                         </div>
-                        <div className="text-[11px] text-zinc-400">
+                        <div className="text-[11px] text-[#9F6839] dark:text-[#DABA8C]">
                           Vendido por: <strong>{sale.sold_by_username || 'Personal'}</strong>
                         </div>
                       </td>
 
                       <td className="px-4 py-4">
-                        <span className="inline-block px-2.5 py-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-bold uppercase text-[10px]">
+                        <span className="inline-block px-2.5 py-1 rounded-xl bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] font-bold uppercase text-[10px] border border-[#D4B28E]/60 dark:border-[#9F6839]/30">
                           {sale.payment_method}
                         </span>
                         {sale.bank_details && (
-                          <div className="text-[10px] text-zinc-400 truncate max-w-xs mt-0.5">
+                          <div className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] truncate max-w-xs mt-0.5">
                             {sale.bank_details}
                           </div>
                         )}
                       </td>
 
                       <td className="px-4 py-4">
-                        <div className="text-zinc-600 dark:text-zinc-400 font-medium">
+                        <div className="text-[#432414] dark:text-[#FEE4D7] font-medium">
                           ${Number(sale.subtotal || sale.total).toLocaleString('es-CO')}
                         </div>
                         {(sale.discount_amount > 0 || sale.discount_percent > 0) && (
-                          <div className="text-red-500 text-[11px] font-bold">
+                          <div className="text-red-600 dark:text-red-400 text-[11px] font-bold">
                             -${Number(sale.discount_amount).toLocaleString('es-CO')} ({sale.discount_percent}%)
                           </div>
                         )}
                       </td>
 
                       <td className="px-4 py-4">
-                        <span className="text-sm font-black text-zinc-900 dark:text-zinc-100">
+                        <span className="text-sm font-black text-[#432414] dark:text-[#FEE4D7]">
                           ${Number(sale.total).toLocaleString('es-CO')}
                         </span>
                       </td>
@@ -459,8 +446,8 @@ export default function SalesHistory() {
                         <span
                           className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
                             isCancelled
-                              ? 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300'
-                              : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
+                              ? 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/40'
+                              : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40'
                           }`}
                         >
                           {isCancelled ? 'Cancelada' : 'Completada'}
@@ -473,7 +460,7 @@ export default function SalesHistory() {
                           <button
                             onClick={() => handleOpenReceiptModal(sale)}
                             title="Ver / Imprimir Comprobante"
-                            className="p-2 text-zinc-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
+                            className="p-2 text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#2A150C] rounded-xl transition-colors cursor-pointer"
                           >
                             <Printer className="w-4 h-4" />
                           </button>
@@ -483,7 +470,7 @@ export default function SalesHistory() {
                             <button
                               onClick={() => handleCancelSale(sale)}
                               title="Cancelar Venta"
-                              className="p-2 text-zinc-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/30 rounded-xl transition-colors cursor-pointer"
+                              className="p-2 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/40 rounded-xl transition-colors cursor-pointer"
                             >
                               <Ban className="w-4 h-4" />
                             </button>
@@ -494,7 +481,7 @@ export default function SalesHistory() {
                             <button
                               onClick={() => handleOpenEditSale(sale)}
                               title="Editar Venta (Dueño)"
-                              className="p-2 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition-colors cursor-pointer"
+                              className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl transition-colors cursor-pointer"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
@@ -505,7 +492,7 @@ export default function SalesHistory() {
                             <button
                               onClick={() => handleDeleteSale(sale)}
                               title="Eliminar Venta Definitivamente (Dueño)"
-                              className="p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-colors cursor-pointer"
+                              className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -529,28 +516,28 @@ export default function SalesHistory() {
           title={`Ticket de Venta #${selectedSale.id.substring(0, 8)}`}
         >
           <div className="space-y-4">
-            <div className="p-4 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-2xl text-xs space-y-2">
+            <div className="p-4 bg-[#FEE4D7]/40 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl text-xs space-y-2 text-[#432414] dark:text-[#FEE4D7]">
               <div className="flex justify-between">
-                <span className="text-zinc-400 font-bold">Cliente:</span>
-                <span className="font-extrabold text-zinc-900 dark:text-zinc-100">{selectedSale.customer_name || 'Cliente General'}</span>
+                <span className="text-[#9F6839] dark:text-[#DABA8C] font-bold">Cliente:</span>
+                <span className="font-extrabold">{selectedSale.customer_name || 'Cliente General'}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-400 font-bold">Fecha:</span>
-                <span className="font-bold text-zinc-800 dark:text-zinc-200">{new Date(selectedSale.created_at).toLocaleString('es-CO')}</span>
+                <span className="text-[#9F6839] dark:text-[#DABA8C] font-bold">Fecha:</span>
+                <span className="font-bold">{new Date(selectedSale.created_at).toLocaleString('es-CO')}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-zinc-400 font-bold">Método de Pago:</span>
-                <span className="font-bold uppercase text-zinc-800 dark:text-zinc-200">{selectedSale.payment_method}</span>
+                <span className="text-[#9F6839] dark:text-[#DABA8C] font-bold">Método de Pago:</span>
+                <span className="font-bold uppercase">{selectedSale.payment_method}</span>
               </div>
               {selectedSale.bank_details && (
                 <div className="flex justify-between">
-                  <span className="text-zinc-400 font-bold">Bancos:</span>
-                  <span className="font-bold text-zinc-700 dark:text-zinc-300">{selectedSale.bank_details}</span>
+                  <span className="text-[#9F6839] dark:text-[#DABA8C] font-bold">Bancos:</span>
+                  <span className="font-bold">{selectedSale.bank_details}</span>
                 </div>
               )}
-              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-700 flex justify-between text-sm font-black text-zinc-900 dark:text-zinc-100">
+              <div className="pt-2 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30 flex justify-between text-sm font-black text-[#432414] dark:text-[#FEE4D7]">
                 <span>Total:</span>
-                <span className="text-amber-700 dark:text-amber-400">${Number(selectedSale.total).toLocaleString('es-CO')}</span>
+                <span className="text-[#9F6839] dark:text-[#DABA8C]">${Number(selectedSale.total).toLocaleString('es-CO')}</span>
               </div>
             </div>
 
@@ -558,25 +545,25 @@ export default function SalesHistory() {
               <button
                 type="button"
                 onClick={() => printReceiptPDF(selectedSale)}
-                className="p-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-2xl text-xs font-bold text-zinc-800 dark:text-zinc-200 flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
+                className="p-3 bg-white dark:bg-[#2A150C] hover:bg-[#FEE4D7] dark:hover:bg-[#3E2114] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl text-xs font-bold text-[#432414] dark:text-[#FEE4D7] flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Printer className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
+                <Printer className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
                 <span>Imprimir Ticket</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => downloadReceiptPDF(selectedSale)}
-                className="p-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-2xl text-xs font-bold text-zinc-800 dark:text-zinc-200 flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
+                className="p-3 bg-white dark:bg-[#2A150C] hover:bg-[#FEE4D7] dark:hover:bg-[#3E2114] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl text-xs font-bold text-[#432414] dark:text-[#FEE4D7] flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Download className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
+                <Download className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
                 <span>Descargar PDF</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => shareReceiptPDFToWhatsApp(selectedSale)}
-                className="p-3 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 rounded-2xl text-xs font-bold text-emerald-700 dark:text-emerald-300 flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
+                className="p-3 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl text-xs font-bold text-emerald-700 dark:text-emerald-300 flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <MessageCircle className="w-4 h-4 text-emerald-600" />
                 <span>Enviar WhatsApp</span>
@@ -595,26 +582,26 @@ export default function SalesHistory() {
         >
           <form onSubmit={handleSaveEditSale} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                 Cliente
               </label>
               <input
                 type="text"
                 value={editFormData.customer_name}
                 onChange={(e) => setEditFormData({ ...editFormData, customer_name: e.target.value })}
-                className="w-full px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                className="w-full px-3.5 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                   Método de Pago
                 </label>
                 <select
                   value={editFormData.payment_method}
                   onChange={(e) => setEditFormData({ ...editFormData, payment_method: e.target.value })}
-                  className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100"
+                  className="w-full px-3.5 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none"
                 >
                   <option value="efectivo">Efectivo</option>
                   <option value="transferencia">Transferencia</option>
@@ -623,7 +610,7 @@ export default function SalesHistory() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                   Detalles Banco
                 </label>
                 <input
@@ -631,46 +618,46 @@ export default function SalesHistory() {
                   value={editFormData.bank_details}
                   onChange={(e) => setEditFormData({ ...editFormData, bank_details: e.target.value })}
                   placeholder="Ej. Nequi: $10.000"
-                  className="w-full px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100"
+                  className="w-full px-3.5 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                   Descuento (%)
                 </label>
                 <input
                   type="number"
                   value={editFormData.discount_percent}
                   onChange={(e) => setEditFormData({ ...editFormData, discount_percent: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100"
+                  className="w-full px-3.5 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                   Motivo Descuento
                 </label>
                 <input
                   type="text"
                   value={editFormData.discount_reason}
                   onChange={(e) => setEditFormData({ ...editFormData, discount_reason: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100"
+                  className="w-full px-3.5 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Ítems */}
             <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                 Cantidades de Productos
               </label>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                 {editFormData.items.map((it, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-2 bg-zinc-50 dark:bg-zinc-800/60 rounded-xl text-xs">
-                    <span className="font-bold text-zinc-800 dark:text-zinc-200">{it.product_name}</span>
+                  <div key={idx} className="flex items-center justify-between p-2.5 bg-[#FEE4D7]/30 dark:bg-[#2A150C] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl text-xs">
+                    <span className="font-bold text-[#432414] dark:text-[#FEE4D7]">{it.product_name}</span>
                     <input
                       type="number"
                       min="1"
@@ -681,25 +668,25 @@ export default function SalesHistory() {
                         next[idx].quantity = val
                         setEditFormData({ ...editFormData, items: next })
                       }}
-                      className="w-16 px-2 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-center font-bold"
+                      className="w-16 px-2 py-1 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-lg text-center font-bold text-[#432414] dark:text-[#FEE4D7]"
                     />
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30">
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className="px-4 py-2 text-zinc-600 dark:text-zinc-400 text-xs font-bold cursor-pointer"
+                className="px-4 py-2 text-[#9F6839] dark:text-[#DABA8C] text-xs font-bold cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={savingEdit}
-                className="px-5 py-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all disabled:opacity-50"
+                className="px-5 py-2 bg-[#9F6839] hover:bg-[#835229] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all disabled:opacity-50"
               >
                 {savingEdit ? 'Guardando...' : 'Guardar Cambios'}
               </button>
@@ -715,15 +702,15 @@ export default function SalesHistory() {
           onClose={() => setIsFilterModalOpen(false)}
           title="Filtrar Período de Ventas"
         >
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2">
+          <div className="space-y-4 text-[#432414] dark:text-[#FEE4D7]">
+            <div className="flex items-center gap-2 border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 pb-2">
               <button
                 type="button"
                 onClick={() => setActiveTab('preset')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
                   activeTab === 'preset'
-                    ? 'bg-amber-700 text-white'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100'
+                    ? 'bg-[#9F6839] text-white'
+                    : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50'
                 }`}
               >
                 Rápidos
@@ -733,8 +720,8 @@ export default function SalesHistory() {
                 onClick={() => setActiveTab('month')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
                   activeTab === 'month'
-                    ? 'bg-amber-700 text-white'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100'
+                    ? 'bg-[#9F6839] text-white'
+                    : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50'
                 }`}
               >
                 Mes Específico
@@ -744,8 +731,8 @@ export default function SalesHistory() {
                 onClick={() => setActiveTab('custom')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
                   activeTab === 'custom'
-                    ? 'bg-amber-700 text-white'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100'
+                    ? 'bg-[#9F6839] text-white'
+                    : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50'
                 }`}
               >
                 Rango Libre
@@ -754,42 +741,22 @@ export default function SalesHistory() {
 
             {activeTab === 'preset' && (
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => handleSelectPreset('today', 'Hoy')}
-                  className="p-3 bg-zinc-50 dark:bg-zinc-800 hover:bg-amber-50 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
-                >
-                  Hoy
-                </button>
-                <button
-                  onClick={() => handleSelectPreset('week', 'Últimos 7 días')}
-                  className="p-3 bg-zinc-50 dark:bg-zinc-800 hover:bg-amber-50 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
-                >
-                  Últimos 7 días
-                </button>
-                <button
-                  onClick={() => handleSelectPreset('month', 'Este Mes')}
-                  className="p-3 bg-zinc-50 dark:bg-zinc-800 hover:bg-amber-50 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
-                >
-                  Este Mes
-                </button>
-                <button
-                  onClick={() => handleSelectPreset('prev_month', 'Mes Anterior')}
-                  className="p-3 bg-zinc-50 dark:bg-zinc-800 hover:bg-amber-50 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
-                >
-                  Mes Anterior
-                </button>
-                <button
-                  onClick={() => handleSelectPreset('year', 'Este Año')}
-                  className="p-3 bg-zinc-50 dark:bg-zinc-800 hover:bg-amber-50 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
-                >
-                  Este Año
-                </button>
-                <button
-                  onClick={() => handleSelectPreset('all', 'Histórico Total')}
-                  className="p-3 bg-zinc-50 dark:bg-zinc-800 hover:bg-amber-50 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
-                >
-                  Histórico Total
-                </button>
+                {[
+                  { key: 'today', label: 'Hoy' },
+                  { key: 'week', label: 'Últimos 7 días' },
+                  { key: 'month', label: 'Este Mes' },
+                  { key: 'prev_month', label: 'Mes Anterior' },
+                  { key: 'year', label: 'Este Año' },
+                  { key: 'all', label: 'Histórico Total' }
+                ].map((item) => (
+                  <button
+                    key={item.key}
+                    onClick={() => handleSelectPreset(item.key, item.label)}
+                    className="p-3 bg-[#FEE4D7]/40 dark:bg-[#2A150C] hover:bg-[#9F6839] hover:text-white border border-[#D4B28E]/60 dark:border-[#9F6839]/30 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    {item.label}
+                  </button>
+                ))}
               </div>
             )}
 
@@ -798,14 +765,14 @@ export default function SalesHistory() {
                 <div className="flex items-center justify-between">
                   <button
                     onClick={() => setSelectedYear(selectedYear - 1)}
-                    className="p-1 rounded-lg hover:bg-zinc-100"
+                    className="p-1 rounded-lg hover:bg-[#FEE4D7]"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <span className="font-extrabold text-sm">{selectedYear}</span>
                   <button
                     onClick={() => setSelectedYear(selectedYear + 1)}
-                    className="p-1 rounded-lg hover:bg-zinc-100"
+                    className="p-1 rounded-lg hover:bg-[#FEE4D7]"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -815,7 +782,7 @@ export default function SalesHistory() {
                     <button
                       key={m.num}
                       onClick={() => handleSelectMonthYear(selectedYear, m.num, m.full)}
-                      className="p-2.5 bg-zinc-50 dark:bg-zinc-800 hover:bg-amber-50 rounded-xl text-xs font-bold text-center cursor-pointer transition-colors"
+                      className="p-2.5 bg-[#FEE4D7]/40 dark:bg-[#2A150C] hover:bg-[#9F6839] hover:text-white border border-[#D4B28E]/60 dark:border-[#9F6839]/30 rounded-xl text-xs font-bold text-center cursor-pointer transition-colors"
                     >
                       {m.full}
                     </button>
@@ -827,26 +794,26 @@ export default function SalesHistory() {
             {activeTab === 'custom' && (
               <form onSubmit={handleApplyCustomRange} className="space-y-3">
                 <div>
-                  <label className="block text-xs font-bold text-zinc-600 mb-1">Fecha Inicio</label>
+                  <label className="block text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-1">Fecha Inicio</label>
                   <input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border rounded-xl text-xs"
+                    className="w-full px-3 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-zinc-600 mb-1">Fecha Fin</label>
+                  <label className="block text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-1">Fecha Fin</label>
                   <input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border rounded-xl text-xs"
+                    className="w-full px-3 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7]"
                   />
                 </div>
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold cursor-pointer"
+                  className="w-full py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-xl text-xs font-bold cursor-pointer transition-all"
                 >
                   Aplicar Rango
                 </button>

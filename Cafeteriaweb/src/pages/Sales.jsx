@@ -10,24 +10,16 @@ import {
   Trash2,
   Coffee,
   ShoppingBag,
-  Utensils,
-  CheckCircle2,
-  Image as ImageIcon,
   Banknote,
   Smartphone,
   CreditCard,
-  Building2,
   AlertCircle,
   Tag,
-  Percent,
-  Users,
   Printer,
   Download,
   MessageCircle,
-  UserPlus,
   Sparkles,
-  X,
-  FileText
+  CheckCircle2
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { downloadReceiptPDF, printReceiptPDF, shareReceiptPDFToWhatsApp } from '../utils/pdfReceipt'
@@ -48,7 +40,7 @@ export default function Sales() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // Lista de clientes CRM
+  // Clientes CRM
   const [crmCustomers, setCrmCustomers] = useState([])
   const [selectedCustomerId, setSelectedCustomerId] = useState(null)
   const [selectedCustomerObj, setSelectedCustomerObj] = useState(null)
@@ -64,7 +56,6 @@ export default function Sales() {
 
   // Carrito de compras
   const [cartItems, setCartItems] = useState([])
-  const [orderType, setOrderType] = useState('Para Llevar')
   const [tableNumber, setTableNumber] = useState('')
   const [tipAmount, setTipAmount] = useState(0)
 
@@ -116,7 +107,6 @@ export default function Sales() {
     loadData()
   }, [])
 
-  // Carrito helpers
   function addToCart(product, qtyToAdd = 1) {
     if (!isProductActive(product)) return
     setCartItems((prev) => {
@@ -159,7 +149,6 @@ export default function Sales() {
     setSelectedCustomerObj(null)
   }
 
-  // Cálculos de Totales
   const cartSubtotal = useMemo(() => {
     return cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0)
   }, [cartItems])
@@ -177,7 +166,6 @@ export default function Sales() {
     return Math.max(0, afterDiscount + tipAmount)
   }, [cartSubtotal, calculatedDiscountAmount, tipAmount])
 
-  // Descuento helpers
   function handleApplyPercent(pct) {
     if (discountPercent === pct) {
       setDiscountPercent(0)
@@ -193,7 +181,6 @@ export default function Sales() {
     setDiscountAmount(Number(val) || 0)
   }
 
-  // Filtrar productos activos
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       if (!isProductActive(p)) return false
@@ -375,7 +362,6 @@ export default function Sales() {
     }
   }
 
-  // Cambio en efectivo
   const changeDue = useMemo(() => {
     if (paymentMethod !== 'efectivo') return 0
     const val = Number(cashAmount) || 0
@@ -383,31 +369,31 @@ export default function Sales() {
   }, [paymentMethod, cashAmount, cartTotal])
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-5.5rem)] gap-4 select-none">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-5.5rem)] gap-4 select-none text-[#432414] dark:text-[#FEE4D7]">
       {/* SECCIÓN IZQUIERDA: Catálogo de Productos */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-4 shadow-sm overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-4 shadow-sm overflow-hidden">
         {/* Cabecera y Buscador */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 bg-amber-100 dark:bg-amber-950/50 rounded-2xl text-amber-800 dark:text-amber-300">
+            <div className="p-2.5 bg-[#FEE4D7] dark:bg-[#2A150C] rounded-2xl text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
               <Coffee className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-black tracking-tight text-zinc-900 dark:text-zinc-100">
+              <h2 className="text-lg font-black tracking-tight text-[#432414] dark:text-[#FEE4D7]">
                 Punto de Venta
               </h2>
-              <p className="text-xs text-zinc-400 font-medium">Toffee Espresso & Bakery</p>
+              <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] font-semibold">Toffee Espresso & Bakery</p>
             </div>
           </div>
 
           <div className="relative flex-1 max-w-xs">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9F6839] dark:text-[#DABA8C]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar café, postre o bebida..."
-              className="w-full pl-10 pr-3.5 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full pl-10 pr-3.5 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:border-[#9F6839]"
             />
           </div>
         </div>
@@ -420,8 +406,8 @@ export default function Sales() {
               onClick={() => setSelectedCategory(cat)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === cat
-                  ? 'bg-amber-700 text-white shadow-sm shadow-amber-700/20'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                  ? 'bg-[#9F6839] text-white shadow-xs'
+                  : 'bg-[#FEE4D7]/50 dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border border-[#D4B28E]/60 dark:border-[#9F6839]/30 hover:bg-[#FEE4D7]'
               }`}
             >
               {cat}
@@ -432,15 +418,15 @@ export default function Sales() {
         {/* Grid de Productos */}
         <div className="flex-1 overflow-y-auto pr-1">
           {loading ? (
-            <div className="flex flex-col items-center justify-center h-64 text-zinc-400 gap-2">
-              <div className="w-6 h-6 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs font-medium">Cargando menú...</span>
+            <div className="flex flex-col items-center justify-center h-64 text-[#9F6839] dark:text-[#DABA8C] gap-2">
+              <div className="w-6 h-6 border-2 border-[#9F6839] border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs font-bold">Cargando menú...</span>
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-zinc-400 text-center">
-              <Coffee className="w-10 h-10 text-zinc-300 dark:text-zinc-700 mb-2" />
-              <p className="text-sm font-bold text-zinc-600 dark:text-zinc-400">No hay productos en esta vista</p>
-              <p className="text-xs text-zinc-400">Verifica la categoría o búsqueda ingresada.</p>
+            <div className="flex flex-col items-center justify-center h-64 text-[#9F6839] dark:text-[#DABA8C] text-center">
+              <Coffee className="w-10 h-10 text-[#9F6839]/40 mb-2" />
+              <p className="text-xs font-bold">No hay productos en esta vista</p>
+              <p className="text-[11px] opacity-70">Verifica la categoría o búsqueda ingresada.</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
@@ -452,15 +438,15 @@ export default function Sales() {
                   <div
                     key={p.id}
                     onClick={() => addToCart(p)}
-                    className="group bg-zinc-50 dark:bg-zinc-800/60 hover:bg-amber-50/50 dark:hover:bg-amber-950/20 border border-zinc-200/80 dark:border-zinc-700/60 hover:border-amber-400 dark:hover:border-amber-800/80 rounded-2xl p-2.5 transition-all cursor-pointer flex flex-col justify-between relative shadow-xs"
+                    className="group bg-white dark:bg-[#25120B] hover:bg-[#FEE4D7]/40 dark:hover:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 hover:border-[#9F6839] rounded-2xl p-2.5 transition-all cursor-pointer flex flex-col justify-between relative shadow-xs"
                   >
                     {cartMatch && (
-                      <div className="absolute top-2 right-2 bg-amber-700 text-white font-black text-xs px-2 py-0.5 rounded-full shadow-md z-10 animate-scale">
+                      <div className="absolute top-2 right-2 bg-[#9F6839] text-white font-black text-xs px-2 py-0.5 rounded-full shadow-md z-10">
                         {cartMatch.quantity}
                       </div>
                     )}
 
-                    <div className="aspect-square w-full rounded-xl overflow-hidden mb-2 bg-zinc-200 dark:bg-zinc-700 relative">
+                    <div className="aspect-square w-full rounded-xl overflow-hidden mb-2 bg-[#FEE4D7]/50 dark:bg-[#1A0C06] relative">
                       <img
                         src={processImageUrl(imgUrl)}
                         alt={p.name}
@@ -472,14 +458,14 @@ export default function Sales() {
                     </div>
 
                     <div>
-                      <h4 className="font-extrabold text-xs text-zinc-800 dark:text-zinc-200 line-clamp-1 group-hover:text-amber-700 dark:group-hover:text-amber-400">
+                      <h4 className="font-extrabold text-xs text-[#432414] dark:text-[#FEE4D7] line-clamp-1 group-hover:text-[#9F6839] dark:group-hover:text-[#DABA8C]">
                         {p.name}
                       </h4>
                       <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs font-black text-amber-900 dark:text-amber-200">
+                        <span className="text-xs font-black text-[#9F6839] dark:text-[#DABA8C]">
                           ${Number(p.price).toLocaleString('es-CO')}
                         </span>
-                        <div className="w-5 h-5 rounded-lg bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 flex items-center justify-center group-hover:bg-amber-700 group-hover:text-white transition-colors">
+                        <div className="w-5 h-5 rounded-lg bg-[#FEE4D7] dark:bg-[#3E2114] text-[#9F6839] dark:text-[#DABA8C] flex items-center justify-center group-hover:bg-[#9F6839] group-hover:text-white transition-colors">
                           <Plus className="w-3 h-3" />
                         </div>
                       </div>
@@ -493,19 +479,19 @@ export default function Sales() {
       </div>
 
       {/* SECCIÓN DERECHA: Carrito & Cobro */}
-      <div className="w-full lg:w-96 flex flex-col bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-4 shadow-sm">
+      <div className="w-full lg:w-96 flex flex-col bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-4 shadow-sm">
         {/* Encabezado Carrito */}
-        <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800 mb-3">
+        <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 mb-3">
           <div className="flex items-center gap-2">
-            <ShoppingBag className="w-4 h-4 text-amber-700" />
-            <h3 className="font-black text-sm text-zinc-900 dark:text-zinc-100">Orden Actual</h3>
-            <span className="text-xs font-bold text-zinc-400">({cartItems.length})</span>
+            <ShoppingBag className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
+            <h3 className="font-black text-sm text-[#432414] dark:text-[#FEE4D7]">Orden Actual</h3>
+            <span className="text-xs font-bold text-[#9F6839] dark:text-[#DABA8C]">({cartItems.length})</span>
           </div>
 
           {cartItems.length > 0 && (
             <button
               onClick={clearCart}
-              className="text-xs text-red-500 hover:text-red-700 font-bold transition-colors cursor-pointer"
+              className="text-xs text-red-600 dark:text-red-400 hover:underline font-bold transition-colors cursor-pointer"
             >
               Vaciar
             </button>
@@ -514,7 +500,7 @@ export default function Sales() {
 
         {/* Selector de Cliente Habitual (CRM) */}
         <div className="mb-3">
-          <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider mb-1">
+          <label className="block text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider mb-1">
             Cliente Habitual
           </label>
           <select
@@ -528,7 +514,7 @@ export default function Sales() {
                 handleSelectCrmCustomer(found)
               }
             }}
-            className="w-full px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full px-3 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
           >
             <option value="">Cliente Ocasional / General</option>
             {crmCustomers.map((c) => (
@@ -540,8 +526,8 @@ export default function Sales() {
 
           {/* Badge de preferencias del cliente seleccionado */}
           {selectedCustomerObj?.notes && (
-            <div className="mt-2 p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/50 dark:border-amber-900/50 rounded-xl text-[11px] text-amber-900 dark:text-amber-200 flex items-start gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-amber-700 flex-shrink-0 mt-0.5" />
+            <div className="mt-2 p-2.5 bg-[#FEE4D7]/40 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-xl text-[11px] text-[#432414] dark:text-[#FEE4D7] flex items-start gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C] flex-shrink-0 mt-0.5" />
               <div>
                 <strong>Gusto del cliente:</strong> {selectedCustomerObj.notes}
               </div>
@@ -552,22 +538,22 @@ export default function Sales() {
         {/* Lista de Ítems del Carrito */}
         <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-3">
           {cartItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 text-zinc-400 text-center">
-              <ShoppingBag className="w-8 h-8 text-zinc-300 dark:text-zinc-700 mb-2" />
-              <p className="text-xs font-bold text-zinc-600 dark:text-zinc-400">Tu orden está vacía</p>
-              <p className="text-[11px] text-zinc-400">Selecciona productos del menú.</p>
+            <div className="flex flex-col items-center justify-center h-48 text-[#9F6839] dark:text-[#DABA8C] text-center">
+              <ShoppingBag className="w-8 h-8 text-[#9F6839]/40 mb-2" />
+              <p className="text-xs font-bold">Tu orden está vacía</p>
+              <p className="text-[11px] opacity-70">Selecciona productos del menú.</p>
             </div>
           ) : (
             cartItems.map(({ product, quantity }) => (
               <div
                 key={product.id}
-                className="p-2.5 bg-zinc-50 dark:bg-zinc-800/70 border border-zinc-200/80 dark:border-zinc-700/80 rounded-2xl flex items-center justify-between gap-2"
+                className="p-2.5 bg-[#FEE4D7]/30 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/30 rounded-2xl flex items-center justify-between gap-2"
               >
                 <div className="min-w-0 flex-1">
-                  <h4 className="text-xs font-extrabold text-zinc-900 dark:text-zinc-100 truncate">
+                  <h4 className="text-xs font-extrabold text-[#432414] dark:text-[#FEE4D7] truncate">
                     {product.name}
                   </h4>
-                  <span className="text-[11px] text-zinc-400 font-bold">
+                  <span className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] font-bold">
                     ${Number(product.price).toLocaleString('es-CO')} c/u
                   </span>
                 </div>
@@ -575,22 +561,22 @@ export default function Sales() {
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => updateQuantity(product.id, -1)}
-                    className="w-6 h-6 rounded-lg bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 flex items-center justify-center text-zinc-700 dark:text-zinc-200 transition-colors cursor-pointer"
+                    className="w-6 h-6 rounded-lg bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/30 hover:bg-[#FEE4D7] flex items-center justify-center text-[#432414] dark:text-[#FEE4D7] transition-colors cursor-pointer"
                   >
                     <Minus className="w-3 h-3" />
                   </button>
-                  <span className="w-6 text-center text-xs font-black text-zinc-900 dark:text-zinc-100">
+                  <span className="w-6 text-center text-xs font-black text-[#432414] dark:text-[#FEE4D7]">
                     {quantity}
                   </span>
                   <button
                     onClick={() => updateQuantity(product.id, 1)}
-                    className="w-6 h-6 rounded-lg bg-zinc-200 dark:bg-zinc-700 hover:bg-zinc-300 dark:hover:bg-zinc-600 flex items-center justify-center text-zinc-700 dark:text-zinc-200 transition-colors cursor-pointer"
+                    className="w-6 h-6 rounded-lg bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/30 hover:bg-[#FEE4D7] flex items-center justify-center text-[#432414] dark:text-[#FEE4D7] transition-colors cursor-pointer"
                   >
                     <Plus className="w-3 h-3" />
                   </button>
                   <button
                     onClick={() => removeFromCart(product.id)}
-                    className="p-1 text-zinc-400 hover:text-red-600 transition-colors cursor-pointer ml-1"
+                    className="p-1 text-[#9F6839] dark:text-[#DABA8C] hover:text-red-600 transition-colors cursor-pointer ml-1"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -602,16 +588,16 @@ export default function Sales() {
 
         {/* Sección de Descuentos (Solo Dueños) */}
         {isOwner && cartItems.length > 0 && (
-          <div className="p-3 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-2xl mb-3 space-y-2">
+          <div className="p-3 bg-[#FEE4D7]/40 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl mb-3 space-y-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-black text-amber-900 dark:text-amber-200">
-                <Tag className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-1.5 text-xs font-black text-[#432414] dark:text-[#FEE4D7]">
+                <Tag className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C]" />
                 <span>Descuento en Caja</span>
               </div>
               <button
                 type="button"
                 onClick={() => setShowDiscountInputs(!showDiscountInputs)}
-                className="text-[11px] font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] hover:underline cursor-pointer"
               >
                 {showDiscountInputs ? 'Ocultar' : 'Aplicar'}
               </button>
@@ -619,7 +605,6 @@ export default function Sales() {
 
             {showDiscountInputs && (
               <div className="space-y-2 pt-1 animate-fade-in">
-                {/* Botones de porcentaje rápido */}
                 <div className="grid grid-cols-5 gap-1">
                   {DISCOUNT_PRESETS.map((pct) => (
                     <button
@@ -628,8 +613,8 @@ export default function Sales() {
                       onClick={() => handleApplyPercent(pct)}
                       className={`py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
                         discountPercent === pct
-                          ? 'bg-amber-700 text-white shadow-xs'
-                          : 'bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100'
+                          ? 'bg-[#9F6839] text-white shadow-xs'
+                          : 'bg-white dark:bg-[#201009] text-[#432414] dark:text-[#FEE4D7] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]'
                       }`}
                     >
                       {pct}%
@@ -637,19 +622,18 @@ export default function Sales() {
                   ))}
                 </div>
 
-                {/* Monto personalizado y motivo */}
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="number"
                     value={discountAmount || ''}
                     onChange={(e) => handleCustomAmountChange(e.target.value)}
                     placeholder="Monto $"
-                    className="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-lg text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
                   />
                   <select
                     value={discountReason}
                     onChange={(e) => setDiscountReason(e.target.value)}
-                    className="w-full px-2.5 py-1.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-lg text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
                   >
                     <option value="">Motivo...</option>
                     {DISCOUNT_REASONS.map((r) => (
@@ -663,22 +647,22 @@ export default function Sales() {
         )}
 
         {/* Resumen de Totales y Botón Cobrar */}
-        <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
-          <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
+        <div className="pt-3 border-t border-[#D4B28E]/40 dark:border-[#9F6839]/30 space-y-2">
+          <div className="flex items-center justify-between text-xs text-[#9F6839] dark:text-[#DABA8C]">
             <span>Subtotal:</span>
             <span className="font-bold">${Number(cartSubtotal).toLocaleString('es-CO')}</span>
           </div>
 
           {calculatedDiscountAmount > 0 && (
-            <div className="flex items-center justify-between text-xs text-red-500 font-bold">
+            <div className="flex items-center justify-between text-xs text-red-600 dark:text-red-400 font-bold">
               <span>Descuento {discountPercent > 0 ? `(${discountPercent}%)` : ''}:</span>
               <span>-${Number(calculatedDiscountAmount).toLocaleString('es-CO')}</span>
             </div>
           )}
 
-          <div className="flex items-center justify-between text-base font-black text-zinc-900 dark:text-zinc-100 pt-1">
+          <div className="flex items-center justify-between text-base font-black text-[#432414] dark:text-[#FEE4D7] pt-1">
             <span>TOTAL:</span>
-            <span className="text-xl text-amber-700 dark:text-amber-400">
+            <span className="text-xl text-[#9F6839] dark:text-[#DABA8C]">
               ${Number(cartTotal).toLocaleString('es-CO')}
             </span>
           </div>
@@ -687,7 +671,7 @@ export default function Sales() {
             type="button"
             disabled={cartItems.length === 0}
             onClick={openCheckout}
-            className="w-full py-3.5 bg-amber-700 hover:bg-amber-800 text-white font-black rounded-2xl shadow-lg shadow-amber-700/25 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+            className="w-full py-3.5 bg-[#9F6839] hover:bg-[#835229] text-white font-black rounded-2xl shadow-md transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
           >
             <CreditCard className="w-4 h-4" />
             <span>Cobrar ${Number(cartTotal).toLocaleString('es-CO')}</span>
@@ -702,7 +686,7 @@ export default function Sales() {
           onClose={() => !submitting && setIsCheckoutOpen(false)}
           title="Completar Cobro & Generar Comanda"
         >
-          <form onSubmit={handleConfirmSale} className="space-y-4">
+          <form onSubmit={handleConfirmSale} className="space-y-4 text-[#432414] dark:text-[#FEE4D7]">
             {checkoutError && (
               <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-2xl text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -710,9 +694,8 @@ export default function Sales() {
               </div>
             )}
 
-            {/* Nombre del cliente */}
             <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                 Nombre del Cliente
               </label>
               <input
@@ -723,13 +706,12 @@ export default function Sales() {
                   setSelectedCustomerId(null)
                 }}
                 placeholder="Cliente General"
-                className="w-full px-3.5 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
               />
             </div>
 
-            {/* Método de pago */}
             <div>
-              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
                 Método de Pago
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -738,8 +720,8 @@ export default function Sales() {
                   onClick={() => handleSelectPaymentMethod('efectivo')}
                   className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
                     paymentMethod === 'efectivo'
-                      ? 'bg-amber-700 text-white border-amber-700 shadow-sm'
-                      : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100'
+                      ? 'bg-[#9F6839] text-white border-[#9F6839] shadow-xs'
+                      : 'bg-white dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]'
                   }`}
                 >
                   <Banknote className="w-4 h-4" />
@@ -751,8 +733,8 @@ export default function Sales() {
                   onClick={() => handleSelectPaymentMethod('transferencia')}
                   className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
                     paymentMethod === 'transferencia'
-                      ? 'bg-amber-700 text-white border-amber-700 shadow-sm'
-                      : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100'
+                      ? 'bg-[#9F6839] text-white border-[#9F6839] shadow-xs'
+                      : 'bg-white dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]'
                   }`}
                 >
                   <Smartphone className="w-4 h-4" />
@@ -764,8 +746,8 @@ export default function Sales() {
                   onClick={() => handleSelectPaymentMethod('mixto')}
                   className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
                     paymentMethod === 'mixto'
-                      ? 'bg-amber-700 text-white border-amber-700 shadow-sm'
-                      : 'bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100'
+                      ? 'bg-[#9F6839] text-white border-[#9F6839] shadow-xs'
+                      : 'bg-white dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]'
                   }`}
                 >
                   <CreditCard className="w-4 h-4" />
@@ -774,23 +756,22 @@ export default function Sales() {
               </div>
             </div>
 
-            {/* Desglose según método de pago */}
             {paymentMethod === 'efectivo' && (
-              <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-2xl space-y-2">
+              <div className="p-3 bg-[#FEE4D7]/30 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl space-y-2">
                 <div>
-                  <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">
+                  <label className="block text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-1">
                     Efectivo Recibido ($)
                   </label>
                   <input
                     type="number"
                     value={cashAmount}
                     onChange={(e) => setCashAmount(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-sm font-bold text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
                   />
                 </div>
                 <div className="flex items-center justify-between text-xs font-bold pt-1">
-                  <span className="text-zinc-500">Cambio / Vueltos:</span>
-                  <span className="text-emerald-600 text-sm font-black">
+                  <span className="text-[#9F6839] dark:text-[#DABA8C]">Cambio / Vueltos:</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 text-sm font-black">
                     ${Number(changeDue).toLocaleString('es-CO')}
                   </span>
                 </div>
@@ -798,29 +779,29 @@ export default function Sales() {
             )}
 
             {(paymentMethod === 'transferencia' || paymentMethod === 'mixto') && (
-              <div className="p-3 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700 rounded-2xl space-y-2.5">
+              <div className="p-3 bg-[#FEE4D7]/30 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl space-y-2.5">
                 {paymentMethod === 'mixto' && (
                   <div className="mb-2">
-                    <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400 mb-1">
+                    <label className="block text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-1">
                       Abono en Efectivo ($)
                     </label>
                     <input
                       type="number"
                       value={cashAmount}
                       onChange={(e) => setCashAmount(e.target.value)}
-                      className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-sm font-bold text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-full px-3 py-2 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-sm font-bold text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
                     />
                   </div>
                 )}
 
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-zinc-600 dark:text-zinc-400">
+                  <label className="block text-xs font-bold text-[#9F6839] dark:text-[#DABA8C]">
                     Bancos / Entidades
                   </label>
                   <button
                     type="button"
                     onClick={addBankLine}
-                    className="text-[11px] font-bold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer"
+                    className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] hover:underline cursor-pointer"
                   >
                     + Agregar Banco
                   </button>
@@ -832,7 +813,7 @@ export default function Sales() {
                       <select
                         value={bp.bank}
                         onChange={(e) => updateBankLine(idx, 'bank', e.target.value)}
-                        className="flex-1 px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className="flex-1 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none"
                       >
                         {COMMON_BANKS.map((b) => (
                           <option key={b} value={b}>{b}</option>
@@ -843,13 +824,13 @@ export default function Sales() {
                         placeholder="Monto"
                         value={bp.amount}
                         onChange={(e) => updateBankLine(idx, 'amount', e.target.value)}
-                        className="w-28 px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-bold text-zinc-900 dark:text-zinc-100 focus:outline-none"
+                        className="w-28 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs font-bold text-[#432414] dark:text-[#FEE4D7] focus:outline-none"
                       />
                       {bankPayments.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeBankLine(idx)}
-                          className="p-1 text-zinc-400 hover:text-red-600 cursor-pointer"
+                          className="p-1 text-[#9F6839] hover:text-red-600 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -860,13 +841,12 @@ export default function Sales() {
               </div>
             )}
 
-            {/* Botones de acción */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-100 dark:border-zinc-800">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30">
               <button
                 type="button"
                 disabled={submitting}
                 onClick={() => setIsCheckoutOpen(false)}
-                className="px-4 py-2.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                className="px-4 py-2.5 text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] rounded-xl text-xs font-bold cursor-pointer transition-colors"
               >
                 Cancelar
               </button>
@@ -874,10 +854,10 @@ export default function Sales() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-5 py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all disabled:opacity-50 flex items-center gap-2"
+                className="px-5 py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all disabled:opacity-50 flex items-center gap-2"
               >
                 {submitting && <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                Confirmar Venta
+                <span>Confirmar Venta</span>
               </button>
             </div>
           </form>
@@ -891,56 +871,55 @@ export default function Sales() {
           onClose={() => setIsReceiptOpen(false)}
           title="¡Venta Registrada Exitosamente!"
         >
-          <div className="space-y-4">
+          <div className="space-y-4 text-[#432414] dark:text-[#FEE4D7]">
             <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl flex items-center gap-3">
               <div className="p-2.5 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-xl">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
-                <h4 className="font-extrabold text-sm text-zinc-900 dark:text-zinc-100">
+                <h4 className="font-extrabold text-sm">
                   Orden #{lastOrder.order_number || 'Generada'}
                 </h4>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="text-xs text-[#9F6839] dark:text-[#DABA8C]">
                   Comanda enviada a cocina. Total: <strong>${Number(lastOrder.total).toLocaleString('es-CO')}</strong>
                 </p>
               </div>
             </div>
 
-            {/* Opciones de Comprobante Oficial */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <button
                 type="button"
                 onClick={() => printReceiptPDF(lastOrder)}
-                className="p-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-2xl text-xs font-bold text-zinc-800 dark:text-zinc-200 flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
+                className="p-3 bg-white dark:bg-[#2A150C] hover:bg-[#FEE4D7] dark:hover:bg-[#3E2114] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl text-xs font-bold text-[#432414] dark:text-[#FEE4D7] flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Printer className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
+                <Printer className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
                 <span>Imprimir Ticket</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => downloadReceiptPDF(lastOrder)}
-                className="p-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded-2xl text-xs font-bold text-zinc-800 dark:text-zinc-200 flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
+                className="p-3 bg-white dark:bg-[#2A150C] hover:bg-[#FEE4D7] dark:hover:bg-[#3E2114] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl text-xs font-bold text-[#432414] dark:text-[#FEE4D7] flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Download className="w-4 h-4 text-zinc-600 dark:text-zinc-300" />
+                <Download className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
                 <span>Descargar PDF</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => shareReceiptPDFToWhatsApp(lastOrder, selectedCustomerObj?.phone || '')}
-                className="p-3 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 rounded-2xl text-xs font-bold text-emerald-700 dark:text-emerald-300 flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
+                className="p-3 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl text-xs font-bold text-emerald-700 dark:text-emerald-300 flex flex-col items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <MessageCircle className="w-4 h-4 text-emerald-600" />
                 <span>Enviar WhatsApp</span>
               </button>
             </div>
 
-            <div className="flex items-center justify-end pt-3 border-t border-zinc-100 dark:border-zinc-800">
+            <div className="flex items-center justify-end pt-3 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30">
               <button
                 type="button"
                 onClick={() => setIsReceiptOpen(false)}
-                className="w-full py-2.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all"
+                className="w-full py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all"
               >
                 Nueva Venta
               </button>
