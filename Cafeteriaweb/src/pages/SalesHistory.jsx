@@ -16,7 +16,8 @@ import {
   MessageCircle,
   CreditCard,
   DollarSign,
-  ShoppingBag
+  ShoppingBag,
+  FileSpreadsheet
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { exportSalesToCSV, exportSalesToExcel } from '../utils/csvExport'
@@ -277,23 +278,25 @@ export default function SalesHistory() {
           </button>
 
           {/* Exportar a Excel & CSV */}
-          <button
-            onClick={() => exportSalesToExcel(filteredSales)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl text-xs font-extrabold transition-all cursor-pointer shadow-xs"
-            title="Descargar reporte de ventas en formato Excel (.xls)"
-          >
-            <Download className="w-4 h-4" />
-            <span>Exportar Excel</span>
-          </button>
-
-          <button
-            onClick={() => exportSalesToCSV(filteredSales)}
-            className="inline-flex items-center gap-1.5 px-3 py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-xs"
-            title="Descargar en formato CSV"
-          >
-            <Download className="w-4 h-4" />
-            <span>CSV</span>
-          </button>
+          <div className="inline-flex items-center p-1 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl shadow-xs">
+            <button
+              onClick={() => exportSalesToExcel(filteredSales)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-all cursor-pointer whitespace-nowrap"
+              title="Descargar reporte de ventas en formato Excel (.xls)"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Excel</span>
+            </button>
+            <div className="h-3.5 w-px bg-[#D4B28E]/60 dark:bg-[#9F6839]/40 mx-0.5" />
+            <button
+              onClick={() => exportSalesToCSV(filteredSales)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] rounded-xl transition-all cursor-pointer whitespace-nowrap"
+              title="Descargar en formato CSV"
+            >
+              <Download className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C]" />
+              <span>CSV</span>
+            </button>
+          </div>
         </div>
       </div>
 

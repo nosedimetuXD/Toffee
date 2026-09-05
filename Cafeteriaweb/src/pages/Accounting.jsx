@@ -18,7 +18,8 @@ import {
   Download,
   AlertCircle,
   Tag,
-  ShoppingBag
+  ShoppingBag,
+  FileSpreadsheet
 } from 'lucide-react'
 import { exportAccountingToCSV, exportAccountingToExcel } from '../utils/csvExport'
 import { useAuth } from '../context/AuthContext'
@@ -312,40 +313,46 @@ export default function Accounting() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-          <button
-            onClick={() => exportAccountingToExcel(expenses, incomes)}
-            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
-            title="Descargar libro contable en formato Excel (.xls)"
-          >
-            <Download className="w-4 h-4" />
-            <span>Exportar Excel</span>
-          </button>
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+          {/* Grupo Exportacion */}
+          <div className="inline-flex items-center p-1 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl shadow-xs">
+            <button
+              onClick={() => exportAccountingToExcel(expenses, incomes)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-all cursor-pointer whitespace-nowrap"
+              title="Descargar en formato Excel (.xls)"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Excel</span>
+            </button>
+            <div className="h-3.5 w-px bg-[#D4B28E]/60 dark:bg-[#9F6839]/40 mx-0.5" />
+            <button
+              onClick={() => exportAccountingToCSV(expenses, incomes)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] rounded-xl transition-all cursor-pointer whitespace-nowrap"
+              title="Descargar en formato CSV"
+            >
+              <Download className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C]" />
+              <span>CSV</span>
+            </button>
+          </div>
 
-          <button
-            onClick={() => exportAccountingToCSV(expenses, incomes)}
-            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-white dark:bg-[#2A150C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] text-[#432414] dark:text-[#FEE4D7] rounded-2xl text-xs font-bold transition-colors cursor-pointer border border-[#D4B28E]/70 dark:border-[#9F6839]/40 shadow-xs"
-            title="Descargar en formato CSV"
-          >
-            <Download className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
-            <span>CSV</span>
-          </button>
+          {/* Grupo Acciones Principales */}
+          <div className="inline-flex items-center gap-2">
+            <button
+              onClick={handleOpenCreateIncome}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black shadow-xs transition-all cursor-pointer whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Ingreso</span>
+            </button>
 
-          <button
-            onClick={handleOpenCreateIncome}
-            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-extrabold shadow-md transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Ingreso Extra</span>
-          </button>
-
-          <button
-            onClick={handleOpenCreateExpense}
-            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-2xl text-xs font-extrabold shadow-md transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Registrar Gasto</span>
-          </button>
+            <button
+              onClick={handleOpenCreateExpense}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#9F6839] hover:bg-[#835229] text-white rounded-2xl text-xs font-black shadow-xs transition-all cursor-pointer whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Gasto</span>
+            </button>
+          </div>
         </div>
       </div>
 
