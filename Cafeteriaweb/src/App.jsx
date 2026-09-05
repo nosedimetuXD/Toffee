@@ -13,6 +13,7 @@ import Tasks from './pages/Tasks'
 import Recipe from './pages/Recipe'
 import Profile from './pages/Profile'
 import Customers from './pages/Customers'
+import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 
 function ProtectedRoute({ children, roles }) {
@@ -93,6 +94,9 @@ function AppRoutes() {
           }
         />
       </Route>
+
+      {/* Pagina 404 */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }
