@@ -20,7 +20,7 @@ import {
   Tag,
   ShoppingBag
 } from 'lucide-react'
-import { exportAccountingToCSV } from '../utils/csvExport'
+import { exportAccountingToCSV, exportAccountingToExcel } from '../utils/csvExport'
 import { useAuth } from '../context/AuthContext'
 
 const EXPENSE_CATEGORIES = [
@@ -312,13 +312,23 @@ export default function Accounting() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          <button
+            onClick={() => exportAccountingToExcel(expenses, incomes)}
+            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl text-xs font-bold transition-colors cursor-pointer shadow-xs"
+            title="Descargar libro contable en formato Excel (.xls)"
+          >
+            <Download className="w-4 h-4" />
+            <span>Exportar Excel</span>
+          </button>
+
           <button
             onClick={() => exportAccountingToCSV(expenses, incomes)}
-            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-[#2A150C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] text-[#432414] dark:text-[#FEE4D7] rounded-2xl text-xs font-bold transition-colors cursor-pointer border border-[#D4B28E]/70 dark:border-[#9F6839]/40 shadow-xs"
+            className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-white dark:bg-[#2A150C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] text-[#432414] dark:text-[#FEE4D7] rounded-2xl text-xs font-bold transition-colors cursor-pointer border border-[#D4B28E]/70 dark:border-[#9F6839]/40 shadow-xs"
+            title="Descargar en formato CSV"
           >
             <Download className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
-            <span>Exportar CSV</span>
+            <span>CSV</span>
           </button>
 
           <button
@@ -624,7 +634,7 @@ export default function Accounting() {
                         {/* Descripción / Concepto */}
                         <td className="px-4 py-4">
                           <div className="font-extrabold text-[#432414] dark:text-[#FEE4D7]">
-                            {inc.description}
+                            {isSale ? (inc.customer_name || (inc.description || '').replace(/^Venta POS - /i, '') || 'Cliente General') : inc.description}
                           </div>
                           {inc.category && inc.category !== 'Venta POS' && (
                             <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-[#FEE4D7]/60 dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] text-[10px] font-bold uppercase border border-[#D4B28E]/50 dark:border-[#9F6839]/30">

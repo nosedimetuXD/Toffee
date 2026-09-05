@@ -19,7 +19,7 @@ import {
   ShoppingBag
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { exportSalesToCSV } from '../utils/csvExport'
+import { exportSalesToCSV, exportSalesToExcel } from '../utils/csvExport'
 import { downloadReceiptPDF, printReceiptPDF, shareReceiptPDFToWhatsApp } from '../utils/pdfReceipt'
 
 const MONTH_NAMES = [
@@ -276,13 +276,23 @@ export default function SalesHistory() {
             <ChevronDown className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
           </button>
 
-          {/* Exportar a CSV */}
+          {/* Exportar a Excel & CSV */}
           <button
-            onClick={() => exportSalesToCSV(filteredSales)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-2xl text-xs font-extrabold transition-all cursor-pointer shadow-xs"
+            onClick={() => exportSalesToExcel(filteredSales)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl text-xs font-extrabold transition-all cursor-pointer shadow-xs"
+            title="Descargar reporte de ventas en formato Excel (.xls)"
           >
             <Download className="w-4 h-4" />
-            <span>Exportar CSV</span>
+            <span>Exportar Excel</span>
+          </button>
+
+          <button
+            onClick={() => exportSalesToCSV(filteredSales)}
+            className="inline-flex items-center gap-1.5 px-3 py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+            title="Descargar en formato CSV"
+          >
+            <Download className="w-4 h-4" />
+            <span>CSV</span>
           </button>
         </div>
       </div>
