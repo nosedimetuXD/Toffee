@@ -649,42 +649,6 @@ export default function Sales() {
           </div>
         </div>
 
-        {/* Selector de Cliente Habitual (CRM) */}
-        <div className="mb-3">
-          <label className="block text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider mb-1">
-            Cliente Habitual
-          </label>
-          <select
-            value={selectedCustomerId || ''}
-            onChange={(e) => {
-              const val = e.target.value
-              if (!val) {
-                handleSelectCrmCustomer(null)
-              } else {
-                const found = crmCustomers.find((c) => c.id === val)
-                handleSelectCrmCustomer(found)
-              }
-            }}
-            className="w-full px-3 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
-          >
-            <option value="">Cliente Ocasional / General</option>
-            {crmCustomers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.first_name} {c.last_name || ''} {c.phone ? `(${c.phone})` : ''}
-              </option>
-            ))}
-          </select>
-
-          {/* Badge de preferencias del cliente seleccionado */}
-          {selectedCustomerObj?.notes && (
-            <div className="mt-2 p-2.5 bg-[#FEE4D7]/40 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-xl text-[11px] text-[#432414] dark:text-[#FEE4D7] flex items-start gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C] flex-shrink-0 mt-0.5" />
-              <div>
-                <strong>Gusto del cliente:</strong> {selectedCustomerObj.notes}
-              </div>
-            </div>
-          )}
-        </div>
 
         {/* Lista de Ítems del Carrito */}
         <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-3 max-h-48 lg:max-h-none">
@@ -962,23 +926,31 @@ export default function Sales() {
 
               {/* Ficha rápida del cliente seleccionado */}
               {selectedCustomerObj && (
-                <div className="mt-2 p-2.5 rounded-xl bg-[#FEE4D7]/30 dark:bg-[#2A150C]/60 border border-[#D4B28E]/50 dark:border-[#9F6839]/30 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <UserCheck className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
-                    <span className="font-bold text-[#432414] dark:text-[#FEE4D7]">
-                      {selectedCustomerObj.first_name} {selectedCustomerObj.last_name || ''}
-                    </span>
-                    {selectedCustomerObj.phone && (
-                      <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C]">
-                        ({selectedCustomerObj.phone})
+                <div className="mt-2 p-2.5 rounded-xl bg-[#FEE4D7]/30 dark:bg-[#2A150C]/60 border border-[#D4B28E]/50 dark:border-[#9F6839]/30 text-xs space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <UserCheck className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
+                      <span className="font-bold text-[#432414] dark:text-[#FEE4D7]">
+                        {selectedCustomerObj.first_name} {selectedCustomerObj.last_name || ''}
+                      </span>
+                      {selectedCustomerObj.phone && (
+                        <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C]">
+                          ({selectedCustomerObj.phone})
+                        </span>
+                      )}
+                    </div>
+                    {Number(selectedCustomerObj.total_spent) > 0 && (
+                      <span className="text-[10px] font-bold text-[#9F6839] dark:text-[#DABA8C]">
+                        ${Number(selectedCustomerObj.total_spent).toLocaleString('es-CO')} consumido
+                        {selectedCustomerObj.total_orders ? ` (${selectedCustomerObj.total_orders} pedidos)` : ''}
                       </span>
                     )}
                   </div>
-                  {Number(selectedCustomerObj.total_spent) > 0 && (
-                    <span className="text-[10px] font-bold text-[#9F6839] dark:text-[#DABA8C]">
-                      Total consumido: ${Number(selectedCustomerObj.total_spent).toLocaleString('es-CO')}
-                      {selectedCustomerObj.total_orders ? ` (${selectedCustomerObj.total_orders} pedidos)` : ''}
-                    </span>
+                  {selectedCustomerObj.notes && (
+                    <div className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] flex items-center gap-1 pl-6">
+                      <Sparkles className="w-3 h-3 text-[#9F6839] dark:text-[#DABA8C] shrink-0" />
+                      <span><strong>Preferencia:</strong> {selectedCustomerObj.notes}</span>
+                    </div>
                   )}
                 </div>
               )}
