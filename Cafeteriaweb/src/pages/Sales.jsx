@@ -925,19 +925,15 @@ export default function Sales() {
                               </div>
                             </div>
 
-                            {/* Estado / Badge */}
+                            {/* Estado / Badge de Compras */}
                             <div className="shrink-0">
-                              {hasDebt ? (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900">
-                                  Debe ${Number(c.total_debt).toLocaleString('es-CO')}
-                                </span>
-                              ) : Number(c.total_spent) > 0 ? (
-                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C]">
+                              {Number(c.total_spent) > 0 ? (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/40 dark:border-[#9F6839]/30">
                                   ${Number(c.total_spent).toLocaleString('es-CO')} consumido
                                 </span>
                               ) : (
-                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
-                                  Al día
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#FEE4D7]/50 dark:bg-[#2A150C]/60 text-[#9F6839]/80 dark:text-[#DABA8C]/80">
+                                  Cliente registrado
                                 </span>
                               )}
                             </div>
@@ -964,21 +960,26 @@ export default function Sales() {
                 </div>
               )}
 
-              {/* Recordatorio de Deuda si el cliente tiene saldo pendiente */}
-              {selectedCustomerObj && Number(selectedCustomerObj.total_debt) > 0 && (
-                <div className="mt-2 p-3 rounded-2xl bg-amber-50 dark:bg-[#280c0c] border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 text-xs font-bold space-y-1.5 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 font-black text-amber-800 dark:text-amber-300">
-                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>Recordatorio de Saldo Pendiente</span>
-                    </div>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-red-600 text-white shadow-xs">
-                      Debe ${Number(selectedCustomerObj.total_debt).toLocaleString('es-CO')}
+              {/* Ficha rápida del cliente seleccionado */}
+              {selectedCustomerObj && (
+                <div className="mt-2 p-2.5 rounded-xl bg-[#FEE4D7]/30 dark:bg-[#2A150C]/60 border border-[#D4B28E]/50 dark:border-[#9F6839]/30 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
+                    <span className="font-bold text-[#432414] dark:text-[#FEE4D7]">
+                      {selectedCustomerObj.first_name} {selectedCustomerObj.last_name || ''}
                     </span>
+                    {selectedCustomerObj.phone && (
+                      <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C]">
+                        ({selectedCustomerObj.phone})
+                      </span>
+                    )}
                   </div>
-                  <p className="text-[11px] leading-relaxed text-amber-900/90 dark:text-amber-200/90">
-                    El cliente <strong>{selectedCustomerObj.first_name} {selectedCustomerObj.last_name || ''}</strong> tiene un saldo pendiente de <strong className="text-red-600 dark:text-red-400">${Number(selectedCustomerObj.total_debt).toLocaleString('es-CO')}</strong>.
-                  </p>
+                  {Number(selectedCustomerObj.total_spent) > 0 && (
+                    <span className="text-[10px] font-bold text-[#9F6839] dark:text-[#DABA8C]">
+                      Total consumido: ${Number(selectedCustomerObj.total_spent).toLocaleString('es-CO')}
+                      {selectedCustomerObj.total_orders ? ` (${selectedCustomerObj.total_orders} pedidos)` : ''}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
