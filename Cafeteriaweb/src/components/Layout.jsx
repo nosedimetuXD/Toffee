@@ -88,10 +88,10 @@ export default function Layout() {
     {
       title: 'OPERACIÓN & VENTAS',
       items: [
-        { to: '/', label: 'Ventas (POS)', icon: ShoppingBag, end: true, show: true },
+        { to: '/', label: 'Ventas', icon: ShoppingBag, end: true, show: true },
         { to: '/sales/history', label: 'Historial Ventas', icon: FileText, show: true },
-        { to: '/comandas', label: 'Comandas (Cocina)', icon: UtensilsCrossed, show: true },
-        { to: '/customers', label: 'Clientes (CRM)', icon: Users, show: true }
+        { to: '/comandas', label: 'Comandas', icon: UtensilsCrossed, show: true },
+        { to: '/customers', label: 'Clientes', icon: Users, show: true }
       ]
     },
     {

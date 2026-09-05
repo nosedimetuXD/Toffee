@@ -501,9 +501,6 @@ export default function Customers() {
                 placeholder="Ej. Le gusta el latte con leche de avena, sin azúcar y con canela..."
                 className="w-full px-3.5 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839] resize-none"
               />
-              <span className="text-[11px] text-[#9F6839] dark:text-[#DABA8C]">
-                Estas notas se mostrarán en la caja (POS) para que los baristas preparen su café favorito al instante.
-              </span>
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30">
