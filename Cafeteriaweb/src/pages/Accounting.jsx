@@ -17,7 +17,8 @@ import {
   Edit2,
   Download,
   AlertCircle,
-  Tag
+  Tag,
+  ShoppingBag
 } from 'lucide-react'
 import { exportAccountingToCSV } from '../utils/csvExport'
 import { useAuth } from '../context/AuthContext'
@@ -41,11 +42,13 @@ export default function Accounting() {
   const { user } = useAuth()
   const isOwner = (user?.role || '').toLowerCase() === 'owner' || (user?.role || '').toLowerCase() === 'dueño'
 
+  const [summary, setSummary] = useState(null)
   const [expenses, setExpenses] = useState([])
   const [incomes, setIncomes] = useState([])
-  const [sales, setSales] = useState([])
   const [ingredients, setIngredients] = useState([])
-  const [activeTab, setActiveTab] = useState('expenses')
+  const [activeTab, setActiveTab] = useState('expenses') // 'expenses' | 'incomes'
+  const [period, setPeriod] = useState('month') // 'today' | 'week' | 'month' | 'year' | 'all'
+  const [incomeFilter, setIncomeFilter] = useState('all') // 'all' | 'sale' | 'manual'
   const [loading, setLoading] = useState(true)
   const [pageError, setPageError] = useState('')
 
@@ -82,15 +85,15 @@ export default function Accounting() {
     setLoading(true)
     setPageError('')
     try {
-      const [expData, ingData, salesData, incData] = await Promise.all([
-        api.get('/expenses?period=all').catch(() => []),
+      const [sumData, expData, ingData, incData] = await Promise.all([
+        api.get(`/accounting/summary?period=${period}`).catch(() => null),
+        api.get(`/expenses?period=${period}`).catch(() => []),
         api.get('/ingredients').catch(() => []),
-        api.get('/sales?period=all').catch(() => []),
-        api.get('/incomes?period=all').catch(() => [])
+        api.get(`/incomes?period=${period}`).catch(() => [])
       ])
+      setSummary(sumData)
       setExpenses(Array.isArray(expData) ? expData : [])
       setIngredients(Array.isArray(ingData) ? ingData : [])
-      setSales(Array.isArray(salesData) ? salesData : [])
       setIncomes(Array.isArray(incData) ? incData : [])
     } catch (err) {
       console.error('Error cargando contabilidad:', err)
@@ -102,7 +105,7 @@ export default function Accounting() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [period])
 
   function handleOpenCreateExpense() {
     setEditingExpense(null)
@@ -265,23 +268,29 @@ export default function Accounting() {
     }
   }
 
-  const totalSalesIncome = useMemo(() => {
-    return sales
-      .filter((s) => s.status !== 'cancelado' && s.status !== 'cancelada')
-      .reduce((sum, s) => sum + (s.total || 0), 0)
-  }, [sales])
+  const salesIncomes = useMemo(() => incomes.filter((i) => i.type === 'sale'), [incomes])
+  const manualIncomes = useMemo(() => incomes.filter((i) => (i.type || 'manual') === 'manual'), [incomes])
 
-  const totalExtraIncome = useMemo(() => {
-    return incomes.reduce((sum, i) => sum + (i.amount || 0), 0)
-  }, [incomes])
+  const salesIncomesCount = salesIncomes.length
+  const manualIncomesCount = manualIncomes.length
 
-  const totalAllIncome = totalSalesIncome + totalExtraIncome
+  const salesIncomeTotal = useMemo(() => salesIncomes.reduce((sum, i) => sum + (i.amount || 0), 0), [salesIncomes])
+  const manualIncomeTotal = useMemo(() => manualIncomes.reduce((sum, i) => sum + (i.amount || 0), 0), [manualIncomes])
 
-  const totalExpenses = useMemo(() => {
-    return expenses.reduce((sum, e) => sum + (e.amount || 0), 0)
-  }, [expenses])
+  const totalIngresosCalc = useMemo(() => {
+    return summary?.total_income ?? (salesIncomeTotal + manualIncomeTotal)
+  }, [summary, salesIncomeTotal, manualIncomeTotal])
 
-  const netBalance = totalAllIncome - totalExpenses
+  const totalGastosCalc = useMemo(() => {
+    return summary?.total_expenses ?? expenses.reduce((sum, e) => sum + (e.amount || 0), 0)
+  }, [summary, expenses])
+
+  const balanceNetoCalc = totalIngresosCalc - totalGastosCalc
+
+  const filteredIncomes = useMemo(() => {
+    if (incomeFilter === 'all') return incomes
+    return incomes.filter((inc) => (inc.type || 'manual') === incomeFilter)
+  }, [incomes, incomeFilter])
 
   return (
     <div className="space-y-6 text-[#432414] dark:text-[#FEE4D7]">
@@ -294,10 +303,10 @@ export default function Accounting() {
             </div>
             <div>
               <h1 className="text-2xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7]">
-                Libros & Contabilidad
+                Contabilidad & Flujo de Caja
               </h1>
               <p className="text-xs font-semibold text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
-                Flujo de caja, egresos operativos e ingresos extraordinarios
+                Control de ingresos, gastos clasificados, balance neto y exportación contable.
               </p>
             </div>
           </div>
@@ -340,10 +349,10 @@ export default function Accounting() {
           <div>
             <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Ingresos Totales</span>
             <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-              ${Number(totalAllIncome).toLocaleString('es-CO')}
+              ${Number(totalIngresosCalc).toLocaleString('es-CO')}
             </div>
             <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
-              Ventas: ${Number(totalSalesIncome).toLocaleString('es-CO')} | Extra: ${Number(totalExtraIncome).toLocaleString('es-CO')}
+              Ventas: ${Number(salesIncomeTotal).toLocaleString('es-CO')} | Extra: ${Number(manualIncomeTotal).toLocaleString('es-CO')}
             </span>
           </div>
         </div>
@@ -354,9 +363,9 @@ export default function Accounting() {
             <TrendingDown className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Egresos & Gastos</span>
+            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Gastos Totales</span>
             <div className="text-2xl font-black text-red-600 dark:text-red-400">
-              ${Number(totalExpenses).toLocaleString('es-CO')}
+              ${Number(totalGastosCalc).toLocaleString('es-CO')}
             </div>
             <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
               {expenses.length} movimientos registrados
@@ -366,43 +375,68 @@ export default function Accounting() {
 
         {/* Balance Neto */}
         <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className={`p-3 rounded-2xl border ${netBalance >= 0 ? 'bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] border-[#D4B28E]/50 dark:border-[#9F6839]/30' : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200'}`}>
+          <div className={`p-3 rounded-2xl border ${balanceNetoCalc >= 0 ? 'bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] border-[#D4B28E]/50 dark:border-[#9F6839]/30' : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200'}`}>
             <Wallet className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Balance Neto</span>
-            <div className={`text-2xl font-black ${netBalance >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-red-600 dark:text-red-400'}`}>
-              ${Number(netBalance).toLocaleString('es-CO')}
+            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Ganancia Neta</span>
+            <div className={`text-2xl font-black ${balanceNetoCalc >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-red-600 dark:text-red-400'}`}>
+              ${Number(balanceNetoCalc).toLocaleString('es-CO')}
             </div>
             <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
-              Utilidad operativa acumulada
+              Balance neto acumulado
             </span>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 pb-2">
-        <button
-          onClick={() => setActiveTab('expenses')}
-          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === 'expenses'
-              ? 'bg-[#9F6839] text-white shadow-xs'
-              : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A150C]'
-          }`}
-        >
-          Gastos & Egresos ({expenses.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('incomes')}
-          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-            activeTab === 'incomes'
-              ? 'bg-emerald-600 text-white shadow-xs'
-              : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A150C]'
-          }`}
-        >
-          Ingresos Extraordinarios ({incomes.length})
-        </button>
+      {/* Tabs y Periodos */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 pb-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab('expenses')}
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'expenses'
+                ? 'bg-[#9F6839] text-white shadow-xs'
+                : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A150C]'
+            }`}
+          >
+            Gastos ({expenses.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('incomes')}
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'incomes'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A150C]'
+            }`}
+          >
+            Ingresos ({incomes.length})
+          </button>
+        </div>
+
+        {/* Selector de Periodo */}
+        <div className="flex items-center gap-1 bg-[#FEE4D7]/40 dark:bg-[#2A150C] p-1 rounded-2xl border border-[#D4B28E]/60 dark:border-[#9F6839]/30 self-start sm:self-auto overflow-x-auto">
+          {[
+            { id: 'today', label: 'Hoy' },
+            { id: 'week', label: '7 Días' },
+            { id: 'month', label: 'Este Mes' },
+            { id: 'year', label: 'Este Año' },
+            { id: 'all', label: 'Todo' }
+          ].map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setPeriod(p.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                period === p.id
+                  ? 'bg-[#9F6839] text-white shadow-xs font-black'
+                  : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#3E2114]'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* TAB GASTOS */}
@@ -493,70 +527,159 @@ export default function Accounting() {
       {/* TAB INGRESOS */}
       {activeTab === 'incomes' && (
         <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden shadow-sm">
-          {incomes.length === 0 ? (
+          {/* Sub-filtros de Tipo de Ingreso */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-[#FEE4D7]/30 dark:bg-[#2A150C] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30">
+            <div className="flex items-center gap-1.5 overflow-x-auto">
+              {[
+                { id: 'all', label: `Todos (${incomes.length})` },
+                { id: 'sale', label: `Ventas POS (${salesIncomesCount})` },
+                { id: 'manual', label: `Ingresos Extras (${manualIncomesCount})` }
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setIncomeFilter(f.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    incomeFilter === f.id
+                      ? 'bg-emerald-600 text-white shadow-xs font-black'
+                      : 'bg-white dark:bg-[#201009] text-[#432414] dark:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#3E2114] border border-[#D4B28E]/50 dark:border-[#9F6839]/30'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={handleOpenCreateIncome}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs cursor-pointer shadow-xs ml-auto whitespace-nowrap"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Registrar Ingreso Extra</span>
+            </button>
+          </div>
+
+          {filteredIncomes.length === 0 ? (
             <div className="p-12 text-center text-[#9F6839] dark:text-[#DABA8C]">
-              <DollarSign className="w-10 h-10 mx-auto mb-2 opacity-50" />
-              <p className="font-bold text-xs">No hay ingresos extraordinarios registrados</p>
+              <TrendingUp className="w-10 h-10 mx-auto mb-2 opacity-50 text-emerald-500" />
+              <p className="font-bold text-xs">No hay ingresos registrados para este filtro o periodo</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-bold text-[10px] tracking-wider">
                   <tr>
-                    <th className="px-5 py-3.5">Fecha</th>
-                    <th className="px-4 py-3.5">Descripción & Categoría</th>
-                    <th className="px-4 py-3.5">Método de Pago</th>
-                    <th className="px-4 py-3.5">Monto</th>
-                    <th className="px-4 py-3.5">Registrado Por</th>
-                    <th className="px-5 py-3.5 text-right">Acciones</th>
+                    <th className="px-5 py-3.5 whitespace-nowrap">Fecha & Hora</th>
+                    <th className="px-4 py-3.5 whitespace-nowrap">Tipo / Origen</th>
+                    <th className="px-4 py-3.5">Descripción / Concepto</th>
+                    <th className="px-4 py-3.5 whitespace-nowrap">Método de Pago</th>
+                    <th className="px-4 py-3.5 text-right whitespace-nowrap">Monto Cobrado</th>
+                    <th className="px-5 py-3.5 text-center whitespace-nowrap">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#D4B28E]/40 dark:divide-[#9F6839]/20">
-                  {incomes.map((i) => (
-                    <tr key={i.id} className="hover:bg-[#FEE4D7]/30 dark:hover:bg-[#2A150C]/60 transition-colors">
-                      <td className="px-5 py-4 font-bold text-[#432414] dark:text-[#FEE4D7]">
-                        {new Date(i.created_at).toLocaleDateString('es-CO')}
-                        <span className="block text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-normal">
-                          {new Date(i.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="font-extrabold text-[#432414] dark:text-[#FEE4D7]">{i.description}</div>
-                        <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase border border-emerald-200 dark:border-emerald-900/40">
-                          {i.category}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 capitalize text-[#432414] dark:text-[#FEE4D7] font-medium">
-                        {i.payment_method}
-                      </td>
-                      <td className="px-4 py-4 font-black text-emerald-600 dark:text-emerald-400 text-sm">
-                        +${Number(i.amount).toLocaleString('es-CO')}
-                      </td>
-                      <td className="px-4 py-4 text-[#9F6839] dark:text-[#DABA8C] font-medium">
-                        {i.registerer_name || 'Personal'}
-                      </td>
-                      <td className="px-5 py-4 text-right">
-                        {isOwner && (
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => handleOpenEditIncome(i)}
-                              className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl transition-colors cursor-pointer"
-                              title="Editar Ingreso"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteIncome(i)}
-                              className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
-                              title="Eliminar Ingreso"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                  {filteredIncomes.map((inc) => {
+                    const isSale = inc.type === 'sale'
+                    const isManual = !isSale
+
+                    return (
+                      <tr
+                        key={`${inc.type || 'inc'}-${inc.id}`}
+                        className="hover:bg-[#FEE4D7]/30 dark:hover:bg-[#2A150C]/60 transition-colors"
+                      >
+                        {/* Fecha y Hora */}
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-[#432414] dark:text-[#FEE4D7]">
+                              {new Date(inc.created_at).toLocaleDateString('es-CO', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </span>
+                            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C]">
+                              {new Date(inc.created_at).toLocaleTimeString('es-CO', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: true
+                              })}
+                            </span>
                           </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+
+                        {/* Tipo / Origen Badge */}
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {isSale ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-extrabold text-[10px] uppercase border border-emerald-300/60 dark:border-emerald-800/40">
+                              <ShoppingBag className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                              <span>Venta POS</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#FEE4D7] dark:bg-[#3E2114] text-[#9F6839] dark:text-[#DABA8C] font-extrabold text-[10px] uppercase border border-[#D4B28E]/70 dark:border-[#9F6839]/50">
+                              <Plus className="w-3 h-3 text-[#9F6839] dark:text-[#DABA8C]" />
+                              <span>Ingreso Extra</span>
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Descripción / Concepto */}
+                        <td className="px-4 py-4">
+                          <div className="font-extrabold text-[#432414] dark:text-[#FEE4D7]">
+                            {inc.description}
+                          </div>
+                          {inc.category && inc.category !== 'Venta POS' && (
+                            <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-[#FEE4D7]/60 dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] text-[10px] font-bold uppercase border border-[#D4B28E]/50 dark:border-[#9F6839]/30">
+                              {inc.category}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Método de Pago */}
+                        <td className="px-4 py-4 capitalize text-[#432414] dark:text-[#FEE4D7] font-medium whitespace-nowrap">
+                          <div className="flex flex-col">
+                            <span className="uppercase font-bold">{inc.payment_method}</span>
+                            {inc.bank_details && (
+                              <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C]">
+                                ({inc.bank_details})
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Monto */}
+                        <td className="px-4 py-4 text-right font-black text-emerald-600 dark:text-emerald-400 text-sm whitespace-nowrap">
+                          +${Number(inc.amount).toLocaleString('es-CO')}
+                        </td>
+
+                        {/* Acciones */}
+                        <td className="px-5 py-4 text-center whitespace-nowrap">
+                          {isManual ? (
+                            isOwner && (
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  onClick={() => handleOpenEditIncome(inc)}
+                                  className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl transition-colors cursor-pointer"
+                                  title="Editar Ingreso"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteIncome(inc)}
+                                  className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
+                                  title="Eliminar Ingreso"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-bold text-[10px] uppercase border border-emerald-200/60 dark:border-emerald-800/40">
+                              POS
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

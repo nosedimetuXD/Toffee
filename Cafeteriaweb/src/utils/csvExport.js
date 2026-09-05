@@ -106,18 +106,19 @@ export function exportAccountingToCSV(expenses = [], incomes = [], filename = 'c
   })
 
   incomes.forEach((i) => {
+    const isSale = i.type === 'sale'
     rows.push(
       [
-        escapeCSV('INGRESO EXTRAORDINARIO'),
+        escapeCSV(isSale ? 'VENTA POS' : 'INGRESO EXTRAORDINARIO'),
         escapeCSV(i.id),
         escapeCSV(new Date(i.created_at).toLocaleString('es-CO')),
         escapeCSV(i.description),
-        escapeCSV(i.category),
-        escapeCSV(i.payment_method),
+        escapeCSV(i.category || (isSale ? 'Venta POS' : 'Otros')),
+        escapeCSV(i.bank_details ? `${i.payment_method} (${i.bank_details})` : i.payment_method),
         escapeCSV(i.amount),
         escapeCSV(''),
         escapeCSV(''),
-        escapeCSV(i.registerer_name || 'Personal')
+        escapeCSV(i.registerer_name || (isSale ? 'Caja POS' : 'Personal'))
       ].join(',')
     )
   })

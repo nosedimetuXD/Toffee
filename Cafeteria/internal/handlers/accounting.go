@@ -44,6 +44,37 @@ func NewAccountingHandler(db *pgxpool.Pool, hub *events.Hub) *AccountingHandler 
 	return &AccountingHandler{DB: db, Hub: hub}
 }
 
+func getTimeCondition(col string, period, startDate, endDate, yearParam, monthParam string) string {
+	if startDate != "" && endDate != "" {
+		return fmt.Sprintf("(%s AT TIME ZONE 'America/Bogota')::date >= '%s'::date AND (%s AT TIME ZONE 'America/Bogota')::date <= '%s'::date", col, startDate, col, endDate)
+	}
+	if yearParam != "" {
+		y, _ := strconv.Atoi(yearParam)
+		if monthParam != "" {
+			m, _ := strconv.Atoi(monthParam)
+			if y > 2000 && m >= 1 && m <= 12 {
+				return fmt.Sprintf("EXTRACT(YEAR FROM (%s AT TIME ZONE 'America/Bogota')) = %d AND EXTRACT(MONTH FROM (%s AT TIME ZONE 'America/Bogota')) = %d", col, y, col, m)
+			}
+		} else if y > 2000 {
+			return fmt.Sprintf("EXTRACT(YEAR FROM (%s AT TIME ZONE 'America/Bogota')) = %d", col, y)
+		}
+	}
+	switch period {
+	case "today":
+		return fmt.Sprintf("(%s AT TIME ZONE 'America/Bogota')::date = (now() AT TIME ZONE 'America/Bogota')::date", col)
+	case "week":
+		return fmt.Sprintf("(%s AT TIME ZONE 'America/Bogota') >= ((now() AT TIME ZONE 'America/Bogota') - INTERVAL '7 days')", col)
+	case "month":
+		return fmt.Sprintf("(%s AT TIME ZONE 'America/Bogota') >= date_trunc('month', now() AT TIME ZONE 'America/Bogota')", col)
+	case "prev_month":
+		return fmt.Sprintf("(%s AT TIME ZONE 'America/Bogota') >= date_trunc('month', (now() AT TIME ZONE 'America/Bogota') - INTERVAL '1 month') AND (%s AT TIME ZONE 'America/Bogota') < date_trunc('month', now() AT TIME ZONE 'America/Bogota')", col, col)
+	case "year":
+		return fmt.Sprintf("(%s AT TIME ZONE 'America/Bogota') >= date_trunc('year', now() AT TIME ZONE 'America/Bogota')", col)
+	default:
+		return "1=1"
+	}
+}
+
 // GET /accounting/summary?period=today|week|month|all&start_date=...&end_date=...&year=...&month_num=...
 func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	period := r.URL.Query().Get("period")
@@ -52,71 +83,32 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	yearParam := strings.TrimSpace(r.URL.Query().Get("year"))
 	monthParam := strings.TrimSpace(r.URL.Query().Get("month_num"))
 
-	var timeCondition string
-	var timeCondSales string
-	var timeCondComandas string
-
-	if startDate != "" && endDate != "" {
-		timeCondition = fmt.Sprintf("created_at >= '%s 00:00:00' AND created_at <= '%s 23:59:59'", startDate, endDate)
-		timeCondSales = fmt.Sprintf("s.created_at >= '%s 00:00:00' AND s.created_at <= '%s 23:59:59'", startDate, endDate)
-		timeCondComandas = fmt.Sprintf("c.created_at >= '%s 00:00:00' AND c.created_at <= '%s 23:59:59'", startDate, endDate)
-	} else if yearParam != "" && monthParam != "" {
-		y, _ := strconv.Atoi(yearParam)
-		m, _ := strconv.Atoi(monthParam)
-		if y > 2000 && m >= 1 && m <= 12 {
-			timeCondition = fmt.Sprintf("EXTRACT(YEAR FROM created_at) = %d AND EXTRACT(MONTH FROM created_at) = %d", y, m)
-			timeCondSales = fmt.Sprintf("EXTRACT(YEAR FROM s.created_at) = %d AND EXTRACT(MONTH FROM s.created_at) = %d", y, m)
-			timeCondComandas = fmt.Sprintf("EXTRACT(YEAR FROM c.created_at) = %d AND EXTRACT(MONTH FROM c.created_at) = %d", y, m)
-		}
-	}
-
-	if timeCondition == "" {
-		switch period {
-		case "today":
-			timeCondition = "(created_at AT TIME ZONE 'America/Bogota')::date = (now() AT TIME ZONE 'America/Bogota')::date"
-			timeCondSales = "(s.created_at AT TIME ZONE 'America/Bogota')::date = (now() AT TIME ZONE 'America/Bogota')::date"
-			timeCondComandas = "(c.created_at AT TIME ZONE 'America/Bogota')::date = (now() AT TIME ZONE 'America/Bogota')::date"
-		case "week":
-			timeCondition = "created_at >= (now() - INTERVAL '7 days')"
-			timeCondSales = "s.created_at >= (now() - INTERVAL '7 days')"
-			timeCondComandas = "c.created_at >= (now() - INTERVAL '7 days')"
-		case "month":
-			timeCondition = "created_at >= date_trunc('month', now())"
-			timeCondSales = "s.created_at >= date_trunc('month', now())"
-			timeCondComandas = "c.created_at >= date_trunc('month', now())"
-		case "prev_month":
-			timeCondition = "created_at >= date_trunc('month', now() - INTERVAL '1 month') AND created_at < date_trunc('month', now())"
-			timeCondSales = "s.created_at >= date_trunc('month', now() - INTERVAL '1 month') AND s.created_at < date_trunc('month', now())"
-			timeCondComandas = "c.created_at >= date_trunc('month', now() - INTERVAL '1 month') AND c.created_at < date_trunc('month', now())"
-		case "year":
-			timeCondition = "created_at >= date_trunc('year', now())"
-			timeCondSales = "s.created_at >= date_trunc('year', now())"
-			timeCondComandas = "c.created_at >= date_trunc('year', now())"
-		default: // "all"
-			timeCondition = "1=1"
-			timeCondSales = "1=1"
-			timeCondComandas = "1=1"
-		}
-	}
+	timeCondition := getTimeCondition("created_at", period, startDate, endDate, yearParam, monthParam)
+	timeCondSales := getTimeCondition("s.created_at", period, startDate, endDate, yearParam, monthParam)
+	timeCondComandas := getTimeCondition("c.created_at", period, startDate, endDate, yearParam, monthParam)
 
 	summary := models.AccountingSummary{
 		IncomeByPaymentMethod: make(map[string]float64),
 		ExpensesByCategory:   make(map[string]float64),
 	}
 
-	var cashIncome, transferIncome float64
+	// 1. Ingresos por ventas POS cobradas
+	var cashSales, transferSales, totalSales float64
 	salesQuery := "SELECT COALESCE(SUM(s.total), 0), COUNT(s.id), COALESCE(SUM(s.cash_amount), 0), COALESCE(SUM(s.transfer_amount), 0) FROM sales s LEFT JOIN comandas c ON c.sale_id = s.id WHERE (c.status IS NULL OR c.status != 'cancelado') AND " + timeCondSales
-	err := h.DB.QueryRow(r.Context(), salesQuery).Scan(&summary.TotalIncome, &summary.SalesCount, &cashIncome, &transferIncome)
-	if err != nil {
-		log.Printf("error calculando ingresos: %v", err)
-		http.Error(w, "error calculando ingresos", http.StatusInternalServerError)
-		return
-	}
-	summary.IncomeByPaymentMethod["efectivo"] = cashIncome
-	summary.IncomeByPaymentMethod["transferencia"] = transferIncome
+	_ = h.DB.QueryRow(r.Context(), salesQuery).Scan(&totalSales, &summary.SalesCount, &cashSales, &transferSales)
 
+	// 2. Ingresos manuales extraordinarios
+	var cashManual, transferManual, manualIncomes float64
+	incQuery := "SELECT COALESCE(SUM(amount), 0), COUNT(id), COALESCE(SUM(CASE WHEN payment_method = 'efectivo' THEN amount ELSE 0 END), 0), COALESCE(SUM(CASE WHEN payment_method != 'efectivo' THEN amount ELSE 0 END), 0) FROM incomes WHERE " + timeCondition
+	_ = h.DB.QueryRow(r.Context(), incQuery).Scan(&manualIncomes, &summary.IncomesCount, &cashManual, &transferManual)
+
+	summary.TotalIncome = totalSales + manualIncomes
+	summary.IncomeByPaymentMethod["efectivo"] = cashSales + cashManual
+	summary.IncomeByPaymentMethod["transferencia"] = transferSales + transferManual
+
+	// 3. Gastos
 	expensesQuery := "SELECT COALESCE(SUM(amount), 0), COUNT(id) FROM expenses WHERE " + timeCondition
-	err = h.DB.QueryRow(r.Context(), expensesQuery).Scan(&summary.TotalExpenses, &summary.ExpensesCount)
+	err := h.DB.QueryRow(r.Context(), expensesQuery).Scan(&summary.TotalExpenses, &summary.ExpensesCount)
 	if err != nil {
 		log.Printf("error calculando gastos: %v", err)
 		http.Error(w, "error calculando gastos", http.StatusInternalServerError)
@@ -153,8 +145,12 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 			TopBanks:     []models.TopBankStat{},
 		}
 
+		var monthlySales, monthlyIncomes float64
 		_ = h.DB.QueryRow(r.Context(),
-			"SELECT COALESCE(SUM(s.total), 0) FROM sales s LEFT JOIN comandas c ON c.sale_id = s.id WHERE (c.status IS NULL OR c.status != 'cancelado') AND "+timeCondSales).Scan(&mStats.MonthlyIncome)
+			"SELECT COALESCE(SUM(s.total), 0) FROM sales s LEFT JOIN comandas c ON c.sale_id = s.id WHERE (c.status IS NULL OR c.status != 'cancelado') AND "+timeCondSales).Scan(&monthlySales)
+		_ = h.DB.QueryRow(r.Context(),
+			"SELECT COALESCE(SUM(amount), 0) FROM incomes WHERE "+timeCondition).Scan(&monthlyIncomes)
+		mStats.MonthlyIncome = monthlySales + monthlyIncomes
 
 		_ = h.DB.QueryRow(r.Context(),
 			"SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE "+timeCondition).Scan(&mStats.MonthlyExpenses)
@@ -255,26 +251,10 @@ func (h *AccountingHandler) ListExpenses(w http.ResponseWriter, r *http.Request)
 	period := r.URL.Query().Get("period")
 	startDate := strings.TrimSpace(r.URL.Query().Get("start_date"))
 	endDate := strings.TrimSpace(r.URL.Query().Get("end_date"))
+	yearParam := strings.TrimSpace(r.URL.Query().Get("year"))
+	monthParam := strings.TrimSpace(r.URL.Query().Get("month_num"))
 
-	var timeCondition string
-	if startDate != "" && endDate != "" {
-		timeCondition = fmt.Sprintf("WHERE e.created_at >= '%s 00:00:00' AND e.created_at <= '%s 23:59:59'", startDate, endDate)
-	} else {
-		switch period {
-		case "today":
-			timeCondition = "WHERE (e.created_at AT TIME ZONE 'America/Bogota')::date = (now() AT TIME ZONE 'America/Bogota')::date"
-		case "week":
-			timeCondition = "WHERE e.created_at >= (now() - INTERVAL '7 days')"
-		case "month":
-			timeCondition = "WHERE e.created_at >= date_trunc('month', now())"
-		case "prev_month":
-			timeCondition = "WHERE e.created_at >= date_trunc('month', now() - INTERVAL '1 month') AND e.created_at < date_trunc('month', now())"
-		case "year":
-			timeCondition = "WHERE e.created_at >= date_trunc('year', now())"
-		default: // "all"
-			timeCondition = ""
-		}
-	}
+	timeCondition := "WHERE " + getTimeCondition("e.created_at", period, startDate, endDate, yearParam, monthParam)
 
 	query := fmt.Sprintf(`SELECT e.id, e.description, e.amount, e.category, e.payment_method, e.registered_by, 
 		        COALESCE(u.username, 'Personal'), e.ingredient_id, COALESCE(i.name, ''), e.quantity_added, e.created_at 
@@ -521,43 +501,68 @@ func (h *AccountingHandler) DeleteExpense(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// GET /incomes?period=today|week|month|all&start_date=...&end_date=...
+// GET /incomes?period=today|week|month|all&start_date=...&end_date=...&year=...&month_num=...
 func (h *AccountingHandler) ListIncomes(w http.ResponseWriter, r *http.Request) {
 	period := r.URL.Query().Get("period")
 	startDate := strings.TrimSpace(r.URL.Query().Get("start_date"))
 	endDate := strings.TrimSpace(r.URL.Query().Get("end_date"))
+	yearParam := strings.TrimSpace(r.URL.Query().Get("year"))
+	monthParam := strings.TrimSpace(r.URL.Query().Get("month_num"))
 
-	var timeCondition string
-	if startDate != "" && endDate != "" {
-		timeCondition = fmt.Sprintf("WHERE i.created_at >= '%s 00:00:00' AND i.created_at <= '%s 23:59:59'", startDate, endDate)
-	} else {
-		switch period {
-		case "today":
-			timeCondition = "WHERE (i.created_at AT TIME ZONE 'America/Bogota')::date = (now() AT TIME ZONE 'America/Bogota')::date"
-		case "week":
-			timeCondition = "WHERE i.created_at >= (now() - INTERVAL '7 days')"
-		case "month":
-			timeCondition = "WHERE i.created_at >= date_trunc('month', now())"
-		case "prev_month":
-			timeCondition = "WHERE i.created_at >= date_trunc('month', now() - INTERVAL '1 month') AND i.created_at < date_trunc('month', now())"
-		case "year":
-			timeCondition = "WHERE i.created_at >= date_trunc('year', now())"
-		default: // "all"
-			timeCondition = ""
-		}
-	}
+	timeCondSales := getTimeCondition("s.created_at", period, startDate, endDate, yearParam, monthParam)
+	timeCondIncomes := getTimeCondition("i.created_at", period, startDate, endDate, yearParam, monthParam)
 
-	query := fmt.Sprintf(`SELECT i.id, i.description, i.amount, i.category, i.payment_method, i.registered_by, 
-		        COALESCE(u.username, 'Personal'), i.created_at 
-		 FROM incomes i
-		 LEFT JOIN users u ON i.registered_by = u.id
-		 %s
-		 ORDER BY i.created_at DESC`, timeCondition)
+	query := fmt.Sprintf(`
+		SELECT id, type, description, amount, category, payment_method, bank_details, customer_name, registered_by, registerer_name, created_at
+		FROM (
+			-- 1. Ventas POS (no canceladas)
+			SELECT 
+				s.id,
+				'sale'::text as type,
+				CASE 
+					WHEN TRIM(s.customer_name) != '' AND LOWER(s.customer_name) != 'cliente general' 
+					THEN 'Venta POS - ' || s.customer_name 
+					ELSE 'Venta POS - Cliente General' 
+				END as description,
+				s.total as amount,
+				'Venta POS'::text as category,
+				COALESCE(s.payment_method, 'efectivo') as payment_method,
+				COALESCE(s.bank_details, '') as bank_details,
+				COALESCE(s.customer_name, 'Cliente General') as customer_name,
+				s.sold_by as registered_by,
+				COALESCE(NULLIF(s.sold_by_name, ''), u.username, 'Personal') as registerer_name,
+				s.created_at
+			FROM sales s
+			LEFT JOIN users u ON s.sold_by = u.id
+			LEFT JOIN comandas c ON c.sale_id = s.id
+			WHERE (c.status IS NULL OR c.status != 'cancelado') AND s.total > 0 AND %s
+
+			UNION ALL
+
+			-- 2. Ingresos manuales extraordinarios
+			SELECT 
+				i.id,
+				'manual'::text as type,
+				i.description,
+				i.amount,
+				i.category,
+				i.payment_method,
+				''::text as bank_details,
+				''::text as customer_name,
+				i.registered_by,
+				COALESCE(u.username, 'Personal') as registerer_name,
+				i.created_at
+			FROM incomes i
+			LEFT JOIN users u ON i.registered_by = u.id
+			WHERE %s
+		) all_incomes
+		ORDER BY created_at DESC
+	`, timeCondSales, timeCondIncomes)
 
 	rows, err := h.DB.Query(r.Context(), query)
 	if err != nil {
-		log.Printf("error consultando ingresos manuales: %v", err)
-		http.Error(w, "error consultando ingresos", http.StatusInternalServerError)
+		log.Printf("error consultando ingresos consolidados: %v", err)
+		http.Error(w, fmt.Sprintf("error consultando ingresos: %v", err), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -565,10 +570,10 @@ func (h *AccountingHandler) ListIncomes(w http.ResponseWriter, r *http.Request) 
 	var incomes []models.Income
 	for rows.Next() {
 		var inc models.Income
-		if err := rows.Scan(&inc.ID, &inc.Description, &inc.Amount, &inc.Category, &inc.PaymentMethod,
-			&inc.RegisteredBy, &inc.RegistererName, &inc.CreatedAt); err != nil {
-			log.Printf("error leyendo ingresos: %v", err)
-			http.Error(w, "error leyendo ingresos", http.StatusInternalServerError)
+		if err := rows.Scan(&inc.ID, &inc.Type, &inc.Description, &inc.Amount, &inc.Category, &inc.PaymentMethod,
+			&inc.BankDetails, &inc.CustomerName, &inc.RegisteredBy, &inc.RegistererName, &inc.CreatedAt); err != nil {
+			log.Printf("error leyendo ingresos consolidados: %v", err)
+			http.Error(w, fmt.Sprintf("error leyendo ingresos: %v", err), http.StatusInternalServerError)
 			return
 		}
 		incomes = append(incomes, inc)

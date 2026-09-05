@@ -21,14 +21,17 @@ type Expense struct {
 }
 
 type Income struct {
-	ID             uuid.UUID `json:"id"`
-	Description    string    `json:"description"`
-	Amount         float64   `json:"amount"`
-	Category       string    `json:"category"`
-	PaymentMethod  string    `json:"payment_method"`
-	RegisteredBy   uuid.UUID `json:"registered_by"`
-	RegistererName string    `json:"registerer_name,omitempty"`
-	CreatedAt      time.Time `json:"created_at"`
+	ID             uuid.UUID  `json:"id"`
+	Type           string     `json:"type"` // "sale" or "manual"
+	Description    string     `json:"description"`
+	Amount         float64    `json:"amount"`
+	Category       string     `json:"category"`
+	PaymentMethod  string     `json:"payment_method"`
+	BankDetails    string     `json:"bank_details,omitempty"`
+	CustomerName   string     `json:"customer_name,omitempty"`
+	RegisteredBy   *uuid.UUID `json:"registered_by,omitempty"`
+	RegistererName string     `json:"registerer_name,omitempty"`
+	CreatedAt      time.Time  `json:"created_at"`
 }
 
 type CustomerStat struct {
@@ -75,6 +78,7 @@ type AccountingSummary struct {
 	IncomeByPaymentMethod map[string]float64 `json:"income_by_payment_method"`
 	ExpensesByCategory    map[string]float64 `json:"expenses_by_category"`
 	SalesCount            int                `json:"sales_count"`
+	IncomesCount          int                `json:"incomes_count"`
 	ExpensesCount         int                `json:"expenses_count"`
 	MonthlyStats          *MonthlyStats      `json:"monthly_stats,omitempty"`
 }
