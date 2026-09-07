@@ -7,10 +7,27 @@ import {
   ExternalLink,
   Maximize2,
   Printer,
-  CreditCard,
-  Instagram
+  CreditCard
 } from 'lucide-react'
 import Modal from '../components/Modal'
+
+function InstagramIcon({ className = 'w-4 h-4' }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  )
+}
 
 export default function QRCodes() {
   const [zoomModal, setZoomModal] = useState(null)
@@ -35,7 +52,7 @@ export default function QRCodes() {
       handle: '@TOFFEE_CTGG',
       src: '/qr-instagram.jpg',
       badge: 'Redes Sociales',
-      icon: Instagram,
+      icon: InstagramIcon,
       badgeBg: 'bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900',
       externalUrl: 'https://instagram.com/TOFFEE_CTGG'
     }
