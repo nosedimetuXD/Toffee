@@ -555,20 +555,40 @@ export default function SalesHistory() {
         <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-bold text-[10px] tracking-wider">
+              <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] font-black uppercase text-[10px] tracking-wider">
                 <tr>
-                  <th className="px-5 py-3.5">Fecha / ID</th>
-                  <th className="px-4 py-3.5">Cliente & Vendedor</th>
-                  <th className="px-4 py-3.5">Método de Pago</th>
-                  <th className="px-4 py-3.5">Subtotal / Descuento</th>
-                  <th className="px-4 py-3.5">Total / Cobrado</th>
-                  <th className="px-4 py-3.5">Estado / Deuda</th>
-                  <th className="px-5 py-3.5 text-right">Acciones</th>
+                  <th className="p-4 whitespace-nowrap">Fecha & Hora</th>
+                  <th className="p-4">Cliente</th>
+                  <th className="p-4">Productos</th>
+                  <th className="p-4 whitespace-nowrap">Pago / Estado</th>
+                  <th className="p-4 text-right whitespace-nowrap">Total</th>
+                  <th className="p-4 text-right whitespace-nowrap">Cobrado</th>
+                  <th className="p-4 text-right whitespace-nowrap">Pendiente</th>
+                  <th className="p-4 text-center whitespace-nowrap">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#D4B28E]/40 dark:divide-[#9F6839]/20">
                 {filteredSales.map((sale) => {
                   const isCancelled = sale.status === 'cancelado' || sale.status === 'cancelada'
+                  const paid =
+                    sale.paid_amount !== undefined && sale.paid_amount !== null
+                      ? Number(sale.paid_amount)
+                      : sale.payment_method === 'credito'
+                      ? 0
+                      : Number(sale.total)
+
+                  const pending =
+                    sale.pending_amount !== undefined && sale.pending_amount !== null
+                      ? Number(sale.pending_amount)
+                      : sale.payment_method === 'credito'
+                      ? Number(sale.total)
+                      : 0
+
+                  const isFullyPaid = !isCancelled && pending === 0
+                  const isPartial = !isCancelled && paid > 0 && pending > 0
+                  const isFullDebt = !isCancelled && (sale.payment_method === 'credito' || (paid === 0 && pending > 0))
+                  const itemsList = (sale.items || []).map((it) => `${it.quantity}x ${it.product_name}`).join(', ')
+
                   return (
                     <tr
                       key={sale.id}
@@ -576,95 +596,107 @@ export default function SalesHistory() {
                         isCancelled ? 'opacity-60 bg-[#FEE4D7]/10 dark:bg-[#150904]/40' : ''
                       }`}
                     >
-                      <td className="px-5 py-4">
-                        <div className="font-bold text-[#432414] dark:text-[#FEE4D7]">
-                          {new Date(sale.created_at).toLocaleDateString('es-CO')}
-                        </div>
-                        <div className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] font-mono">
-                          {new Date(sale.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })} • #{sale.id.substring(0, 8)}
-                        </div>
-                      </td>
-
-                      <td className="px-4 py-4">
-                        <div className="font-extrabold text-[#432414] dark:text-[#FEE4D7]">
-                          {sale.customer_name || 'Cliente General'}
-                        </div>
-                        <div className="text-[11px] text-[#9F6839] dark:text-[#DABA8C]">
-                          Vendido por: <strong>{sale.sold_by_username || 'Personal'}</strong>
-                        </div>
-                      </td>
-
-                      <td className="px-4 py-4">
-                        <span className="inline-block px-2.5 py-1 rounded-xl bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] font-bold uppercase text-[10px] border border-[#D4B28E]/60 dark:border-[#9F6839]/30">
-                          {sale.payment_method}
-                        </span>
-                        {sale.bank_details && (
-                          <div className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] truncate max-w-xs mt-0.5">
-                            {sale.bank_details}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="px-4 py-4">
-                        <div className="text-[#432414] dark:text-[#FEE4D7] font-medium">
-                          ${Number(sale.subtotal || sale.total).toLocaleString('es-CO')}
-                        </div>
-                        {(sale.discount_amount > 0 || sale.discount_percent > 0) && (
-                          <div className="text-red-600 dark:text-red-400 text-[11px] font-bold">
-                            -${Number(sale.discount_amount).toLocaleString('es-CO')} ({sale.discount_percent}%)
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="px-4 py-4">
-                        <span className="text-sm font-black text-[#432414] dark:text-[#FEE4D7]">
-                          ${Number(sale.total).toLocaleString('es-CO')}
-                        </span>
-                        {Number(sale.pending_amount) > 0 && (
-                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-                            Cobrado: ${Number(sale.paid_amount || 0).toLocaleString('es-CO')}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="px-4 py-4">
-                        {isCancelled ? (
-                          <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/40">
-                            Cancelada
+                      {/* Fecha & Hora */}
+                      <td className="p-4 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="font-black text-xs text-[#432414] dark:text-[#FEE4D7]">
+                            {new Date(sale.created_at).toLocaleDateString('es-CO', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
                           </span>
-                        ) : sale.payment_method === 'credito' || sale.payment_status === 'pending' ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-                            <AlertTriangle className="w-3 h-3 text-amber-600" />
-                            <span>A Crédito (${Number(sale.pending_amount || sale.total).toLocaleString('es-CO')})</span>
+                          <span className="font-bold text-[11px] text-[#9F6839] dark:text-[#DABA8C]">
+                            {new Date(sale.created_at).toLocaleTimeString('es-CO', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            })}
                           </span>
-                        ) : sale.payment_status === 'partial' || Number(sale.pending_amount) > 0 ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-orange-100 dark:bg-orange-950/50 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-800">
-                            <span>Parcial (Debe ${Number(sale.pending_amount).toLocaleString('es-CO')})</span>
+                        </div>
+                      </td>
+
+                      {/* Cliente */}
+                      <td
+                        className="p-4 font-black text-[#432414] dark:text-[#FEE4D7] max-w-[150px]"
+                        title={sale.customer_name || 'Cliente General'}
+                      >
+                        <div className="truncate">{sale.customer_name || 'Cliente General'}</div>
+                      </td>
+
+                      {/* Productos */}
+                      <td
+                        className="p-4 max-w-[220px] truncate font-medium text-[#432414]/80 dark:text-[#FEE4D7]/80"
+                        title={itemsList}
+                      >
+                        {itemsList || 'Sin detalle'}
+                      </td>
+
+                      {/* Pago / Estado */}
+                      <td className="p-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[10px] font-black uppercase text-[#432414] dark:text-[#FEE4D7]">
+                            {sale.payment_method}
+                          </span>
+                          {isCancelled ? (
+                            <span className="w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300">
+                              Cancelada
+                            </span>
+                          ) : isFullyPaid ? (
+                            <span className="w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+                              Pagado
+                            </span>
+                          ) : isPartial ? (
+                            <span className="w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
+                              Abono Parcial
+                            </span>
+                          ) : (
+                            <span className="w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400">
+                              Crédito
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Total */}
+                      <td className="p-4 text-right font-black text-[#432414] dark:text-[#FEE4D7] whitespace-nowrap">
+                        ${Number(sale.total).toLocaleString('es-CO')}
+                      </td>
+
+                      {/* Cobrado */}
+                      <td className="p-4 text-right font-black text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                        ${Number(paid).toLocaleString('es-CO')}
+                      </td>
+
+                      {/* Pendiente */}
+                      <td className="p-4 text-right whitespace-nowrap">
+                        {pending > 0 ? (
+                          <span className="font-black text-rose-600 dark:text-rose-400">
+                            ${Number(pending).toLocaleString('es-CO')}
                           </span>
                         ) : (
-                          <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40">
-                            Pagada
-                          </span>
+                          <span className="text-gray-400 dark:text-gray-500 font-bold">$0</span>
                         )}
                       </td>
 
-                      <td className="px-5 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {/* Ver Comprobante */}
+                      {/* Acciones */}
+                      <td className="p-4 text-center whitespace-nowrap">
+                        <div className="inline-flex items-center justify-center gap-1.5">
+                          {/* Ver / Imprimir Comprobante */}
                           <button
                             onClick={() => handleOpenReceiptModal(sale)}
                             title="Ver / Imprimir Comprobante"
-                            className="p-2 text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#2A150C] rounded-xl transition-colors cursor-pointer"
+                            className="p-1.5 rounded-xl text-red-600 dark:text-amber-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
                           >
                             <Printer className="w-4 h-4" />
                           </button>
 
-                          {/* Cancelar Venta (Accesible para cualquier usuario) */}
+                          {/* Cancelar Venta */}
                           {!isCancelled && (
                             <button
                               onClick={() => handleCancelSale(sale)}
                               title="Cancelar Venta"
-                              className="p-2 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/40 rounded-xl transition-colors cursor-pointer"
+                              className="p-1.5 rounded-xl text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/40 transition-colors cursor-pointer"
                             >
                               <Ban className="w-4 h-4" />
                             </button>
@@ -675,7 +707,7 @@ export default function SalesHistory() {
                             <button
                               onClick={() => handleOpenEditSale(sale)}
                               title="Editar Venta (Dueño)"
-                              className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl transition-colors cursor-pointer"
+                              className="p-1.5 rounded-xl text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
@@ -686,7 +718,7 @@ export default function SalesHistory() {
                             <button
                               onClick={() => handleDeleteSale(sale)}
                               title="Eliminar Venta Definitivamente (Dueño)"
-                              className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
+                              className="p-1.5 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
