@@ -1115,19 +1115,19 @@ export default function Sales() {
         <Modal
           isOpen={isReceiptOpen}
           onClose={() => setIsReceiptOpen(false)}
-          title="¡Venta Registrada Exitosamente!"
+          title={`Ticket de Venta — Orden #${lastOrder.order_number || 'Generada'}`}
         >
           <div className="space-y-4 text-[#432414] dark:text-[#FEE4D7]">
-            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl flex items-center gap-3">
-              <div className="p-2.5 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-xl">
-                <CheckCircle2 className="w-6 h-6" />
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl flex items-center gap-2.5">
+              <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-xl shrink-0">
+                <CheckCircle2 className="w-5 h-5" />
               </div>
-              <div>
-                <h4 className="font-extrabold text-sm">
-                  Orden #{lastOrder.order_number || 'Generada'}
+              <div className="min-w-0">
+                <h4 className="font-extrabold text-xs text-emerald-900 dark:text-emerald-200">
+                  ¡Venta Registrada Exitosamente!
                 </h4>
-                <p className="text-xs text-[#9F6839] dark:text-[#DABA8C]">
-                  Comanda enviada a cocina. Total: <strong>${Number(lastOrder.total).toLocaleString('es-CO')}</strong>
+                <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
+                  Comanda enviada a cocina.
                 </p>
               </div>
             </div>
