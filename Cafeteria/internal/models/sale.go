@@ -28,6 +28,9 @@ type Sale struct {
 	DiscountAmount  float64    `json:"discount_amount"`
 	DiscountReason  string     `json:"discount_reason,omitempty"`
 	Total           float64    `json:"total"`
+	PaidAmount      float64    `json:"paid_amount"`
+	PendingAmount   float64    `json:"pending_amount"`
+	PaymentStatus   string     `json:"payment_status,omitempty"`
 	Status          string     `json:"status,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	Items           []SaleItem `json:"items,omitempty"`

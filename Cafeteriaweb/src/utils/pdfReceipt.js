@@ -9,9 +9,10 @@ export async function createReceiptPDF(order) {
   const items = order.items || []
   const itemsCount = items.length
   const hasDiscount = (order.discount_amount || 0) > 0 || (order.discount_percent || 0) > 0
+  const hasDebt = Number(order.pending_amount) > 0 || order.payment_method === 'credito'
 
   // Altura dinámica calculada según ítems y descuentos
-  const dynamicHeight = Math.max(160, 115 + itemsCount * 9 + (hasDiscount ? 15 : 0))
+  const dynamicHeight = Math.max(160, 115 + itemsCount * 9 + (hasDiscount ? 15 : 0) + (hasDebt ? 16 : 0))
 
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -131,7 +132,24 @@ export async function createReceiptPDF(order) {
   doc.setTextColor(67, 36, 20)
   doc.text('TOTAL:', 7, y + 1)
   doc.text(`$${Number(order.total || 0).toLocaleString('es-CO')}`, 73, y + 1, { align: 'right' })
-  y += 7
+  y += 6
+
+  if (hasDebt) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(16, 120, 60)
+    doc.text('Abonado hoy:', 7, y)
+    doc.text(`$${Number(order.paid_amount || 0).toLocaleString('es-CO')}`, 73, y, { align: 'right' })
+    y += 4
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.setTextColor(180, 50, 50)
+    doc.text('Saldo Pendiente (Deuda):', 7, y)
+    const pendingVal = Number(order.pending_amount || (order.payment_method === 'credito' ? order.total : 0))
+    doc.text(`$${pendingVal.toLocaleString('es-CO')}`, 73, y, { align: 'right' })
+    y += 5
+  }
 
   // 7. Pie de página
   doc.setDrawColor(220, 200, 190)
@@ -198,13 +216,21 @@ export function shareReceiptPDFToWhatsApp(order, phone = '') {
       discountInfo = `\n*Descuento:* -$${Number(order.discount_amount).toLocaleString('es-CO')}`
     }
 
+    const hasDebt = Number(order.pending_amount) > 0 || order.payment_method === 'credito'
+    let debtInfo = ''
+    if (hasDebt) {
+      const pendingVal = Number(order.pending_amount || (order.payment_method === 'credito' ? order.total : 0))
+      debtInfo = `\n*Abonado:* $${Number(order.paid_amount || 0).toLocaleString('es-CO')}\n*SALDO PENDIENTE (DEUDA):* *$${pendingVal.toLocaleString('es-CO')}*`
+    }
+
     const message = `*COMPROBANTE DE COMPRA - TOFFEE COFFEE*\n\n` +
       `*Cliente:* ${order.customer_name || 'Cliente General'}\n` +
       `*Fecha:* ${new Date(order.created_at || Date.now()).toLocaleString('es-CO')}\n` +
       `*Método de Pago:* ${(order.payment_method || 'Efectivo').toUpperCase()}${order.bank_details ? ` (${order.bank_details})` : ''}\n\n` +
       `*Detalle del Pedido:*\n${itemsText}\n` +
       `${discountInfo}\n` +
-      `*TOTAL PAGADO:* *$${Number(order.total || 0).toLocaleString('es-CO')}*\n\n` +
+      `*TOTAL:* *$${Number(order.total || 0).toLocaleString('es-CO')}*` +
+      `${debtInfo}\n\n` +
       `¡Muchas gracias por tu visita! Esperamos que disfrutes tu café.`
 
     const cleanPhone = (phone || '').replace(/\D/g, '')

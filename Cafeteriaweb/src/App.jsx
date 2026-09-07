@@ -13,6 +13,7 @@ import Tasks from './pages/Tasks'
 import Recipe from './pages/Recipe'
 import Profile from './pages/Profile'
 import Customers from './pages/Customers'
+import QRCodes from './pages/QRCodes'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
 
@@ -56,6 +57,7 @@ function AppRoutes() {
         <Route path="products" element={<Products />} />
         <Route path="tasks" element={<Tasks />} />
         <Route path="customers" element={<Customers />} />
+        <Route path="qrs" element={<QRCodes />} />
         <Route path="profile" element={<Profile />} />
 
         <Route

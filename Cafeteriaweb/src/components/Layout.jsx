@@ -19,7 +19,8 @@ import {
   Sun,
   Moon,
   Menu,
-  X
+  X,
+  QrCode
 } from 'lucide-react'
 import { ToffeeMarblePattern } from './ToffeeMarblePattern'
 
@@ -91,7 +92,8 @@ export default function Layout() {
         { to: '/', label: 'Ventas', icon: ShoppingBag, end: true, show: true },
         { to: '/sales/history', label: 'Historial Ventas', icon: FileText, show: true },
         { to: '/comandas', label: 'Comandas', icon: UtensilsCrossed, show: true },
-        { to: '/customers', label: 'Clientes', icon: Users, show: true }
+        { to: '/customers', label: 'Clientes', icon: Users, show: true },
+        { to: '/qrs', label: 'Códigos QR', icon: QrCode, show: true }
       ]
     },
     {

@@ -38,8 +38,12 @@ func NewSaleHandler(db *pgxpool.Pool, hub *events.Hub) *SaleHandler {
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(10,2) DEFAULT 0`)
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS discount_reason TEXT DEFAULT ''`)
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_id UUID`)
+	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS paid_amount NUMERIC(10,2) DEFAULT 0`)
+	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS pending_amount NUMERIC(10,2) DEFAULT 0`)
+	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) DEFAULT 'paid'`)
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ALTER COLUMN sold_by DROP NOT NULL`)
 	_, _ = db.Exec(ctx, `UPDATE sales SET subtotal = total WHERE (subtotal = 0 OR subtotal IS NULL) AND total > 0`)
+	_, _ = db.Exec(ctx, `UPDATE sales SET paid_amount = total, pending_amount = 0, payment_status = 'paid' WHERE (paid_amount = 0 OR paid_amount IS NULL) AND (pending_amount = 0 OR pending_amount IS NULL) AND total > 0`)
 
 	_, _ = db.Exec(ctx, `ALTER TABLE sale_items ADD COLUMN IF NOT EXISTS product_name TEXT DEFAULT ''`)
 	_, _ = db.Exec(ctx, `UPDATE sale_items si SET product_name = p.name FROM products p WHERE si.product_id = p.id AND (si.product_name IS NULL OR si.product_name = '')`)
@@ -57,13 +61,14 @@ func NewSaleHandler(db *pgxpool.Pool, hub *events.Hub) *SaleHandler {
 	return &SaleHandler{DB: db, Hub: hub}
 }
 
-// GET /sales?period=today|week|month|all&start_date=...&end_date=...&year=...&month_num=...
+// GET /sales?period=today|week|month|all&start_date=...&end_date=...&year=...&month_num=...&debt_status=...
 func (h *SaleHandler) List(w http.ResponseWriter, r *http.Request) {
 	period := r.URL.Query().Get("period")
 	startDate := strings.TrimSpace(r.URL.Query().Get("start_date"))
 	endDate := strings.TrimSpace(r.URL.Query().Get("end_date"))
 	yearParam := strings.TrimSpace(r.URL.Query().Get("year"))
 	monthParam := strings.TrimSpace(r.URL.Query().Get("month_num"))
+	debtStatus := strings.TrimSpace(r.URL.Query().Get("debt_status"))
 
 	roleVal := r.Context().Value(custommw.ContextRole)
 	var userRole models.UserRole
@@ -75,7 +80,9 @@ func (h *SaleHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	isOwnerOrAdmin := userRole == models.RoleOwner || userRole == models.RoleAdmin || string(userRole) == "dueño" || string(userRole) == "administrador"
 	if !isOwnerOrAdmin && userRole != "" {
-		period = "week"
+		if period != "today" && period != "week" {
+			period = "today"
+		}
 		startDate = ""
 		endDate = ""
 		yearParam = ""
@@ -111,9 +118,19 @@ func (h *SaleHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var timeCondition string
+	var conditions []string
 	if rawCond != "" {
-		timeCondition = "WHERE " + rawCond
+		conditions = append(conditions, rawCond)
+	}
+	if debtStatus == "debt" {
+		conditions = append(conditions, "s.pending_amount > 0")
+	} else if debtStatus == "paid" {
+		conditions = append(conditions, "s.pending_amount = 0")
+	}
+
+	var whereClause string
+	if len(conditions) > 0 {
+		whereClause = "WHERE " + strings.Join(conditions, " AND ")
 	}
 
 	query := fmt.Sprintf(`SELECT s.id, COALESCE(s.sold_by, '00000000-0000-0000-0000-000000000000'::uuid), 
@@ -126,7 +143,11 @@ func (h *SaleHandler) List(w http.ResponseWriter, r *http.Request) {
 		        COALESCE(s.discount_percent, 0),
 		        COALESCE(s.discount_amount, 0),
 		        COALESCE(s.discount_reason, ''),
-		        s.total, COALESCE(c.status, 'completada') AS status, s.created_at,
+		        s.total,
+		        COALESCE(s.paid_amount, s.total),
+		        COALESCE(s.pending_amount, 0),
+		        COALESCE(s.payment_status, 'paid'),
+		        COALESCE(c.status, 'completada') AS status, s.created_at,
 		        COALESCE(
 		          (SELECT json_agg(json_build_object(
 		             'product_id', si.product_id,
@@ -140,7 +161,7 @@ func (h *SaleHandler) List(w http.ResponseWriter, r *http.Request) {
 		 LEFT JOIN users u ON s.sold_by = u.id
 		 LEFT JOIN comandas c ON c.sale_id = s.id
 		 %s
-		 ORDER BY s.created_at DESC`, timeCondition)
+		 ORDER BY s.created_at DESC`, whereClause)
 
 	rows, err := h.DB.Query(r.Context(), query)
 	if err != nil {
@@ -157,7 +178,8 @@ func (h *SaleHandler) List(w http.ResponseWriter, r *http.Request) {
 		if err := rows.Scan(&s.ID, &s.SoldBy, &s.SoldByUsername, &s.CustomerID, &s.CustomerName,
 			&s.PaymentMethod, &s.CashAmount, &s.TransferAmount, &s.BankDetails,
 			&s.Subtotal, &s.DiscountPercent, &s.DiscountAmount, &s.DiscountReason,
-			&s.Total, &s.Status, &s.CreatedAt, &itemsJSON); err != nil {
+			&s.Total, &s.PaidAmount, &s.PendingAmount, &s.PaymentStatus,
+			&s.Status, &s.CreatedAt, &itemsJSON); err != nil {
 			log.Printf("error leyendo ventas: %v", err)
 			http.Error(w, "error leyendo ventas", http.StatusInternalServerError)
 			return
@@ -196,14 +218,18 @@ func (h *SaleHandler) Get(w http.ResponseWriter, r *http.Request) {
 		        COALESCE(s.discount_percent, 0),
 		        COALESCE(s.discount_amount, 0),
 		        COALESCE(s.discount_reason, ''),
-		        s.total, s.created_at 
+		        s.total,
+		        COALESCE(s.paid_amount, s.total),
+		        COALESCE(s.pending_amount, 0),
+		        COALESCE(s.payment_status, 'paid'),
+		        s.created_at 
 		 FROM sales s
 		 LEFT JOIN users u ON s.sold_by = u.id
 		 WHERE s.id = $1`, id,
 	).Scan(&s.ID, &s.SoldBy, &s.SoldByUsername, &s.CustomerID, &s.CustomerName,
 		&s.PaymentMethod, &s.CashAmount, &s.TransferAmount, &s.BankDetails,
 		&s.Subtotal, &s.DiscountPercent, &s.DiscountAmount, &s.DiscountReason,
-		&s.Total, &s.CreatedAt)
+		&s.Total, &s.PaidAmount, &s.PendingAmount, &s.PaymentStatus, &s.CreatedAt)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		http.Error(w, "venta no encontrada", http.StatusNotFound)
@@ -245,6 +271,7 @@ type createSaleRequest struct {
 	CustomerID      *uuid.UUID `json:"customer_id"`
 	CustomerName    string     `json:"customer_name"`
 	PaymentMethod   string     `json:"payment_method"`
+	PaidAmount      *float64   `json:"paid_amount"`
 	CashAmount      float64    `json:"cash_amount"`
 	TransferAmount  float64    `json:"transfer_amount"`
 	BankDetails     string     `json:"bank_details"`
@@ -297,7 +324,7 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if paymentMethod == "" {
 		paymentMethod = "efectivo"
 	}
-	if paymentMethod != "efectivo" && paymentMethod != "transferencia" && paymentMethod != "mixto" {
+	if paymentMethod != "efectivo" && paymentMethod != "transferencia" && paymentMethod != "mixto" && paymentMethod != "credito" {
 		http.Error(w, "método de pago inválido", http.StatusBadRequest)
 		return
 	}
@@ -368,17 +395,48 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	total := math.Max(0, subtotal-discountAmount)
 
+	paidAmount := total
+	if req.PaidAmount != nil {
+		paidAmount = *req.PaidAmount
+		if paidAmount < 0 {
+			paidAmount = 0
+		}
+		if paidAmount > total {
+			paidAmount = total
+		}
+	} else if paymentMethod == "credito" {
+		paidAmount = 0
+	}
+	pendingAmount := math.Max(0, total-paidAmount)
+
+	if pendingAmount > 0 && req.CustomerID == nil {
+		http.Error(w, "debe seleccionar un cliente registrado para ventas a crédito o con saldo pendiente", http.StatusBadRequest)
+		return
+	}
+
+	paymentStatus := "paid"
+	if pendingAmount > 0 {
+		if paidAmount > 0 {
+			paymentStatus = "partial"
+		} else {
+			paymentStatus = "pending"
+		}
+	}
+
 	cashAmount := req.CashAmount
 	transferAmount := req.TransferAmount
 	if paymentMethod == "efectivo" {
-		cashAmount = total
+		cashAmount = paidAmount
 		transferAmount = 0
 	} else if paymentMethod == "transferencia" {
 		cashAmount = 0
-		transferAmount = total
+		transferAmount = paidAmount
+	} else if paymentMethod == "credito" {
+		cashAmount = 0
+		transferAmount = 0
 	} else if paymentMethod == "mixto" {
-		if cashAmount+transferAmount < total {
-			http.Error(w, "el pago total en mixto es inferior al monto de la venta", http.StatusBadRequest)
+		if cashAmount+transferAmount < paidAmount {
+			http.Error(w, "el pago total en mixto es inferior al monto abonado", http.StatusBadRequest)
 			return
 		}
 	}
@@ -438,9 +496,9 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var saleID uuid.UUID
 	err = tx.QueryRow(ctx,
-		`INSERT INTO sales (sold_by, sold_by_name, customer_id, customer_name, payment_method, cash_amount, transfer_amount, bank_details, subtotal, discount_percent, discount_amount, discount_reason, total, created_at) 
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now()) RETURNING id`,
-		soldBy, soldByName, req.CustomerID, customerName, paymentMethod, cashAmount, transferAmount, strings.TrimSpace(req.BankDetails), subtotal, discountPercent, discountAmount, strings.TrimSpace(req.DiscountReason), total,
+		`INSERT INTO sales (sold_by, sold_by_name, customer_id, customer_name, payment_method, cash_amount, transfer_amount, bank_details, subtotal, discount_percent, discount_amount, discount_reason, total, paid_amount, pending_amount, payment_status, created_at) 
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, now()) RETURNING id`,
+		soldBy, soldByName, req.CustomerID, customerName, paymentMethod, cashAmount, transferAmount, strings.TrimSpace(req.BankDetails), subtotal, discountPercent, discountAmount, strings.TrimSpace(req.DiscountReason), total, paidAmount, pendingAmount, paymentStatus,
 	).Scan(&saleID)
 	if err != nil {
 		log.Printf("error creando venta: %v", err)
@@ -522,7 +580,19 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		"subtotal":        subtotal,
 		"discount_amount": discountAmount,
 		"total":           total,
+		"paid_amount":     paidAmount,
+		"pending_amount":  pendingAmount,
+		"payment_status":  paymentStatus,
 	})
+
+	if req.CustomerID != nil {
+		var newDebt float64
+		_ = h.DB.QueryRow(ctx, `SELECT COALESCE(SUM(pending_amount), 0) FROM sales WHERE customer_id = $1 AND status != 'cancelada'`, req.CustomerID).Scan(&newDebt)
+		h.Hub.Publish("customer_updated", map[string]interface{}{
+			"id":         req.CustomerID,
+			"total_debt": newDebt,
+		})
+	}
 
 	h.Hub.Publish("comanda_created", map[string]interface{}{
 		"id":            comandaID,
@@ -545,6 +615,9 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		"subtotal":        subtotal,
 		"discount_amount": discountAmount,
 		"total":           total,
+		"paid_amount":     paidAmount,
+		"pending_amount":  pendingAmount,
+		"payment_status":  paymentStatus,
 	})
 }
 
@@ -658,14 +731,39 @@ func (h *SaleHandler) Update(w http.ResponseWriter, r *http.Request) {
 		paymentMethod = "efectivo"
 	}
 
+	paidAmount := total
+	if req.PaidAmount != nil {
+		paidAmount = *req.PaidAmount
+		if paidAmount < 0 {
+			paidAmount = 0
+		}
+		if paidAmount > total {
+			paidAmount = total
+		}
+	} else if paymentMethod == "credito" {
+		paidAmount = 0
+	}
+	pendingAmount := math.Max(0, total-paidAmount)
+	paymentStatus := "paid"
+	if pendingAmount > 0 {
+		if paidAmount > 0 {
+			paymentStatus = "partial"
+		} else {
+			paymentStatus = "pending"
+		}
+	}
+
 	cashAmount := req.CashAmount
 	transferAmount := req.TransferAmount
 	if paymentMethod == "efectivo" {
-		cashAmount = total
+		cashAmount = paidAmount
 		transferAmount = 0
 	} else if paymentMethod == "transferencia" {
 		cashAmount = 0
-		transferAmount = total
+		transferAmount = paidAmount
+	} else if paymentMethod == "credito" {
+		cashAmount = 0
+		transferAmount = 0
 	}
 
 	for _, item := range resolved {
@@ -690,9 +788,10 @@ func (h *SaleHandler) Update(w http.ResponseWriter, r *http.Request) {
 	_, err = tx.Exec(ctx, `
 		UPDATE sales
 		SET customer_id = $1, customer_name = $2, payment_method = $3, cash_amount = $4, transfer_amount = $5,
-		    bank_details = $6, subtotal = $7, discount_percent = $8, discount_amount = $9, discount_reason = $10, total = $11
-		WHERE id = $12
-	`, req.CustomerID, customerName, paymentMethod, cashAmount, transferAmount, strings.TrimSpace(req.BankDetails), subtotal, discountPercent, discountAmount, strings.TrimSpace(req.DiscountReason), total, saleID)
+		    bank_details = $6, subtotal = $7, discount_percent = $8, discount_amount = $9, discount_reason = $10, total = $11,
+		    paid_amount = $12, pending_amount = $13, payment_status = $14
+		WHERE id = $15
+	`, req.CustomerID, customerName, paymentMethod, cashAmount, transferAmount, strings.TrimSpace(req.BankDetails), subtotal, discountPercent, discountAmount, strings.TrimSpace(req.DiscountReason), total, paidAmount, pendingAmount, paymentStatus, saleID)
 
 	if err != nil {
 		log.Printf("error actualizando venta: %v", err)
@@ -726,7 +825,21 @@ func (h *SaleHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Hub.Publish("sale_updated", map[string]interface{}{"id": saleID, "total": total})
+	h.Hub.Publish("sale_updated", map[string]interface{}{
+		"id":             saleID,
+		"total":          total,
+		"paid_amount":    paidAmount,
+		"pending_amount": pendingAmount,
+		"payment_status": paymentStatus,
+	})
+	if req.CustomerID != nil {
+		var newDebt float64
+		_ = h.DB.QueryRow(ctx, `SELECT COALESCE(SUM(pending_amount), 0) FROM sales WHERE customer_id = $1 AND status != 'cancelada'`, req.CustomerID).Scan(&newDebt)
+		h.Hub.Publish("customer_updated", map[string]interface{}{
+			"id":         req.CustomerID,
+			"total_debt": newDebt,
+		})
+	}
 	h.Hub.Publish("inventory_updated", map[string]interface{}{"action": "sale_edited"})
 
 	w.Header().Set("Content-Type", "application/json")
@@ -736,6 +849,9 @@ func (h *SaleHandler) Update(w http.ResponseWriter, r *http.Request) {
 		"subtotal":        subtotal,
 		"discount_amount": discountAmount,
 		"total":           total,
+		"paid_amount":     paidAmount,
+		"pending_amount":  pendingAmount,
+		"payment_status":  paymentStatus,
 	})
 }
 
@@ -756,6 +872,9 @@ func (h *SaleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback(ctx)
+
+	var customerID *uuid.UUID
+	_ = tx.QueryRow(ctx, `SELECT customer_id FROM sales WHERE id = $1`, saleID).Scan(&customerID)
 
 	var status string
 	_ = tx.QueryRow(ctx, `SELECT COALESCE(status, 'completada') FROM comandas WHERE sale_id = $1`, saleID).Scan(&status)
@@ -810,6 +929,15 @@ func (h *SaleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		log.Printf("error confirmando eliminación: %v", err)
 		http.Error(w, "error interno", http.StatusInternalServerError)
 		return
+	}
+
+	if customerID != nil {
+		var newDebt float64
+		_ = h.DB.QueryRow(r.Context(), `SELECT COALESCE(SUM(pending_amount), 0) FROM sales WHERE customer_id = $1 AND status != 'cancelada'`, customerID).Scan(&newDebt)
+		h.Hub.Publish("customer_updated", map[string]interface{}{
+			"id":         customerID,
+			"total_debt": newDebt,
+		})
 	}
 
 	h.Hub.Publish("sale_deleted", map[string]string{"id": idStr})

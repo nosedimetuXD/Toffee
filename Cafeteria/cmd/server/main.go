@@ -85,6 +85,8 @@ func main() {
 		// CRM de Clientes accesible para todos los usuarios
 		r.Get("/customers", customerHandler.List)
 		r.Get("/customers/{id}", customerHandler.Get)
+		r.Get("/customers/{id}/account", customerHandler.GetAccount)
+		r.Post("/customers/{id}/payments", customerHandler.CreatePayment)
 		r.Post("/customers", customerHandler.Create)
 		r.Put("/customers/{id}", customerHandler.Update)
 		r.Delete("/customers/{id}", customerHandler.Delete)

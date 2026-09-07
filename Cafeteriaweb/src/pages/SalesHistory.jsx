@@ -18,7 +18,8 @@ import {
   DollarSign,
   ShoppingBag,
   TrendingUp,
-  FileSpreadsheet
+  FileSpreadsheet,
+  AlertTriangle
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { exportSalesToCSV, exportSalesToExcel } from '../utils/csvExport'
@@ -75,8 +76,9 @@ export default function SalesHistory() {
   // Filtros de Fecha
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('preset')
-  const [displayLabel, setDisplayLabel] = useState(isEmployee ? 'Esta Semana' : 'Histórico Total')
-  const [period, setPeriod] = useState(isEmployee ? 'week' : 'all')
+  const [displayLabel, setDisplayLabel] = useState(isEmployee ? 'Hoy' : 'Histórico Total')
+  const [period, setPeriod] = useState(isEmployee ? 'today' : 'all')
+  const [debtStatusFilter, setDebtStatusFilter] = useState('all') // 'all' | 'debt' | 'paid'
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [startDate, setStartDate] = useState('')
@@ -87,14 +89,15 @@ export default function SalesHistory() {
     setPageError('')
     try {
       let queryStr = ''
+      const targetPeriod = params.period || period
       if (isEmployee) {
-        queryStr = 'period=week'
+        queryStr = `period=${targetPeriod === 'week' ? 'week' : 'today'}`
       } else if (params.startDate && params.endDate) {
         queryStr = `start_date=${params.startDate}&end_date=${params.endDate}`
       } else if (params.year && params.monthNum) {
         queryStr = `year=${params.year}&month_num=${params.monthNum}`
       } else {
-        queryStr = `period=${params.period || period}`
+        queryStr = `period=${targetPeriod}`
       }
 
       const data = await api.get(`/sales?${queryStr}`)
@@ -108,9 +111,9 @@ export default function SalesHistory() {
 
   useEffect(() => {
     if (isEmployee) {
-      setPeriod('week')
-      setDisplayLabel('Esta Semana')
-      loadSales({ period: 'week' })
+      setPeriod('today')
+      setDisplayLabel('Hoy')
+      loadSales({ period: 'today' })
     } else {
       loadSales({ period: 'all' })
     }
@@ -147,12 +150,21 @@ export default function SalesHistory() {
       const matchSearch =
         (s.customer_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         (s.sold_by_username || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (s.id || '').toLowerCase().includes(searchQuery.toLowerCase())
+        (String(s.order_number || '')).toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (String(s.id || '')).toLowerCase().includes(searchQuery.toLowerCase())
 
       const matchMethod = selectedMethod === 'Todos' || s.payment_method === selectedMethod
-      return matchSearch && matchMethod
+
+      let matchDebt = true
+      if (debtStatusFilter === 'debt') {
+        matchDebt = Number(s.pending_amount) > 0 || s.payment_status === 'pending' || s.payment_status === 'partial' || s.payment_method === 'credito'
+      } else if (debtStatusFilter === 'paid') {
+        matchDebt = Number(s.pending_amount) <= 0 && s.payment_status !== 'pending' && s.payment_status !== 'partial' && s.payment_method !== 'credito'
+      }
+
+      return matchSearch && matchMethod && matchDebt
     })
-  }, [sales, searchQuery, selectedMethod])
+  }, [sales, searchQuery, selectedMethod, debtStatusFilter])
 
   // Estadísticas Header
   const activeSales = useMemo(() => {
@@ -284,9 +296,37 @@ export default function SalesHistory() {
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           {/* Selector de Periodo */}
           {isEmployee ? (
-            <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] rounded-2xl text-xs font-bold border border-[#D4B28E]/70 dark:border-[#9F6839]/40 shadow-xs cursor-default select-none">
-              <Calendar className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
-              <span>Esta Semana (Últimos 7 días)</span>
+            <div className="inline-flex p-1 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl shadow-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setPeriod('today')
+                  setDisplayLabel('Hoy')
+                  loadSales({ period: 'today' })
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  period === 'today'
+                    ? 'bg-[#9F6839] text-white shadow-xs'
+                    : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50'
+                }`}
+              >
+                Hoy
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPeriod('week')
+                  setDisplayLabel('Esta Semana')
+                  loadSales({ period: 'week' })
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  period === 'week'
+                    ? 'bg-[#9F6839] text-white shadow-xs'
+                    : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50'
+                }`}
+              >
+                Esta Semana
+              </button>
             </div>
           ) : (
             <button
@@ -299,7 +339,7 @@ export default function SalesHistory() {
             </button>
           )}
 
-          {/* Exportar a Excel & CSV (Exclusivo Dueno / Administrador) */}
+          {/* Exportar a Excel & CSV (Exclusivo Dueño / Administrador) */}
           {!isEmployee && (
             <div className="inline-flex items-center p-1 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl shadow-xs">
               <button
@@ -375,8 +415,8 @@ export default function SalesHistory() {
         </div>
       </div>
 
-      {/* Buscador y Filtro por Método de Pago */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+      {/* Buscador y Filtros */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#9F6839] dark:text-[#DABA8C]" />
           <input
@@ -388,20 +428,58 @@ export default function SalesHistory() {
           />
         </div>
 
+        {/* Filtro por Método de Pago */}
         <div className="flex items-center gap-1.5 overflow-x-auto">
-          {['Todos', 'efectivo', 'transferencia', 'mixto'].map((m) => (
+          {['Todos', 'efectivo', 'transferencia', 'mixto', 'credito'].map((m) => (
             <button
               key={m}
               onClick={() => setSelectedMethod(m)}
-              className={`px-3.5 py-2.5 rounded-2xl text-xs font-bold capitalize whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-3 py-2 rounded-xl text-xs font-bold capitalize whitespace-nowrap transition-all cursor-pointer ${
                 selectedMethod === m
                   ? 'bg-[#9F6839] text-white shadow-xs'
                   : 'bg-white dark:bg-[#201009] text-[#432414] dark:text-[#FEE4D7] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A150C]'
               }`}
             >
-              {m}
+              {m === 'credito' ? 'Crédito' : m}
             </button>
           ))}
+        </div>
+
+        {/* Filtro por Estado de Deuda */}
+        <div className="inline-flex p-1 bg-white dark:bg-[#201009] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-xl shadow-xs shrink-0">
+          <button
+            type="button"
+            onClick={() => setDebtStatusFilter('all')}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              debtStatusFilter === 'all'
+                ? 'bg-[#9F6839] text-white shadow-xs'
+                : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50'
+            }`}
+          >
+            Todas
+          </button>
+          <button
+            type="button"
+            onClick={() => setDebtStatusFilter('debt')}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              debtStatusFilter === 'debt'
+                ? 'bg-red-600 text-white shadow-xs'
+                : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30'
+            }`}
+          >
+            Con Deuda
+          </button>
+          <button
+            type="button"
+            onClick={() => setDebtStatusFilter('paid')}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              debtStatusFilter === 'paid'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
+            }`}
+          >
+            Pagadas
+          </button>
         </div>
       </div>
 
@@ -427,8 +505,8 @@ export default function SalesHistory() {
                   <th className="px-4 py-3.5">Cliente & Vendedor</th>
                   <th className="px-4 py-3.5">Método de Pago</th>
                   <th className="px-4 py-3.5">Subtotal / Descuento</th>
-                  <th className="px-4 py-3.5">Total Pagado</th>
-                  <th className="px-4 py-3.5">Estado</th>
+                  <th className="px-4 py-3.5">Total / Cobrado</th>
+                  <th className="px-4 py-3.5">Estado / Deuda</th>
                   <th className="px-5 py-3.5 text-right">Acciones</th>
                 </tr>
               </thead>
@@ -486,18 +564,32 @@ export default function SalesHistory() {
                         <span className="text-sm font-black text-[#432414] dark:text-[#FEE4D7]">
                           ${Number(sale.total).toLocaleString('es-CO')}
                         </span>
+                        {Number(sale.pending_amount) > 0 && (
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                            Cobrado: ${Number(sale.paid_amount || 0).toLocaleString('es-CO')}
+                          </div>
+                        )}
                       </td>
 
                       <td className="px-4 py-4">
-                        <span
-                          className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                            isCancelled
-                              ? 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/40'
-                              : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40'
-                          }`}
-                        >
-                          {isCancelled ? 'Cancelada' : 'Completada'}
-                        </span>
+                        {isCancelled ? (
+                          <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/40">
+                            Cancelada
+                          </span>
+                        ) : sale.payment_method === 'credito' || sale.payment_status === 'pending' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                            <AlertTriangle className="w-3 h-3 text-amber-600" />
+                            <span>A Crédito (${Number(sale.pending_amount || sale.total).toLocaleString('es-CO')})</span>
+                          </span>
+                        ) : sale.payment_status === 'partial' || Number(sale.pending_amount) > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-orange-100 dark:bg-orange-950/50 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-800">
+                            <span>Parcial (Debe ${Number(sale.pending_amount).toLocaleString('es-CO')})</span>
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/40">
+                            Pagada
+                          </span>
+                        )}
                       </td>
 
                       <td className="px-5 py-4 text-right">
@@ -625,6 +717,27 @@ export default function SalesHistory() {
                 <span>Total:</span>
                 <span className="text-[#9F6839] dark:text-[#DABA8C]">${Number(selectedSale.total).toLocaleString('es-CO')}</span>
               </div>
+
+              {(Number(selectedSale.pending_amount || 0) > 0 || selectedSale.payment_method === 'credito') && (
+                <div className="pt-2 border-t border-dashed border-[#D4B28E]/50 dark:border-[#9F6839]/40 flex flex-col gap-1 text-xs">
+                  <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
+                    <span>Abonado:</span>
+                    <span>${Number(selectedSale.paid_amount || 0).toLocaleString('es-CO')}</span>
+                  </div>
+                  <div className="flex justify-between text-red-600 dark:text-red-400 font-bold">
+                    <span>Saldo pendiente:</span>
+                    <span>
+                      ${Number(
+                        selectedSale.pending_amount !== undefined
+                          ? selectedSale.pending_amount
+                          : selectedSale.payment_method === 'credito'
+                          ? selectedSale.total
+                          : 0
+                      ).toLocaleString('es-CO')}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">

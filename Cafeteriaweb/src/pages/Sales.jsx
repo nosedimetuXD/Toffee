@@ -25,7 +25,9 @@ import {
   ChevronDown,
   X,
   Phone,
-  UserCheck
+  UserCheck,
+  QrCode,
+  BadgeDollarSign
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { downloadReceiptPDF, printReceiptPDF, shareReceiptPDFToWhatsApp } from '../utils/pdfReceipt'
@@ -89,6 +91,9 @@ export default function Sales() {
 
   // Modal de cobro y cliente
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+  const [saleType, setSaleType] = useState('total') // 'total' | 'parcial' | 'credito'
+  const [partialPaidAmount, setPartialPaidAmount] = useState('')
+  const [isQRPopupOpen, setIsQRPopupOpen] = useState(false)
   const [customerName, setCustomerName] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('efectivo')
   const [cashAmount, setCashAmount] = useState('')
@@ -224,6 +229,19 @@ export default function Sales() {
     return Math.max(0, afterDiscount + tipAmount)
   }, [cartSubtotal, calculatedDiscountAmount, tipAmount])
 
+  const effectivePaidAmount = useMemo(() => {
+    if (saleType === 'credito') return 0
+    if (saleType === 'parcial') {
+      const val = Number(partialPaidAmount) || 0
+      return Math.min(cartTotal, Math.max(0, val))
+    }
+    return cartTotal
+  }, [saleType, partialPaidAmount, cartTotal])
+
+  const effectivePendingAmount = useMemo(() => {
+    return Math.max(0, cartTotal - effectivePaidAmount)
+  }, [cartTotal, effectivePaidAmount])
+
   function handleApplyPercent(pct) {
     if (discountPercent === pct) {
       setDiscountPercent(0)
@@ -289,6 +307,8 @@ export default function Sales() {
     setCustomerName('')
     setCustomerQuery('')
     setIsCustomerDropdownOpen(false)
+    setSaleType('total')
+    setPartialPaidAmount('')
     setPaymentMethod('efectivo')
     setCashAmount(String(cartTotal))
     setTransferAmount('0')
@@ -305,21 +325,64 @@ export default function Sales() {
     setIsCheckoutOpen(true)
   }
 
+  function handleSelectSaleType(type) {
+    setSaleType(type)
+    setCheckoutError('')
+    if (type === 'total') {
+      setPartialPaidAmount('')
+      if (paymentMethod === 'efectivo') {
+        setCashAmount(String(cartTotal))
+        setTransferAmount('0')
+      } else if (paymentMethod === 'transferencia') {
+        setCashAmount('0')
+        setTransferAmount(String(cartTotal))
+        setBankPayments([{ bank: 'Bre-B/Llave', amount: String(cartTotal) }])
+      }
+    } else if (type === 'parcial') {
+      const initial = Math.round(cartTotal / 2)
+      setPartialPaidAmount(String(initial))
+      if (paymentMethod === 'efectivo') {
+        setCashAmount(String(initial))
+        setTransferAmount('0')
+      } else if (paymentMethod === 'transferencia') {
+        setCashAmount('0')
+        setTransferAmount(String(initial))
+        setBankPayments([{ bank: 'Bre-B/Llave', amount: String(initial) }])
+      }
+    } else if (type === 'credito') {
+      setPartialPaidAmount('0')
+      setCashAmount('0')
+      setTransferAmount('0')
+    }
+  }
+
+  function handlePartialAmountChange(val) {
+    setPartialPaidAmount(val)
+    const num = Number(val) || 0
+    if (paymentMethod === 'efectivo') {
+      setCashAmount(String(num))
+    } else if (paymentMethod === 'transferencia') {
+      setTransferAmount(String(num))
+      setBankPayments([{ bank: 'Bre-B/Llave', amount: String(num) }])
+    }
+  }
+
   function handleSelectPaymentMethod(method) {
     setPaymentMethod(method)
     setCheckoutError('')
+    const targetAmount = saleType === 'parcial' ? (Number(partialPaidAmount) || 0) : cartTotal
     if (method === 'efectivo') {
-      setCashAmount(String(cartTotal))
+      setCashAmount(String(targetAmount))
       setTransferAmount('0')
     } else if (method === 'transferencia') {
       setCashAmount('0')
-      setTransferAmount(String(cartTotal))
-      setBankPayments([{ bank: 'Bre-B/Llave', amount: String(cartTotal) }])
+      setTransferAmount(String(targetAmount))
+      setBankPayments([{ bank: 'Bre-B/Llave', amount: String(targetAmount) }])
     } else if (method === 'mixto') {
-      const half = Math.round(cartTotal / 2)
+      const half = Math.round(targetAmount / 2)
       setCashAmount(String(half))
-      setTransferAmount(String(cartTotal - half))
-      setBankPayments([{ bank: 'Bre-B/Llave', amount: String(cartTotal - half) }])
+      setTransferAmount(String(targetAmount - half))
+      setBankPayments([{ bank: 'Bre-B/Llave', amount: String(targetAmount - half) }])
     }
   }
 
@@ -348,14 +411,24 @@ export default function Sales() {
     setSubmitting(true)
     setCheckoutError('')
 
+    if (effectivePendingAmount > 0 && !selectedCustomerId) {
+      setCheckoutError('Debes seleccionar un cliente registrado para ventas a crédito o con saldo pendiente.')
+      setSubmitting(false)
+      return
+    }
+
     const finalCustomer = customerName.trim() || 'Cliente General'
     let numCash = Number(cashAmount) || 0
     let numTransfer = Number(transferAmount) || 0
     let bankDetailsStr = ''
 
-    if (paymentMethod === 'efectivo') {
-      if (numCash < cartTotal) {
-        setCheckoutError(`El efectivo entregado ($${numCash.toLocaleString()}) es menor al total ($${cartTotal.toLocaleString()})`)
+    if (saleType === 'credito') {
+      numCash = 0
+      numTransfer = 0
+      bankDetailsStr = ''
+    } else if (paymentMethod === 'efectivo') {
+      if (numCash < effectivePaidAmount) {
+        setCheckoutError(`El efectivo entregado ($${numCash.toLocaleString()}) es menor al monto a pagar hoy ($${effectivePaidAmount.toLocaleString()})`)
         setSubmitting(false)
         return
       }
@@ -373,8 +446,8 @@ export default function Sales() {
       }
 
       numTransfer = bankPayments.reduce((sum, b) => sum + (Number(b.amount) || 0), 0)
-      if (numTransfer !== cartTotal) {
-        setCheckoutError(`La suma de transferencias ($${numTransfer.toLocaleString()}) debe ser igual al total ($${cartTotal.toLocaleString()}).`)
+      if (numTransfer !== effectivePaidAmount) {
+        setCheckoutError(`La suma de transferencias ($${numTransfer.toLocaleString()}) debe ser igual al monto a pagar hoy ($${effectivePaidAmount.toLocaleString()}).`)
         setSubmitting(false)
         return
       }
@@ -386,8 +459,8 @@ export default function Sales() {
         return
       }
       numTransfer = bankPayments.reduce((sum, b) => sum + (Number(b.amount) || 0), 0)
-      if (numCash + numTransfer < cartTotal) {
-        setCheckoutError(`El pago total ($${(numCash + numTransfer).toLocaleString()}) es inferior al monto a cobrar ($${cartTotal.toLocaleString()}).`)
+      if (numCash + numTransfer < effectivePaidAmount) {
+        setCheckoutError(`El pago total ($${(numCash + numTransfer).toLocaleString()}) es inferior al monto a cobrar ($${effectivePaidAmount.toLocaleString()}).`)
         setSubmitting(false)
         return
       }
@@ -398,9 +471,10 @@ export default function Sales() {
       const payload = {
         customer_id: selectedCustomerId || null,
         customer_name: finalCustomer,
-        payment_method: paymentMethod,
-        cash_amount: numCash,
-        transfer_amount: numTransfer,
+        payment_method: saleType === 'credito' ? 'credito' : paymentMethod,
+        paid_amount: effectivePaidAmount,
+        cash_amount: saleType === 'credito' ? 0 : numCash,
+        transfer_amount: saleType === 'credito' ? 0 : numTransfer,
         bank_details: bankDetailsStr,
         discount_percent: discountPercent,
         discount_amount: calculatedDiscountAmount,
@@ -424,7 +498,10 @@ export default function Sales() {
         id: response?.id || Date.now(),
         order_number: response?.order_number || '',
         customer_name: finalCustomer,
-        payment_method: paymentMethod,
+        payment_method: saleType === 'credito' ? 'credito' : paymentMethod,
+        paid_amount: response?.paid_amount ?? effectivePaidAmount,
+        pending_amount: response?.pending_amount ?? effectivePendingAmount,
+        payment_status: response?.payment_status || (effectivePendingAmount > 0 ? (effectivePaidAmount > 0 ? 'partial' : 'pending') : 'paid'),
         bank_details: bankDetailsStr,
         subtotal: cartSubtotal,
         discount_percent: discountPercent,
@@ -455,10 +532,10 @@ export default function Sales() {
   }
 
   const changeDue = useMemo(() => {
-    if (paymentMethod !== 'efectivo') return 0
+    if (saleType === 'credito' || paymentMethod !== 'efectivo') return 0
     const val = Number(cashAmount) || 0
-    return Math.max(0, val - cartTotal)
-  }, [paymentMethod, cashAmount, cartTotal])
+    return Math.max(0, val - effectivePaidAmount)
+  }, [saleType, paymentMethod, cashAmount, effectivePaidAmount])
 
   return (
     <div className="relative flex flex-col lg:flex-row h-[calc(100vh-5.5rem)] gap-4 select-none text-[#432414] dark:text-[#FEE4D7] pb-16 lg:pb-0">
@@ -809,10 +886,96 @@ export default function Sales() {
               </div>
             )}
 
+            {/* Tipo de Venta / Modalidad */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider">
+                Modalidad de Cobro
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleSelectSaleType('total')}
+                  className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                    saleType === 'total'
+                      ? 'bg-[#9F6839] text-white border-[#9F6839] shadow-xs'
+                      : 'bg-white dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]'
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Pago Completo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectSaleType('parcial')}
+                  className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                    saleType === 'parcial'
+                      ? 'bg-[#9F6839] text-white border-[#9F6839] shadow-xs'
+                      : 'bg-white dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]'
+                  }`}
+                >
+                  <BadgeDollarSign className="w-4 h-4" />
+                  <span>Pago Parcial</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectSaleType('credito')}
+                  className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                    saleType === 'credito'
+                      ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                      : 'bg-white dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]'
+                  }`}
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  <span>A Crédito / Fiado</span>
+                </button>
+              </div>
+            </div>
+
+            {saleType === 'parcial' && (
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-amber-900 dark:text-amber-200">Monto abonado hoy ($):</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max={cartTotal}
+                    value={partialPaidAmount}
+                    onChange={(e) => handlePartialAmountChange(e.target.value)}
+                    className="w-32 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-amber-300 dark:border-amber-800 rounded-xl text-right font-black text-amber-900 dark:text-amber-100 focus:outline-none"
+                  />
+                </div>
+                <div className="flex justify-between items-center pt-1 border-t border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-300 font-semibold">
+                  <span>Saldo que queda debiendo:</span>
+                  <span className="font-black text-sm text-red-600 dark:text-red-400">
+                    ${Number(effectivePendingAmount).toLocaleString('es-CO')}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {saleType === 'credito' && (
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Venta 100% a Crédito (Fiado)</p>
+                  <p className="text-[11px] opacity-90">
+                    No se cobra dinero en este momento. El total de ${Number(cartTotal).toLocaleString('es-CO')} se sumará al saldo deudor del cliente seleccionado.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Selección de Cliente con Autocompletado estilo Google / Gmail */}
             <div ref={customerDropdownRef} className="relative space-y-1">
-              <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
-                Nombre del Cliente (Opcional)
+              <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                <span>
+                  Cliente {effectivePendingAmount > 0 ? <span className="text-red-500 font-black">(Requerido para crédito/deuda)</span> : '(Opcional)'}
+                </span>
+                {selectedCustomerObj && Number(selectedCustomerObj.total_debt) > 0 && (
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-300 dark:border-red-800">
+                    Debe ${Number(selectedCustomerObj.total_debt).toLocaleString('es-CO')}
+                  </span>
+                )}
               </label>
 
               {/* Input de búsqueda interactivo */}
@@ -833,7 +996,7 @@ export default function Sales() {
                     }
                     setIsCustomerDropdownOpen(true)
                   }}
-                  placeholder="Escribe el nombre o iniciales del cliente..."
+                  placeholder={effectivePendingAmount > 0 ? "Busca y selecciona un cliente registrado..." : "Escribe el nombre o iniciales del cliente..."}
                   className="w-full pl-10 pr-10 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839] focus:ring-2 focus:ring-[#9F6839]/20 transition-all placeholder:text-[#9F6839]/50 dark:placeholder:text-[#DABA8C]/50"
                 />
                 {(customerQuery || selectedCustomerId) && (
@@ -889,15 +1052,15 @@ export default function Sales() {
                               </div>
                             </div>
 
-                            {/* Estado / Badge de Compras */}
-                            <div className="shrink-0">
-                              {Number(c.total_spent) > 0 ? (
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/40 dark:border-[#9F6839]/30">
-                                  ${Number(c.total_spent).toLocaleString('es-CO')} consumido
+                            {/* Estado / Badge de Deuda y Consumo */}
+                            <div className="shrink-0 flex items-center gap-1.5">
+                              {hasDebt ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-300 dark:border-red-800">
+                                  Debe ${Number(c.total_debt).toLocaleString('es-CO')}
                                 </span>
                               ) : (
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#FEE4D7]/50 dark:bg-[#2A150C]/60 text-[#9F6839]/80 dark:text-[#DABA8C]/80">
-                                  Cliente registrado
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                  Al día
                                 </span>
                               )}
                             </div>
@@ -911,8 +1074,8 @@ export default function Sales() {
                     </div>
                   )}
 
-                  {/* Opción de usar el texto escrito como cliente ocasional */}
-                  {customerQuery.trim() && !crmCustomers.some(c => `${c.first_name} ${c.last_name || ''}`.trim().toLowerCase() === customerQuery.trim().toLowerCase()) && (
+                  {/* Opción de usar el texto escrito como cliente ocasional (solo si no hay deuda) */}
+                  {effectivePendingAmount === 0 && customerQuery.trim() && !crmCustomers.some(c => `${c.first_name} ${c.last_name || ''}`.trim().toLowerCase() === customerQuery.trim().toLowerCase()) && (
                     <div
                       onClick={() => handleUseCustomCustomerName(customerQuery)}
                       className="p-2.5 bg-[#FEE4D7]/40 dark:bg-[#2A150C] hover:bg-[#FEE4D7] dark:hover:bg-[#351a0e] border-t border-[#D4B28E]/40 dark:border-[#9F6839]/30 flex items-center gap-2 text-xs font-black text-[#9F6839] dark:text-[#DABA8C] cursor-pointer"
@@ -926,7 +1089,7 @@ export default function Sales() {
 
               {/* Ficha rápida del cliente seleccionado */}
               {selectedCustomerObj && (
-                <div className="mt-2 p-2.5 rounded-xl bg-[#FEE4D7]/30 dark:bg-[#2A150C]/60 border border-[#D4B28E]/50 dark:border-[#9F6839]/30 text-xs space-y-1">
+                <div className="mt-2 p-2.5 rounded-xl bg-[#FEE4D7]/30 dark:bg-[#2A150C]/60 border border-[#D4B28E]/50 dark:border-[#9F6839]/30 text-xs space-y-1.5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <UserCheck className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
@@ -942,10 +1105,15 @@ export default function Sales() {
                     {Number(selectedCustomerObj.total_spent) > 0 && (
                       <span className="text-[10px] font-bold text-[#9F6839] dark:text-[#DABA8C]">
                         ${Number(selectedCustomerObj.total_spent).toLocaleString('es-CO')} consumido
-                        {selectedCustomerObj.total_orders ? ` (${selectedCustomerObj.total_orders} pedidos)` : ''}
                       </span>
                     )}
                   </div>
+                  {Number(selectedCustomerObj.total_debt) > 0 && (
+                    <div className="p-2 rounded-lg bg-red-100/70 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 flex items-center gap-2 text-xs text-red-700 dark:text-red-300 font-bold">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                      <span>Atención: Cliente con deuda acumulada de ${Number(selectedCustomerObj.total_debt).toLocaleString('es-CO')}</span>
+                    </div>
+                  )}
                   {selectedCustomerObj.notes && (
                     <div className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] flex items-center gap-1 pl-6">
                       <Sparkles className="w-3 h-3 text-[#9F6839] dark:text-[#DABA8C] shrink-0" />
@@ -956,134 +1124,153 @@ export default function Sales() {
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
-                Método de Pago
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleSelectPaymentMethod('efectivo')}
-                  className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                    paymentMethod === 'efectivo'
-                      ? 'bg-[#9F6839] text-white border-[#9F6839] shadow-xs'
-                      : 'bg-white dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]'
-                  }`}
-                >
-                  <Banknote className="w-4 h-4" />
-                  <span>Efectivo</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleSelectPaymentMethod('transferencia')}
-                  className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                    paymentMethod === 'transferencia'
-                      ? 'bg-[#9F6839] text-white border-[#9F6839] shadow-xs'
-                      : 'bg-white dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]'
-                  }`}
-                >
-                  <Smartphone className="w-4 h-4" />
-                  <span>Transferencia</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleSelectPaymentMethod('mixto')}
-                  className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                    paymentMethod === 'mixto'
-                      ? 'bg-[#9F6839] text-white border-[#9F6839] shadow-xs'
-                      : 'bg-white dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]'
-                  }`}
-                >
-                  <CreditCard className="w-4 h-4" />
-                  <span>Pago Mixto</span>
-                </button>
-              </div>
-            </div>
-
-            {paymentMethod === 'efectivo' && (
-              <div className="p-3 bg-[#FEE4D7]/30 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl space-y-2">
+            {/* SECCIÓN MÉTODO DE PAGO */}
+            {saleType !== 'credito' ? (
+              <>
                 <div>
-                  <label className="block text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-1">
-                    Efectivo Recibido ($)
-                  </label>
-                  <input
-                    type="number"
-                    value={cashAmount}
-                    onChange={(e) => setCashAmount(e.target.value)}
-                    className="w-full px-3 py-2 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-sm font-bold text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
-                  />
-                </div>
-                <div className="flex items-center justify-between text-xs font-bold pt-1">
-                  <span className="text-[#9F6839] dark:text-[#DABA8C]">Cambio / Vueltos:</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 text-sm font-black">
-                    ${Number(changeDue).toLocaleString('es-CO')}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {(paymentMethod === 'transferencia' || paymentMethod === 'mixto') && (
-              <div className="p-3 bg-[#FEE4D7]/30 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl space-y-2.5">
-                {paymentMethod === 'mixto' && (
-                  <div className="mb-2">
-                    <label className="block text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-1">
-                      Abono en Efectivo ($)
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider">
+                      Método de Pago
                     </label>
-                    <input
-                      type="number"
-                      value={cashAmount}
-                      onChange={(e) => setCashAmount(e.target.value)}
-                      className="w-full px-3 py-2 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-sm font-bold text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsQRPopupOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 hover:bg-[#9F6839] hover:text-white transition-colors cursor-pointer"
+                    >
+                      <QrCode className="w-3.5 h-3.5" />
+                      <span>Ver QR Bold</span>
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectPaymentMethod('efectivo')}
+                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                        paymentMethod === 'efectivo'
+                          ? 'bg-[#9F6839] text-white border-[#9F6839] shadow-xs'
+                          : 'bg-white dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]'
+                      }`}
+                    >
+                      <Banknote className="w-4 h-4" />
+                      <span>Efectivo</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectPaymentMethod('transferencia')}
+                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                        paymentMethod === 'transferencia'
+                          ? 'bg-[#9F6839] text-white border-[#9F6839] shadow-xs'
+                          : 'bg-white dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]'
+                      }`}
+                    >
+                      <Smartphone className="w-4 h-4" />
+                      <span>Transferencia</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSelectPaymentMethod('mixto')}
+                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                        paymentMethod === 'mixto'
+                          ? 'bg-[#9F6839] text-white border-[#9F6839] shadow-xs'
+                          : 'bg-white dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]'
+                      }`}
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span>Pago Mixto</span>
+                    </button>
+                  </div>
+                </div>
+
+                {paymentMethod === 'efectivo' && (
+                  <div className="p-3 bg-[#FEE4D7]/30 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl space-y-2">
+                    <div>
+                      <label className="block text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-1">
+                        Efectivo Recibido ($)
+                      </label>
+                      <input
+                        type="number"
+                        value={cashAmount}
+                        onChange={(e) => setCashAmount(e.target.value)}
+                        className="w-full px-3 py-2 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-sm font-bold text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs font-bold pt-1">
+                      <span className="text-[#9F6839] dark:text-[#DABA8C]">Cambio / Vueltos:</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 text-sm font-black">
+                        ${Number(changeDue).toLocaleString('es-CO')}
+                      </span>
+                    </div>
                   </div>
                 )}
 
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-[#9F6839] dark:text-[#DABA8C]">
-                    Bancos / Entidades
-                  </label>
-                  <button
-                    type="button"
-                    onClick={addBankLine}
-                    className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] hover:underline cursor-pointer"
-                  >
-                    + Agregar Banco
-                  </button>
-                </div>
+                {(paymentMethod === 'transferencia' || paymentMethod === 'mixto') && (
+                  <div className="p-3 bg-[#FEE4D7]/30 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl space-y-2.5">
+                    {paymentMethod === 'mixto' && (
+                      <div className="mb-2">
+                        <label className="block text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-1">
+                          Abono en Efectivo ($)
+                        </label>
+                        <input
+                          type="number"
+                          value={cashAmount}
+                          onChange={(e) => setCashAmount(e.target.value)}
+                          className="w-full px-3 py-2 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-sm font-bold text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
+                        />
+                      </div>
+                    )}
 
-                <div className="space-y-2">
-                  {bankPayments.map((bp, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <select
-                        value={bp.bank}
-                        onChange={(e) => updateBankLine(idx, 'bank', e.target.value)}
-                        className="flex-1 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none"
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-[#9F6839] dark:text-[#DABA8C]">
+                        Bancos / Entidades
+                      </label>
+                      <button
+                        type="button"
+                        onClick={addBankLine}
+                        className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] hover:underline cursor-pointer"
                       >
-                        {COMMON_BANKS.map((b) => (
-                          <option key={b} value={b}>{b}</option>
-                        ))}
-                      </select>
-                      <input
-                        type="number"
-                        placeholder="Monto"
-                        value={bp.amount}
-                        onChange={(e) => updateBankLine(idx, 'amount', e.target.value)}
-                        className="w-28 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs font-bold text-[#432414] dark:text-[#FEE4D7] focus:outline-none"
-                      />
-                      {bankPayments.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeBankLine(idx)}
-                          className="p-1 text-[#9F6839] hover:text-red-600 cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                        + Agregar Banco
+                      </button>
                     </div>
-                  ))}
-                </div>
+
+                    <div className="space-y-2">
+                      {bankPayments.map((bp, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <select
+                            value={bp.bank}
+                            onChange={(e) => updateBankLine(idx, 'bank', e.target.value)}
+                            className="flex-1 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none"
+                          >
+                            {COMMON_BANKS.map((b) => (
+                              <option key={b} value={b}>{b}</option>
+                            ))}
+                          </select>
+                          <input
+                            type="number"
+                            placeholder="Monto"
+                            value={bp.amount}
+                            onChange={(e) => updateBankLine(idx, 'amount', e.target.value)}
+                            className="w-28 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs font-bold text-[#432414] dark:text-[#FEE4D7] focus:outline-none"
+                          />
+                          {bankPayments.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeBankLine(idx)}
+                              className="p-1 text-[#9F6839] hover:text-red-600 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center text-xs text-amber-700 dark:text-amber-300 font-bold">
+                Venta asignada a Crédito. El valor total de ${Number(cartTotal).toLocaleString('es-CO')} quedará cargado a la cuenta del cliente.
               </div>
             )}
 
@@ -1187,6 +1374,23 @@ export default function Sales() {
                 <span>Total:</span>
                 <span className="text-[#9F6839] dark:text-[#DABA8C]">${Number(lastOrder.total).toLocaleString('es-CO')}</span>
               </div>
+
+              {Number(lastOrder.pending_amount) > 0 && (
+                <div className="pt-2 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30 space-y-1">
+                  <div className="flex justify-between font-bold text-xs text-[#432414] dark:text-[#FEE4D7]">
+                    <span>Abonado hoy:</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-black">
+                      ${Number(lastOrder.paid_amount || 0).toLocaleString('es-CO')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between font-bold text-xs text-red-600 dark:text-red-400">
+                    <span>Saldo pendiente (Deuda):</span>
+                    <span className="font-black">
+                      ${Number(lastOrder.pending_amount).toLocaleString('es-CO')}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -1227,6 +1431,39 @@ export default function Sales() {
                 Nueva Venta
               </button>
             </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* MODAL VISOR RÁPIDO DE QR BOLD */}
+      {isQRPopupOpen && (
+        <Modal
+          isOpen={isQRPopupOpen}
+          onClose={() => setIsQRPopupOpen(false)}
+          title="Código QR Bold - @boldcaov5716"
+        >
+          <div className="flex flex-col items-center gap-4 text-center p-2 text-[#432414] dark:text-[#FEE4D7]">
+            <div className="p-3 bg-white rounded-2xl border-2 border-[#D4B28E]/70 shadow-md">
+              <img
+                src="/qr-bold.jpg"
+                alt="QR Bold Toffee"
+                className="w-64 h-64 sm:w-72 sm:h-72 object-contain rounded-xl"
+              />
+            </div>
+            <div>
+              <p className="text-sm font-black">Llave Bold / Bre-B</p>
+              <p className="text-xs font-bold text-[#9F6839] dark:text-[#DABA8C]">@boldcaov5716</p>
+              <p className="text-[11px] opacity-75 mt-1">
+                Muestra este código al cliente para pagos desde Bancolombia, Nequi, Daviplata o cualquier billetera digital.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsQRPopupOpen(false)}
+              className="w-full py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+            >
+              Cerrar
+            </button>
           </div>
         </Modal>
       )}
