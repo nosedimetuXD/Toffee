@@ -42,6 +42,25 @@ func NewSaleHandler(db *pgxpool.Pool, hub *events.Hub) *SaleHandler {
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS pending_amount NUMERIC(10,2) DEFAULT 0`)
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) DEFAULT 'paid'`)
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ALTER COLUMN sold_by DROP NOT NULL`)
+	_, _ = db.Exec(ctx, `ALTER TABLE sales DROP CONSTRAINT IF EXISTS sales_payment_method_check`)
+	_, _ = db.Exec(ctx, `ALTER TABLE sales DROP CONSTRAINT IF EXISTS sales_payment_status_check`)
+	_, _ = db.Exec(ctx, `ALTER TABLE sales ALTER COLUMN payment_method TYPE VARCHAR(50)`)
+	_, _ = db.Exec(ctx, `
+		DO $$ 
+		DECLARE
+			r RECORD;
+		BEGIN
+			FOR r IN (
+				SELECT conname 
+				FROM pg_constraint 
+				WHERE conrelid = 'sales'::regclass 
+				  AND contype = 'c' 
+				  AND pg_get_constraintdef(oid) LIKE '%payment_method%'
+			) LOOP
+				EXECUTE 'ALTER TABLE sales DROP CONSTRAINT IF EXISTS ' || quote_ident(r.conname);
+			END LOOP;
+		END $$;
+	`)
 	_, _ = db.Exec(ctx, `UPDATE sales SET subtotal = total WHERE (subtotal = 0 OR subtotal IS NULL) AND total > 0`)
 	_, _ = db.Exec(ctx, `UPDATE sales SET paid_amount = total, pending_amount = 0, payment_status = 'paid' WHERE (paid_amount = 0 OR paid_amount IS NULL) AND (pending_amount = 0 OR pending_amount IS NULL) AND total > 0`)
 
@@ -502,8 +521,36 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	).Scan(&saleID)
 	if err != nil {
 		log.Printf("error creando venta: %v", err)
-		http.Error(w, "error interno", http.StatusInternalServerError)
-		return
+		if strings.Contains(strings.ToLower(err.Error()), "payment_method") || strings.Contains(strings.ToLower(err.Error()), "constraint") {
+			_, _ = h.DB.Exec(ctx, `ALTER TABLE sales DROP CONSTRAINT IF EXISTS sales_payment_method_check`)
+			_, _ = h.DB.Exec(ctx, `ALTER TABLE sales ALTER COLUMN payment_method TYPE VARCHAR(50)`)
+			_, _ = h.DB.Exec(ctx, `
+				DO $$ 
+				DECLARE
+					r RECORD;
+				BEGIN
+					FOR r IN (
+						SELECT conname 
+						FROM pg_constraint 
+						WHERE conrelid = 'sales'::regclass 
+						  AND contype = 'c' 
+						  AND pg_get_constraintdef(oid) LIKE '%payment_method%'
+					) LOOP
+						EXECUTE 'ALTER TABLE sales DROP CONSTRAINT IF EXISTS ' || quote_ident(r.conname);
+					END LOOP;
+				END $$;
+			`)
+			err = tx.QueryRow(ctx,
+				`INSERT INTO sales (sold_by, sold_by_name, customer_id, customer_name, payment_method, cash_amount, transfer_amount, bank_details, subtotal, discount_percent, discount_amount, discount_reason, total, paid_amount, pending_amount, payment_status, created_at) 
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, now()) RETURNING id`,
+				soldBy, soldByName, req.CustomerID, customerName, paymentMethod, cashAmount, transferAmount, strings.TrimSpace(req.BankDetails), subtotal, discountPercent, discountAmount, strings.TrimSpace(req.DiscountReason), total, paidAmount, pendingAmount, paymentStatus,
+			).Scan(&saleID)
+		}
+		if err != nil {
+			log.Printf("error final creando venta: %v", err)
+			http.Error(w, fmt.Sprintf("error creando venta: %v", err), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	for _, item := range resolved {
@@ -795,8 +842,37 @@ func (h *SaleHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("error actualizando venta: %v", err)
-		http.Error(w, "error actualizando venta", http.StatusInternalServerError)
-		return
+		if strings.Contains(strings.ToLower(err.Error()), "payment_method") || strings.Contains(strings.ToLower(err.Error()), "constraint") {
+			_, _ = h.DB.Exec(ctx, `ALTER TABLE sales DROP CONSTRAINT IF EXISTS sales_payment_method_check`)
+			_, _ = h.DB.Exec(ctx, `ALTER TABLE sales ALTER COLUMN payment_method TYPE VARCHAR(50)`)
+			_, _ = h.DB.Exec(ctx, `
+				DO $$ 
+				DECLARE
+					r RECORD;
+				BEGIN
+					FOR r IN (
+						SELECT conname 
+						FROM pg_constraint 
+						WHERE conrelid = 'sales'::regclass 
+						  AND contype = 'c' 
+						  AND pg_get_constraintdef(oid) LIKE '%payment_method%'
+					) LOOP
+						EXECUTE 'ALTER TABLE sales DROP CONSTRAINT IF EXISTS ' || quote_ident(r.conname);
+					END LOOP;
+				END $$;
+			`)
+			_, err = tx.Exec(ctx, `
+				UPDATE sales
+				SET customer_id = $1, customer_name = $2, payment_method = $3, cash_amount = $4, transfer_amount = $5,
+				    bank_details = $6, subtotal = $7, discount_percent = $8, discount_amount = $9, discount_reason = $10, total = $11,
+				    paid_amount = $12, pending_amount = $13, payment_status = $14
+				WHERE id = $15
+			`, req.CustomerID, customerName, paymentMethod, cashAmount, transferAmount, strings.TrimSpace(req.BankDetails), subtotal, discountPercent, discountAmount, strings.TrimSpace(req.DiscountReason), total, paidAmount, pendingAmount, paymentStatus, saleID)
+		}
+		if err != nil {
+			http.Error(w, fmt.Sprintf("error actualizando venta: %v", err), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	_, _ = tx.Exec(ctx, `DELETE FROM sale_items WHERE sale_id = $1`, saleID)
