@@ -65,6 +65,23 @@ func (h *SaleHandler) List(w http.ResponseWriter, r *http.Request) {
 	yearParam := strings.TrimSpace(r.URL.Query().Get("year"))
 	monthParam := strings.TrimSpace(r.URL.Query().Get("month_num"))
 
+	roleVal := r.Context().Value(custommw.ContextRole)
+	var userRole models.UserRole
+	if rRole, ok := roleVal.(models.UserRole); ok {
+		userRole = rRole
+	} else if rStr, ok := roleVal.(string); ok {
+		userRole = models.UserRole(rStr)
+	}
+
+	isOwnerOrAdmin := userRole == models.RoleOwner || userRole == models.RoleAdmin || string(userRole) == "dueño" || string(userRole) == "administrador"
+	if !isOwnerOrAdmin && userRole != "" {
+		period = "week"
+		startDate = ""
+		endDate = ""
+		yearParam = ""
+		monthParam = ""
+	}
+
 	var rawCond string
 
 	if startDate != "" && endDate != "" {

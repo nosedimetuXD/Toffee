@@ -43,6 +43,8 @@ export default function SalesHistory() {
   const { user } = useAuth()
   const userRole = String(user?.role || '').toLowerCase()
   const isOwner = userRole === 'owner' || userRole === 'dueño'
+  const isAdmin = userRole === 'admin' || userRole === 'administrador'
+  const isEmployee = !isOwner && !isAdmin
 
   const [sales, setSales] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -73,8 +75,8 @@ export default function SalesHistory() {
   // Filtros de Fecha
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('preset')
-  const [displayLabel, setDisplayLabel] = useState('Histórico Total')
-  const [period, setPeriod] = useState('all')
+  const [displayLabel, setDisplayLabel] = useState(isEmployee ? 'Esta Semana' : 'Histórico Total')
+  const [period, setPeriod] = useState(isEmployee ? 'week' : 'all')
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [startDate, setStartDate] = useState('')
@@ -85,7 +87,9 @@ export default function SalesHistory() {
     setPageError('')
     try {
       let queryStr = ''
-      if (params.startDate && params.endDate) {
+      if (isEmployee) {
+        queryStr = 'period=week'
+      } else if (params.startDate && params.endDate) {
         queryStr = `start_date=${params.startDate}&end_date=${params.endDate}`
       } else if (params.year && params.monthNum) {
         queryStr = `year=${params.year}&month_num=${params.monthNum}`
@@ -103,8 +107,14 @@ export default function SalesHistory() {
   }
 
   useEffect(() => {
-    loadSales({ period: 'all' })
-  }, [])
+    if (isEmployee) {
+      setPeriod('week')
+      setDisplayLabel('Esta Semana')
+      loadSales({ period: 'week' })
+    } else {
+      loadSales({ period: 'all' })
+    }
+  }, [isEmployee])
 
   function handleSelectPreset(presetKey, label) {
     setPeriod(presetKey)
@@ -272,36 +282,45 @@ export default function SalesHistory() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          {/* Selector de Período */}
-          <button
-            onClick={() => setIsFilterModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#2A150C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] text-[#432414] dark:text-[#FEE4D7] rounded-2xl text-xs font-bold transition-colors cursor-pointer border border-[#D4B28E]/70 dark:border-[#9F6839]/40 shadow-xs"
-          >
-            <Calendar className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
-            <span>{displayLabel}</span>
-            <ChevronDown className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
-          </button>
+          {/* Selector de Periodo */}
+          {isEmployee ? (
+            <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] rounded-2xl text-xs font-bold border border-[#D4B28E]/70 dark:border-[#9F6839]/40 shadow-xs cursor-default select-none">
+              <Calendar className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
+              <span>Esta Semana (Últimos 7 días)</span>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsFilterModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#2A150C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] text-[#432414] dark:text-[#FEE4D7] rounded-2xl text-xs font-bold transition-colors cursor-pointer border border-[#D4B28E]/70 dark:border-[#9F6839]/40 shadow-xs"
+            >
+              <Calendar className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
+              <span>{displayLabel}</span>
+              <ChevronDown className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
+            </button>
+          )}
 
-          {/* Exportar a Excel & CSV */}
-          <div className="inline-flex items-center p-1 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl shadow-xs">
-            <button
-              onClick={() => exportSalesToExcel(filteredSales)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-all cursor-pointer whitespace-nowrap"
-              title="Descargar reporte de ventas en formato Excel (.xls)"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Excel</span>
-            </button>
-            <div className="h-3.5 w-px bg-[#D4B28E]/60 dark:bg-[#9F6839]/40 mx-0.5" />
-            <button
-              onClick={() => exportSalesToCSV(filteredSales)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] rounded-xl transition-all cursor-pointer whitespace-nowrap"
-              title="Descargar en formato CSV"
-            >
-              <Download className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C]" />
-              <span>CSV</span>
-            </button>
-          </div>
+          {/* Exportar a Excel & CSV (Exclusivo Dueno / Administrador) */}
+          {!isEmployee && (
+            <div className="inline-flex items-center p-1 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl shadow-xs">
+              <button
+                onClick={() => exportSalesToExcel(filteredSales)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-all cursor-pointer whitespace-nowrap"
+                title="Descargar reporte de ventas en formato Excel (.xls)"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Excel</span>
+              </button>
+              <div className="h-3.5 w-px bg-[#D4B28E]/60 dark:bg-[#9F6839]/40 mx-0.5" />
+              <button
+                onClick={() => exportSalesToCSV(filteredSales)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] rounded-xl transition-all cursor-pointer whitespace-nowrap"
+                title="Descargar en formato CSV"
+              >
+                <Download className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C]" />
+                <span>CSV</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -763,7 +782,7 @@ export default function SalesHistory() {
       )}
 
       {/* MODAL FILTRO DE FECHAS */}
-      {isFilterModalOpen && (
+      {!isEmployee && isFilterModalOpen && (
         <Modal
           isOpen={isFilterModalOpen}
           onClose={() => setIsFilterModalOpen(false)}
