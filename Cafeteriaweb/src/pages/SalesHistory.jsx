@@ -17,6 +17,7 @@ import {
   CreditCard,
   DollarSign,
   ShoppingBag,
+  TrendingUp,
   FileSpreadsheet
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -162,6 +163,10 @@ export default function SalesHistory() {
 
   const totalSalesCount = activeSales.length
 
+  const averageTicket = useMemo(() => {
+    return totalSalesCount > 0 ? Math.round(totalBilled / totalSalesCount) : 0
+  }, [totalBilled, totalSalesCount])
+
   // Manejo de Cancelación (Abierto a cualquier usuario)
   async function handleCancelSale(sale) {
     const customerLabel = sale.customer_name || 'Cliente General'
@@ -300,20 +305,9 @@ export default function SalesHistory() {
         </div>
       </div>
 
-      {/* Tarjetas de Métricas Resumen (Sin Deuda) */}
+      {/* Tarjetas de Metricas Resumen */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] rounded-2xl border border-[#D4B28E]/50 dark:border-[#9F6839]/30">
-            <DollarSign className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Total Facturado</span>
-            <div className="text-2xl font-black text-[#432414] dark:text-[#FEE4D7]">
-              ${Number(totalBilled).toLocaleString('es-CO')}
-            </div>
-          </div>
-        </div>
-
+        {/* Recaudado en Caja */}
         <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40">
             <CreditCard className="w-6 h-6" />
@@ -329,6 +323,23 @@ export default function SalesHistory() {
           </div>
         </div>
 
+        {/* Ticket Promedio */}
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] rounded-2xl border border-[#D4B28E]/50 dark:border-[#9F6839]/30">
+            <TrendingUp className="w-6 h-6" />
+          </div>
+          <div>
+            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Ticket Promedio</span>
+            <div className="text-2xl font-black text-[#432414] dark:text-[#FEE4D7]">
+              ${Number(averageTicket).toLocaleString('es-CO')}
+            </div>
+            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
+              Promedio por pedido
+            </span>
+          </div>
+        </div>
+
+        {/* Ventas Realizadas */}
         <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] rounded-2xl border border-[#D4B28E]/50 dark:border-[#9F6839]/30">
             <ShoppingBag className="w-6 h-6" />
@@ -338,6 +349,9 @@ export default function SalesHistory() {
             <div className="text-2xl font-black text-[#432414] dark:text-[#FEE4D7]">
               {totalSalesCount}
             </div>
+            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
+              Ordenes completadas
+            </span>
           </div>
         </div>
       </div>
