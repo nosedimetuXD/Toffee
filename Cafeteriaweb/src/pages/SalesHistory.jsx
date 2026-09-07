@@ -176,11 +176,41 @@ export default function SalesHistory() {
   }, [activeSales])
 
   const totalCollectedInCash = useMemo(() => {
-    return activeSales.reduce((sum, s) => sum + (s.cash_amount || (s.payment_method === 'efectivo' ? s.total : 0)), 0)
+    return activeSales.reduce((sum, s) => {
+      if (s.payment_method === 'credito') return sum
+      if (s.cash_amount !== undefined && s.cash_amount !== null && s.cash_amount > 0) {
+        return sum + Number(s.cash_amount)
+      }
+      if (s.payment_method === 'efectivo') {
+        return sum + Number(s.paid_amount !== undefined ? s.paid_amount : s.total)
+      }
+      return sum
+    }, 0)
   }, [activeSales])
 
   const totalCollectedInTransfer = useMemo(() => {
-    return activeSales.reduce((sum, s) => sum + (s.transfer_amount || (s.payment_method === 'transferencia' ? s.total : 0)), 0)
+    return activeSales.reduce((sum, s) => {
+      if (s.payment_method === 'credito') return sum
+      if (s.transfer_amount !== undefined && s.transfer_amount !== null && s.transfer_amount > 0) {
+        return sum + Number(s.transfer_amount)
+      }
+      if (s.payment_method === 'transferencia') {
+        return sum + Number(s.paid_amount !== undefined ? s.paid_amount : s.total)
+      }
+      return sum
+    }, 0)
+  }, [activeSales])
+
+  const totalPendingDebt = useMemo(() => {
+    return activeSales.reduce((sum, s) => {
+      if (s.pending_amount !== undefined && s.pending_amount !== null) {
+        return sum + Number(s.pending_amount)
+      }
+      if (s.payment_method === 'credito') {
+        return sum + Number(s.total)
+      }
+      return sum
+    }, 0)
   }, [activeSales])
 
   const totalSalesCount = activeSales.length
@@ -365,7 +395,33 @@ export default function SalesHistory() {
       </div>
 
       {/* Tarjetas de Metricas Resumen */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Facturado */}
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] rounded-2xl border border-[#D4B28E]/50 dark:border-[#9F6839]/30">
+            <DollarSign className="w-6 h-6" />
+          </div>
+          <div>
+            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">
+              Total Facturado
+            </span>
+            <div className="text-2xl font-black text-[#432414] dark:text-[#FEE4D7]">
+              ${Number(totalBilled).toLocaleString('es-CO')}
+            </div>
+            <span
+              className={`text-[10px] font-semibold block mt-0.5 ${
+                totalPendingDebt > 0
+                  ? 'text-amber-700 dark:text-amber-400 font-bold'
+                  : 'text-[#9F6839] dark:text-[#DABA8C]'
+              }`}
+            >
+              {totalPendingDebt > 0
+                ? `Por cobrar: $${Number(totalPendingDebt).toLocaleString('es-CO')}`
+                : 'Total en ventas'}
+            </span>
+          </div>
+        </div>
+
         {/* Recaudado en Caja */}
         <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40">
