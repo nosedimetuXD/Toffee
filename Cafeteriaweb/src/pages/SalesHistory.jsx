@@ -548,6 +548,46 @@ export default function SalesHistory() {
                   <span className="font-bold">{selectedSale.bank_details}</span>
                 </div>
               )}
+
+              {/* Detalle de Productos / Descripcion de la compra */}
+              <div className="pt-2.5 pb-1 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30">
+                <div className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] mb-2 uppercase tracking-wider">
+                  Productos comprados:
+                </div>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 divide-y divide-[#D4B28E]/30 dark:divide-[#9F6839]/20">
+                  {selectedSale.items && selectedSale.items.length > 0 ? (
+                    selectedSale.items.map((it, idx) => (
+                      <div key={idx} className="flex justify-between items-center pt-1.5 first:pt-0 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-[#FEE4D7] dark:bg-[#3E2114] text-[#9F6839] dark:text-[#DABA8C] font-black text-[11px]">
+                            {it.quantity}x
+                          </span>
+                          <span className="font-semibold text-[#432414] dark:text-[#FEE4D7]">
+                            {it.product_name || 'Producto'}
+                          </span>
+                        </div>
+                        <span className="font-bold text-right text-[#432414] dark:text-[#FEE4D7]">
+                          ${Number((it.unit_price || 0) * it.quantity).toLocaleString('es-CO')}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-xs italic text-[#9F6839] dark:text-[#DABA8C] py-1">
+                      Sin detalle de productos registrado
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {(Number(selectedSale.discount_amount) > 0 || Number(selectedSale.discount_percent) > 0) && (
+                <div className="flex justify-between text-xs text-red-600 dark:text-red-400 font-bold pt-1">
+                  <span>
+                    Descuento {Number(selectedSale.discount_percent) > 0 ? `(${selectedSale.discount_percent}%)` : ''}:
+                  </span>
+                  <span>-${Number(selectedSale.discount_amount || 0).toLocaleString('es-CO')}</span>
+                </div>
+              )}
+
               <div className="pt-2 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30 flex justify-between text-sm font-black text-[#432414] dark:text-[#FEE4D7]">
                 <span>Total:</span>
                 <span className="text-[#9F6839] dark:text-[#DABA8C]">${Number(selectedSale.total).toLocaleString('es-CO')}</span>

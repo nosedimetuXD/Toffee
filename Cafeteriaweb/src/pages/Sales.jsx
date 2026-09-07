@@ -1132,6 +1132,63 @@ export default function Sales() {
               </div>
             </div>
 
+            <div className="p-4 bg-[#FEE4D7]/40 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl text-xs space-y-2 text-[#432414] dark:text-[#FEE4D7]">
+              <div className="flex justify-between">
+                <span className="text-[#9F6839] dark:text-[#DABA8C] font-bold">Cliente:</span>
+                <span className="font-extrabold">{lastOrder.customer_name || 'Cliente General'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#9F6839] dark:text-[#DABA8C] font-bold">Método de Pago:</span>
+                <span className="font-bold uppercase">{lastOrder.payment_method}</span>
+              </div>
+              {lastOrder.bank_details && (
+                <div className="flex justify-between">
+                  <span className="text-[#9F6839] dark:text-[#DABA8C] font-bold">Bancos:</span>
+                  <span className="font-bold">{lastOrder.bank_details}</span>
+                </div>
+              )}
+
+              {/* Detalle de Productos / Descripcion de la compra */}
+              <div className="pt-2 pb-1 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30">
+                <div className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] mb-2 uppercase tracking-wider">
+                  Productos comprados:
+                </div>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1 divide-y divide-[#D4B28E]/30 dark:divide-[#9F6839]/20">
+                  {lastOrder.items && lastOrder.items.length > 0 ? (
+                    lastOrder.items.map((it, idx) => (
+                      <div key={idx} className="flex justify-between items-center pt-1.5 first:pt-0 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-[#FEE4D7] dark:bg-[#3E2114] text-[#9F6839] dark:text-[#DABA8C] font-black text-[11px]">
+                            {it.quantity}x
+                          </span>
+                          <span className="font-semibold text-[#432414] dark:text-[#FEE4D7]">
+                            {it.product_name || 'Producto'}
+                          </span>
+                        </div>
+                        <span className="font-bold text-right text-[#432414] dark:text-[#FEE4D7]">
+                          ${Number((it.unit_price || 0) * it.quantity).toLocaleString('es-CO')}
+                        </span>
+                      </div>
+                    ))
+                  ) : null}
+                </div>
+              </div>
+
+              {(Number(lastOrder.discount_amount) > 0 || Number(lastOrder.discount_percent) > 0) && (
+                <div className="flex justify-between text-xs text-red-600 dark:text-red-400 font-bold pt-1">
+                  <span>
+                    Descuento {Number(lastOrder.discount_percent) > 0 ? `(${lastOrder.discount_percent}%)` : ''}:
+                  </span>
+                  <span>-${Number(lastOrder.discount_amount || 0).toLocaleString('es-CO')}</span>
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30 flex justify-between text-sm font-black text-[#432414] dark:text-[#FEE4D7]">
+                <span>Total:</span>
+                <span className="text-[#9F6839] dark:text-[#DABA8C]">${Number(lastOrder.total).toLocaleString('es-CO')}</span>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <button
                 type="button"
