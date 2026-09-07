@@ -27,6 +27,7 @@ export default function Customers() {
   const { user } = useAuth()
   const isOwner = (user?.role || '').toLowerCase() === 'owner' || (user?.role || '').toLowerCase() === 'dueño'
   const isAdmin = (user?.role || '').toLowerCase() === 'admin' || (user?.role || '').toLowerCase() === 'administrador'
+  const canSendMessages = isOwner || isAdmin
 
   const [customers, setCustomers] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -171,11 +172,13 @@ export default function Customers() {
 
   function handleOpenWhatsApp(customer, e) {
     e?.stopPropagation()
+    if (!canSendMessages) return
     setWhatsAppCustomer(customer)
     setIsWhatsAppModalOpen(true)
   }
 
   function sendWhatsAppTemplate(templateKey) {
+    if (!canSendMessages) return
     if (!whatsAppCustomer || !whatsAppCustomer.phone) {
       alert('El cliente no tiene un teléfono registrado.')
       return
@@ -361,7 +364,7 @@ export default function Customers() {
                     </div>
 
                     <div className="flex items-center gap-1">
-                      {c.phone && (
+                      {canSendMessages && c.phone && (
                         <button
                           onClick={(e) => handleOpenWhatsApp(c, e)}
                           title="Enviar WhatsApp"
@@ -612,7 +615,7 @@ export default function Customers() {
             </div>
 
             <div className="flex items-center justify-between pt-3 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30">
-              {selectedCustomer.phone ? (
+              {canSendMessages && selectedCustomer.phone ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -639,7 +642,7 @@ export default function Customers() {
       )}
 
       {/* MODAL PLANTILLAS WHATSAPP */}
-      {isWhatsAppModalOpen && whatsAppCustomer && (
+      {canSendMessages && isWhatsAppModalOpen && whatsAppCustomer && (
         <Modal
           isOpen={isWhatsAppModalOpen}
           onClose={() => setIsWhatsAppModalOpen(false)}
