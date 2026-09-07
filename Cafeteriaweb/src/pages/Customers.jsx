@@ -957,6 +957,9 @@ export default function Customers() {
               </button>
             </div>
           </div>
+        </Modal>
+      )}
+
       {/* MODAL REGISTRAR ABONO */}
       {isAbonoModalOpen && abonoCustomer && (
         <Modal
