@@ -111,11 +111,15 @@ func (h *SaleHandler) List(w http.ResponseWriter, r *http.Request) {
 	var rawCond string
 
 	if startDate != "" && endDate != "" {
-		rawCond = fmt.Sprintf("s.created_at >= '%s 00:00:00' AND s.created_at <= '%s 23:59:59'", startDate, endDate)
+		start, err1 := time.Parse("2006-01-02", startDate)
+		end, err2 := time.Parse("2006-01-02", endDate)
+		if err1 == nil && err2 == nil {
+			rawCond = fmt.Sprintf("s.created_at >= '%s 00:00:00' AND s.created_at <= '%s 23:59:59'", start.Format("2006-01-02"), end.Format("2006-01-02"))
+		}
 	} else if yearParam != "" && monthParam != "" {
-		y, _ := strconv.Atoi(yearParam)
-		m, _ := strconv.Atoi(monthParam)
-		if y > 2000 && m >= 1 && m <= 12 {
+		y, errY := strconv.Atoi(yearParam)
+		m, errM := strconv.Atoi(monthParam)
+		if errY == nil && errM == nil && y >= 2000 && y <= 2100 && m >= 1 && m <= 12 {
 			rawCond = fmt.Sprintf("EXTRACT(YEAR FROM s.created_at) = %d AND EXTRACT(MONTH FROM s.created_at) = %d", y, m)
 		}
 	}

@@ -46,16 +46,21 @@ func NewAccountingHandler(db *pgxpool.Pool, hub *events.Hub) *AccountingHandler 
 
 func getTimeCondition(col string, period, startDate, endDate, yearParam, monthParam string) string {
 	if startDate != "" && endDate != "" {
-		return fmt.Sprintf("(%s AT TIME ZONE 'America/Bogota')::date >= '%s'::date AND (%s AT TIME ZONE 'America/Bogota')::date <= '%s'::date", col, startDate, col, endDate)
+		start, err1 := time.Parse("2006-01-02", startDate)
+		end, err2 := time.Parse("2006-01-02", endDate)
+		if err1 == nil && err2 == nil {
+			return fmt.Sprintf("(%s AT TIME ZONE 'America/Bogota')::date >= '%s'::date AND (%s AT TIME ZONE 'America/Bogota')::date <= '%s'::date", col, start.Format("2006-01-02"), col, end.Format("2006-01-02"))
+		}
 	}
 	if yearParam != "" {
-		y, _ := strconv.Atoi(yearParam)
-		if monthParam != "" {
-			m, _ := strconv.Atoi(monthParam)
-			if y > 2000 && m >= 1 && m <= 12 {
-				return fmt.Sprintf("EXTRACT(YEAR FROM (%s AT TIME ZONE 'America/Bogota')) = %d AND EXTRACT(MONTH FROM (%s AT TIME ZONE 'America/Bogota')) = %d", col, y, col, m)
+		y, errY := strconv.Atoi(yearParam)
+		if errY == nil && y >= 2000 && y <= 2100 {
+			if monthParam != "" {
+				m, errM := strconv.Atoi(monthParam)
+				if errM == nil && m >= 1 && m <= 12 {
+					return fmt.Sprintf("EXTRACT(YEAR FROM (%s AT TIME ZONE 'America/Bogota')) = %d AND EXTRACT(MONTH FROM (%s AT TIME ZONE 'America/Bogota')) = %d", col, y, col, m)
+				}
 			}
-		} else if y > 2000 {
 			return fmt.Sprintf("EXTRACT(YEAR FROM (%s AT TIME ZONE 'America/Bogota')) = %d", col, y)
 		}
 	}

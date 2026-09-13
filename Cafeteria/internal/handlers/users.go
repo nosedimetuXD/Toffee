@@ -203,8 +203,6 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 // GET /users
 func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
-	_, _ = h.DB.Exec(r.Context(), `ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT ''`)
-
 	rows, err := h.DB.Query(r.Context(),
 		`SELECT id, username, role, COALESCE(avatar_url, ''), created_by, created_at,
 		        (id = (SELECT id FROM users WHERE role = 'owner' ORDER BY created_at ASC LIMIT 1)) AS is_primary

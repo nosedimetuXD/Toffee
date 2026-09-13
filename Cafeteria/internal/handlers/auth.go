@@ -40,8 +40,6 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, _ = h.DB.Exec(r.Context(), `ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT ''`)
-
 	var user models.User
 	var passwordHash string
 	err := h.DB.QueryRow(r.Context(),
