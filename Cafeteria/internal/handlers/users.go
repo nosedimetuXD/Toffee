@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -20,6 +20,35 @@ import (
 	custommw "github.com/NosedimetuXD/cafeteria/internal/middleware"
 	"github.com/NosedimetuXD/cafeteria/internal/models"
 )
+
+func validatePasswordStrength(password string) error {
+	if len(password) < 8 {
+		return errors.New("la contraseña debe tener al menos 8 caracteres")
+	}
+	var hasUpper, hasLower, hasDigit bool
+	for _, c := range password {
+		switch {
+		case unicode.IsUpper(c):
+			hasUpper = true
+		case unicode.IsLower(c):
+			hasLower = true
+		case unicode.IsDigit(c) || unicode.IsPunct(c) || unicode.IsSymbol(c):
+			hasDigit = true
+		}
+	}
+	if !hasUpper || !hasLower || !hasDigit {
+		return errors.New("la contraseña debe contener al menos una letra mayúscula, una minúscula y un número o símbolo")
+	}
+
+	lower := strings.ToLower(password)
+	commonBad := []string{"12345678", "password", "admin123", "cafeteria", "toffee123", "qwertyui", "123456789", "87654321", "admin1234"}
+	for _, bad := range commonBad {
+		if lower == bad {
+			return errors.New("la contraseña elegida es demasiado predecible o común")
+		}
+	}
+	return nil
+}
 
 type UserHandler struct {
 	DB *pgxpool.Pool
@@ -62,8 +91,8 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "usuario y contraseña son obligatorios", http.StatusBadRequest)
 		return
 	}
-	if len(req.Password) < 8 {
-		http.Error(w, "la contraseña debe tener al menos 8 caracteres", http.StatusBadRequest)
+	if err := validatePasswordStrength(req.Password); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -151,8 +180,8 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	var user models.User
 	if strings.TrimSpace(req.Password) != "" {
-		if len(req.Password) < 8 {
-			http.Error(w, "la contraseña debe tener al menos 8 caracteres", http.StatusBadRequest)
+		if err := validatePasswordStrength(req.Password); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -266,8 +295,8 @@ func (h *UserHandler) UpdateSelf(w http.ResponseWriter, r *http.Request) {
 	var queryErr error
 
 	if strings.TrimSpace(req.Password) != "" {
-		if len(req.Password) < 8 {
-			http.Error(w, "la contraseña debe tener al menos 8 caracteres", http.StatusBadRequest)
+		if err := validatePasswordStrength(req.Password); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -338,18 +367,6 @@ func (h *UserHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Desvincular restricción NOT NULL de sales.sold_by antes de iniciar la transacción
-	_, _ = h.DB.Exec(ctx, `ALTER TABLE sales ALTER COLUMN sold_by DROP NOT NULL`)
-	_, _ = h.DB.Exec(ctx, `
-		DO $$ 
-		BEGIN 
-			IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'sales_sold_by_fkey') THEN
-				ALTER TABLE sales DROP CONSTRAINT sales_sold_by_fkey;
-			END IF;
-			ALTER TABLE sales ADD CONSTRAINT sales_sold_by_fkey FOREIGN KEY (sold_by) REFERENCES users(id) ON DELETE SET NULL;
-		END $$;
-	`)
-
 	tx, err := h.DB.Begin(ctx)
 	if err != nil {
 		log.Printf("error iniciando transacción de borrado de usuario: %v", err)
@@ -381,7 +398,7 @@ func (h *UserHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	tag, err := tx.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
 	if err != nil {
 		log.Printf("error eliminando usuario: %v", err)
-		http.Error(w, fmt.Sprintf("no se pudo eliminar el usuario: %v", err), http.StatusBadRequest)
+		http.Error(w, "no se pudo eliminar el usuario", http.StatusBadRequest)
 		return
 	}
 	if tag.RowsAffected() == 0 {

@@ -47,7 +47,12 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		 FROM users WHERE username = $1`, req.Username,
 	).Scan(&user.ID, &user.Username, &user.Role, &user.AvatarURL, &passwordHash, &user.CreatedAt)
 
+	// Hash bcrypt de coste 10 constante para mitigar ataques de temporización (Timing Attacks)
+	const dummyHash = "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+
 	if errors.Is(err, pgx.ErrNoRows) {
+		// Ejecutar comparación dummy para que el tiempo de respuesta sea indistinguible (~70ms)
+		_ = bcrypt.CompareHashAndPassword([]byte(dummyHash), []byte(req.Password))
 		http.Error(w, "usuario o contraseña incorrectos", http.StatusUnauthorized)
 		return
 	}

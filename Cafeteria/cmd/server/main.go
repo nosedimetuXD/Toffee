@@ -4,6 +4,9 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
+	"strings"
+	"time"
 
 	"github.com/go-chi/cors"
 
@@ -49,8 +52,16 @@ func main() {
 		})
 	})
 
+	allowedOrigins := []string{"*"}
+	if envOrigins := strings.TrimSpace(os.Getenv("ALLOWED_ORIGINS")); envOrigins != "" {
+		allowedOrigins = strings.Split(envOrigins, ",")
+		for i := range allowedOrigins {
+			allowedOrigins[i] = strings.TrimSpace(allowedOrigins[i])
+		}
+	}
+
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Content-Type", "Authorization", "X-Requested-With"},
 		AllowCredentials: false,
@@ -62,7 +73,8 @@ func main() {
 	})
 
 	authHandler := handlers.NewAuthHandler(pool)
-	r.Post("/login", authHandler.Login)
+	// Rate limiting: máx 10 peticiones por minuto por IP en /login contra fuerza bruta
+	r.With(custommw.RateLimit(10, time.Minute)).Post("/login", authHandler.Login)
 
 	productHandler := handlers.NewProductHandler(pool)
 	ingredientHandler := handlers.NewIngredientHandler(pool, hub)

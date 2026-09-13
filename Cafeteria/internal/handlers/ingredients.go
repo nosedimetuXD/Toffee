@@ -34,8 +34,6 @@ func NewIngredientHandler(db *pgxpool.Pool, hub *events.Hub) *IngredientHandler 
 
 // GET /ingredients
 func (h *IngredientHandler) List(w http.ResponseWriter, r *http.Request) {
-	_, _ = h.DB.Exec(r.Context(), `ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS unit_cost NUMERIC DEFAULT 0`)
-
 	rows, err := h.DB.Query(r.Context(),
 		`SELECT id, name, unit, quantity, COALESCE(min_quantity, 5), COALESCE(unit_cost, 0), created_at, updated_at
 		 FROM ingredients ORDER BY name`)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -142,23 +141,7 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 1. Eliminar cualquier restricción foránea previa que intente hacer SET NULL
-	_, _ = h.DB.Exec(r.Context(), `
-		DO $$ 
-		BEGIN 
-			IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'sale_items_product_id_fkey') THEN
-				ALTER TABLE sale_items DROP CONSTRAINT sale_items_product_id_fkey;
-			END IF;
-			IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'comanda_items_product_id_fkey') THEN
-				ALTER TABLE comanda_items DROP CONSTRAINT comanda_items_product_id_fkey;
-			END IF;
-			IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'product_ingredients_product_id_fkey') THEN
-				ALTER TABLE product_ingredients DROP CONSTRAINT product_ingredients_product_id_fkey;
-			END IF;
-		END $$;
-	`)
-
-	// 2. Desvincular tablas asociadas manteniendo intactas las ventas y comandas históricas
+	// 1. Desvincular tablas asociadas manteniendo intactas las ventas y comandas históricas
 	_, _ = h.DB.Exec(r.Context(), `UPDATE sale_items SET product_id = '00000000-0000-0000-0000-000000000000'::uuid WHERE product_id = $1`, id)
 	_, _ = h.DB.Exec(r.Context(), `UPDATE comanda_items SET product_id = '00000000-0000-0000-0000-000000000000'::uuid WHERE product_id = $1`, id)
 	_, _ = h.DB.Exec(r.Context(), `DELETE FROM product_ingredients WHERE product_id = $1`, id)
@@ -168,7 +151,7 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	tag, err := h.DB.Exec(r.Context(), `DELETE FROM products WHERE id = $1`, id)
 	if err != nil {
 		log.Printf("error borrando producto %s: %v", id, err)
-		http.Error(w, fmt.Sprintf("Error borrando producto: %v", err), http.StatusInternalServerError)
+		http.Error(w, "no se pudo eliminar el producto", http.StatusInternalServerError)
 		return
 	}
 	if tag.RowsAffected() == 0 {
@@ -181,14 +164,12 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 // GET /products
 func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
-	_, _ = h.DB.Exec(r.Context(), `ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT ''`)
-	_, _ = h.DB.Exec(r.Context(), `ALTER TABLE products ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'Bebidas'`)
-
 	rows, err := h.DB.Query(r.Context(),
 		`SELECT id, name, description, price, COALESCE(category, 'Bebidas'), COALESCE(image_url, ''), active, created_at, updated_at
 		 FROM products
 		 ORDER BY name`)
 	if err != nil {
+		log.Printf("error consultando productos: %v", err)
 		http.Error(w, "error consultando productos", http.StatusInternalServerError)
 		return
 	}
