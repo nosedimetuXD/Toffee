@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -40,11 +41,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	username := strings.TrimSpace(req.Username)
+
 	var user models.User
 	var passwordHash string
 	err := h.DB.QueryRow(r.Context(),
 		`SELECT id, username, role, COALESCE(avatar_url, ''), password_hash, created_at
-		 FROM users WHERE username = $1`, req.Username,
+		 FROM users WHERE LOWER(TRIM(username)) = LOWER(TRIM($1))`, username,
 	).Scan(&user.ID, &user.Username, &user.Role, &user.AvatarURL, &passwordHash, &user.CreatedAt)
 
 	// Hash bcrypt de coste 10 constante para mitigar ataques de temporización (Timing Attacks)

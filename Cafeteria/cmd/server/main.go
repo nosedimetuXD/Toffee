@@ -4,8 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/go-chi/cors"
@@ -52,16 +50,8 @@ func main() {
 		})
 	})
 
-	allowedOrigins := []string{"*"}
-	if envOrigins := strings.TrimSpace(os.Getenv("ALLOWED_ORIGINS")); envOrigins != "" {
-		allowedOrigins = strings.Split(envOrigins, ",")
-		for i := range allowedOrigins {
-			allowedOrigins[i] = strings.TrimSpace(allowedOrigins[i])
-		}
-	}
-
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   allowedOrigins,
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Content-Type", "Authorization", "X-Requested-With"},
 		AllowCredentials: false,
