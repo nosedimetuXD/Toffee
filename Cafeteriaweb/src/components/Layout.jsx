@@ -125,7 +125,7 @@ export default function Layout() {
       {/* Mobile Top Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white dark:bg-[#201009] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/40 px-4 flex items-center justify-between z-40 shadow-sm">
         <div className="flex items-center gap-3">
-          <button
+          <button type="button"
             onClick={() => setMobileOpen(!mobileOpen)}
             className="p-1.5 rounded-xl text-[#432414] dark:text-[#FEE4D7] hover:bg-[#FEE4D7] dark:hover:bg-[#2A150C]"
             aria-label="Abrir menú"
@@ -149,7 +149,7 @@ export default function Layout() {
           </div>
         </div>
 
-        <button
+        <button type="button"
           onClick={toggleDarkMode}
           className="p-2 rounded-xl text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#2A150C]"
         >
@@ -220,7 +220,7 @@ export default function Layout() {
               )}
 
               {/* Close in mobile */}
-              <button
+              <button type="button"
                 onClick={() => setMobileOpen(false)}
                 className="lg:hidden p-1.5 rounded-xl text-[#432414] dark:text-[#FEE4D7] hover:bg-[#FEE4D7] dark:hover:bg-[#3E2114]"
               >
@@ -322,7 +322,7 @@ export default function Layout() {
             </div>
           ) : (
             <div className="flex justify-center">
-              <button
+              <button type="button"
                 onClick={toggleDarkMode}
                 className={`p-2.5 rounded-2xl border transition-all cursor-pointer ${
                   isDarkMode
@@ -372,7 +372,7 @@ export default function Layout() {
             </div>
 
             {!isCollapsed && (
-              <button
+              <button type="button"
                 onClick={handleLogout}
                 className="p-2 rounded-xl text-[#9F6839] dark:text-[#DABA8C] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0 cursor-pointer"
                 title="Cerrar sesión"

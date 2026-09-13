@@ -166,7 +166,7 @@ export default function Products() {
         </div>
 
         {!isEmployee && (
-          <button
+          <button type="button"
             onClick={openCreateModal}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
           >
@@ -196,7 +196,7 @@ export default function Products() {
 
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
           {categories.map((cat) => (
-            <button
+            <button type="button"
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               className={`px-3.5 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
@@ -295,7 +295,7 @@ export default function Products() {
                   </Link>
 
                   {!isEmployee && (
-                    <button
+                    <button type="button"
                       onClick={() => openEditModal(prod)}
                       className="p-2 rounded-xl text-[#9F6839] hover:bg-[#FEE4D7] dark:hover:bg-[#2E180E] transition-colors cursor-pointer"
                       title="Editar producto"
@@ -304,7 +304,7 @@ export default function Products() {
                     </button>
                   )}
                   {!isEmployee && (
-                    <button
+                    <button type="button"
                       onClick={() => handleDelete(prod.id, prod.name)}
                       className="p-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
                       title="Eliminar producto"

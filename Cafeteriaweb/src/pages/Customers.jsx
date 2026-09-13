@@ -390,7 +390,7 @@ export default function Customers() {
           {/* Grupo Exportacion (Solo Dueño y Administrador) */}
           {canExport && (
             <div className="inline-flex items-center p-1 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl shadow-xs">
-              <button
+              <button type="button"
                 onClick={() => exportCustomersToExcel(customers)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-all cursor-pointer whitespace-nowrap"
                 title="Descargar listado de clientes en formato Excel (.xls)"
@@ -399,7 +399,7 @@ export default function Customers() {
                 <span>Excel</span>
               </button>
               <div className="h-3.5 w-px bg-[#D4B28E]/60 dark:bg-[#9F6839]/40 mx-0.5" />
-              <button
+              <button type="button"
                 onClick={() => exportCustomersToCSV(customers)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] rounded-xl transition-all cursor-pointer whitespace-nowrap"
                 title="Descargar en formato CSV"
@@ -410,7 +410,7 @@ export default function Customers() {
             </div>
           )}
 
-          <button
+          <button type="button"
             onClick={handleOpenCreate}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#9F6839] hover:bg-[#835229] text-white rounded-2xl text-xs font-black shadow-xs transition-all cursor-pointer whitespace-nowrap"
           >
@@ -469,7 +469,7 @@ export default function Customers() {
             className="w-full pl-11 pr-4 py-3 bg-white dark:bg-[#201009] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl text-xs text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:border-[#9F6839] shadow-xs"
           />
           {searchQuery && (
-            <button
+            <button type="button"
               onClick={() => setSearchQuery('')}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9F6839] dark:text-[#DABA8C]"
             >
@@ -548,7 +548,7 @@ export default function Customers() {
               ? 'Prueba modificando la búsqueda o el filtro de deuda.'
               : 'Registra los clientes habituales de la cafetería para una atención personalizada.'}
           </p>
-          <button
+          <button type="button"
             onClick={handleOpenCreate}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-2xl text-xs font-bold shadow-md cursor-pointer transition-all"
           >
@@ -587,7 +587,7 @@ export default function Customers() {
 
                     <div className="flex items-center gap-1">
                       {canSendMessages && c.phone && (
-                        <button
+                        <button type="button"
                           onClick={(e) => handleOpenWhatsApp(c, e)}
                           title="Enviar WhatsApp"
                           className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-colors cursor-pointer"
@@ -595,7 +595,7 @@ export default function Customers() {
                           <MessageCircle className="w-4 h-4" />
                         </button>
                       )}
-                      <button
+                      <button type="button"
                         onClick={(e) => handleOpenEdit(c, e)}
                         title="Editar Cliente"
                         className="p-2 text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#2A150C] rounded-xl transition-colors cursor-pointer"
@@ -603,7 +603,7 @@ export default function Customers() {
                         <Edit2 className="w-4 h-4" />
                       </button>
                       {(isOwner || isAdmin) && (
-                        <button
+                        <button type="button"
                           onClick={(e) => handleDeleteCustomer(c, e)}
                           title="Eliminar Cliente"
                           className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-colors cursor-pointer"
@@ -914,7 +914,7 @@ export default function Customers() {
             </p>
 
             <div className="space-y-2.5">
-              <button
+              <button type="button"
                 onClick={() => sendWhatsAppTemplate('saludo')}
                 className="w-full text-left p-3.5 bg-[#FEE4D7]/30 dark:bg-[#2A150C] hover:bg-[#9F6839] hover:text-white border border-[#D4B28E]/60 dark:border-[#9F6839]/30 rounded-2xl transition-all cursor-pointer group"
               >
@@ -929,7 +929,7 @@ export default function Customers() {
                 </p>
               </button>
 
-              <button
+              <button type="button"
                 onClick={() => sendWhatsAppTemplate('promo')}
                 className="w-full text-left p-3.5 bg-[#FEE4D7]/30 dark:bg-[#2A150C] hover:bg-[#9F6839] hover:text-white border border-[#D4B28E]/60 dark:border-[#9F6839]/30 rounded-2xl transition-all cursor-pointer group"
               >
@@ -944,7 +944,7 @@ export default function Customers() {
                 </p>
               </button>
 
-              <button
+              <button type="button"
                 onClick={() => sendWhatsAppTemplate('novedad')}
                 className="w-full text-left p-3.5 bg-[#FEE4D7]/30 dark:bg-[#2A150C] hover:bg-[#9F6839] hover:text-white border border-[#D4B28E]/60 dark:border-[#9F6839]/30 rounded-2xl transition-all cursor-pointer group"
               >

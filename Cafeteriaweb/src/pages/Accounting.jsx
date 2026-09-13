@@ -316,7 +316,7 @@ export default function Accounting() {
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
           {/* Grupo Exportacion */}
           <div className="inline-flex items-center p-1 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl shadow-xs">
-            <button
+            <button type="button"
               onClick={() => exportAccountingToExcel(expenses, incomes)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-all cursor-pointer whitespace-nowrap"
               title="Descargar en formato Excel (.xls)"
@@ -325,7 +325,7 @@ export default function Accounting() {
               <span>Excel</span>
             </button>
             <div className="h-3.5 w-px bg-[#D4B28E]/60 dark:bg-[#9F6839]/40 mx-0.5" />
-            <button
+            <button type="button"
               onClick={() => exportAccountingToCSV(expenses, incomes)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] rounded-xl transition-all cursor-pointer whitespace-nowrap"
               title="Descargar en formato CSV"
@@ -337,7 +337,7 @@ export default function Accounting() {
 
           {/* Grupo Acciones Principales */}
           <div className="inline-flex items-center gap-2">
-            <button
+            <button type="button"
               onClick={handleOpenCreateIncome}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs font-black shadow-xs transition-all cursor-pointer whitespace-nowrap"
             >
@@ -345,7 +345,7 @@ export default function Accounting() {
               <span>Ingreso</span>
             </button>
 
-            <button
+            <button type="button"
               onClick={handleOpenCreateExpense}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#9F6839] hover:bg-[#835229] text-white rounded-2xl text-xs font-black shadow-xs transition-all cursor-pointer whitespace-nowrap"
             >
@@ -410,7 +410,7 @@ export default function Accounting() {
       {/* Tabs y Periodos */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 pb-2">
         <div className="flex items-center gap-2">
-          <button
+          <button type="button"
             onClick={() => setActiveTab('expenses')}
             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'expenses'
@@ -420,7 +420,7 @@ export default function Accounting() {
           >
             Gastos ({expenses.length})
           </button>
-          <button
+          <button type="button"
             onClick={() => setActiveTab('incomes')}
             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'incomes'
@@ -441,7 +441,7 @@ export default function Accounting() {
             { id: 'year', label: 'Este Año' },
             { id: 'all', label: 'Todo' }
           ].map((p) => (
-            <button
+            <button type="button"
               key={p.id}
               onClick={() => setPeriod(p.id)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
@@ -515,14 +515,14 @@ export default function Accounting() {
                       <td className="px-5 py-4 text-right">
                         {isOwner && (
                           <div className="flex items-center justify-end gap-1">
-                            <button
+                            <button type="button"
                               onClick={() => handleOpenEditExpense(e)}
                               className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl transition-colors cursor-pointer"
                               title="Editar Gasto"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
-                            <button
+                            <button type="button"
                               onClick={() => handleDeleteExpense(e)}
                               className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
                               title="Eliminar Gasto"
@@ -552,7 +552,7 @@ export default function Accounting() {
                 { id: 'sale', label: `Ventas POS (${salesIncomesCount})` },
                 { id: 'manual', label: `Ingresos Extras (${manualIncomesCount})` }
               ].map((f) => (
-                <button
+                <button type="button"
                   key={f.id}
                   onClick={() => setIncomeFilter(f.id)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
@@ -566,7 +566,7 @@ export default function Accounting() {
               ))}
             </div>
 
-            <button
+            <button type="button"
               onClick={handleOpenCreateIncome}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs cursor-pointer shadow-xs ml-auto whitespace-nowrap"
             >
@@ -672,14 +672,14 @@ export default function Accounting() {
                           {isManual ? (
                             isOwner && (
                               <div className="flex items-center justify-center gap-1">
-                                <button
+                                <button type="button"
                                   onClick={() => handleOpenEditIncome(inc)}
                                   className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl transition-colors cursor-pointer"
                                   title="Editar Ingreso"
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
-                                <button
+                                <button type="button"
                                   onClick={() => handleDeleteIncome(inc)}
                                   className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
                                   title="Eliminar Ingreso"
@@ -802,7 +802,8 @@ export default function Accounting() {
                   <select
                     value={expenseForm.ingredient_id}
                     onChange={(e) => setExpenseForm({ ...expenseForm, ingredient_id: e.target.value })}
-                    className="col-span-1 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7]"
+                    aria-label="Seleccionar insumo asociado"
+                    className="col-span-1 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus-visible:ring-2 focus-visible:ring-[#9F6839]"
                   >
                     <option value="">Ninguno</option>
                     {ingredients.map((ing) => (
@@ -814,15 +815,17 @@ export default function Accounting() {
                     type="number"
                     step="any"
                     placeholder="Cantidad"
+                    aria-label="Cantidad a sumar al inventario"
                     value={expenseForm.quantity_added}
                     onChange={(e) => setExpenseForm({ ...expenseForm, quantity_added: e.target.value })}
-                    className="col-span-1 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7]"
+                    className="col-span-1 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus-visible:ring-2 focus-visible:ring-[#9F6839]"
                   />
 
                   <select
                     value={expenseForm.unit}
                     onChange={(e) => setExpenseForm({ ...expenseForm, unit: e.target.value })}
-                    className="col-span-1 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7]"
+                    aria-label="Unidad de medida del insumo"
+                    className="col-span-1 px-2.5 py-1.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus-visible:ring-2 focus-visible:ring-[#9F6839]"
                   >
                     {AVAILABLE_UNITS.map((u) => (
                       <option key={u.value} value={u.value}>{u.label}</option>

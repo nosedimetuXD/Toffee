@@ -650,7 +650,7 @@ export default function Sales() {
         {/* Categorías */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-3 scrollbar-none">
           {categories.map((cat) => (
-            <button
+            <button type="button"
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
@@ -737,7 +737,7 @@ export default function Sales() {
 
       {/* BARRA FLOTANTE FIJA INFERIOR EN MÓVIL (CUANDO EL DRAWER ESTÁ MINIMIZADO) */}
       <div className="lg:hidden fixed bottom-3 left-3 right-3 z-30 bg-[#201009] dark:bg-[#201009] border border-[#9F6839]/60 text-white rounded-3xl p-3 shadow-2xl flex items-center justify-between">
-        <button
+        <button type="button"
           onClick={() => setIsMobileCartOpen(true)}
           className="flex items-center gap-3 flex-1 text-left cursor-pointer focus:outline-none"
         >
@@ -761,7 +761,7 @@ export default function Sales() {
         </button>
 
         {cartItems.length > 0 && (
-          <button
+          <button type="button"
             onClick={openCheckout}
             className="px-4 py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white text-xs font-black rounded-2xl shadow-md transition-all cursor-pointer flex items-center gap-1.5"
           >
@@ -787,7 +787,7 @@ export default function Sales() {
 
           <div className="flex items-center gap-2">
             {cartItems.length > 0 && (
-              <button
+              <button type="button"
                 onClick={clearCart}
                 className="text-xs text-red-600 dark:text-red-400 hover:underline font-bold transition-colors cursor-pointer"
               >
@@ -796,7 +796,7 @@ export default function Sales() {
             )}
 
             {/* Botón Minimizar en Móvil */}
-            <button
+            <button type="button"
               onClick={() => setIsMobileCartOpen(false)}
               className="lg:hidden p-1.5 text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#2A150C] rounded-xl transition-colors cursor-pointer"
               title="Minimizar orden"
@@ -831,7 +831,7 @@ export default function Sales() {
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <button
+                  <button type="button"
                     onClick={() => updateQuantity(product.id, -1)}
                     className="w-6 h-6 rounded-lg bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/30 hover:bg-[#FEE4D7] flex items-center justify-center text-[#432414] dark:text-[#FEE4D7] transition-colors cursor-pointer"
                   >
@@ -840,13 +840,13 @@ export default function Sales() {
                   <span className="w-6 text-center text-xs font-black text-[#432414] dark:text-[#FEE4D7]">
                     {quantity}
                   </span>
-                  <button
+                  <button type="button"
                     onClick={() => updateQuantity(product.id, 1)}
                     className="w-6 h-6 rounded-lg bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/30 hover:bg-[#FEE4D7] flex items-center justify-center text-[#432414] dark:text-[#FEE4D7] transition-colors cursor-pointer"
                   >
                     <Plus className="w-3 h-3" />
                   </button>
-                  <button
+                  <button type="button"
                     onClick={() => removeFromCart(product.id)}
                     className="p-1 text-[#9F6839] dark:text-[#DABA8C] hover:text-red-600 transition-colors cursor-pointer ml-1"
                   >

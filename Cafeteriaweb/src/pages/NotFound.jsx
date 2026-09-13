@@ -36,7 +36,7 @@ export default function NotFound() {
 
         {/* Botones de Navegación */}
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <button
+          <button type="button"
             onClick={() => navigate(-1)}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#FEE4D7]/50 dark:bg-[#2A150C] hover:bg-[#FEE4D7] dark:hover:bg-[#341B0F] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 text-[#432414] dark:text-[#FEE4D7] font-bold text-xs transition-colors cursor-pointer"
           >

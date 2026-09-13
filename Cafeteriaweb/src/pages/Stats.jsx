@@ -125,7 +125,7 @@ export default function Stats() {
             </p>
           </div>
 
-          <button
+          <button type="button"
             onClick={() => setIsFilterModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-xs font-bold text-white shadow-sm transition-all cursor-pointer shrink-0"
           >

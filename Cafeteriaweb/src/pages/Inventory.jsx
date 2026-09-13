@@ -254,7 +254,7 @@ export default function Inventory() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          <button type="button"
             onClick={openWasteModal}
             className="px-4 py-2.5 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
           >
@@ -263,7 +263,7 @@ export default function Inventory() {
           </button>
 
           {!isEmployee && (
-            <button
+            <button type="button"
               onClick={openCreateModal}
               className="px-4 py-2.5 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white text-xs font-extrabold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
             >
@@ -307,7 +307,7 @@ export default function Inventory() {
         </div>
 
         <div className="flex items-center gap-2 border-b border-[#D4B28E]/40 pb-2 w-full sm:w-auto overflow-x-auto">
-          <button
+          <button type="button"
             onClick={() => setActiveTab('inventory')}
             className={`px-4 py-2 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'inventory'
@@ -318,7 +318,7 @@ export default function Inventory() {
             <Package className={`w-3.5 h-3.5 ${activeTab === 'inventory' ? 'text-white' : 'text-[#9F6839]'}`} />
             <span>Existencias ({ingredients.length})</span>
           </button>
-          <button
+          <button type="button"
             onClick={() => setActiveTab('waste')}
             className={`px-4 py-2 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'waste'
@@ -371,22 +371,22 @@ export default function Inventory() {
                       {!isEmployee && (
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex justify-center gap-1">
-                            <button onClick={() => quickAdjustStock(ing, -1)} className="p-1 rounded bg-[#FEE4D7] text-[#9F6839]"><Minus className="w-3 h-3" /></button>
-                            <button onClick={() => quickAdjustStock(ing, 1)} className="p-1 rounded bg-[#FEE4D7] text-[#9F6839]"><Plus className="w-3 h-3" /></button>
+                            <button type="button" onClick={() => quickAdjustStock(ing, -1)} className="p-1 rounded bg-[#FEE4D7] text-[#9F6839]"><Minus className="w-3 h-3" /></button>
+                            <button type="button" onClick={() => quickAdjustStock(ing, 1)} className="p-1 rounded bg-[#FEE4D7] text-[#9F6839]"><Plus className="w-3 h-3" /></button>
                           </div>
                         </td>
                       )}
                       {!isEmployee && (
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <button
+                            <button type="button"
                               onClick={() => openEditModal(ing)}
                               className="p-2 rounded-xl text-[#9F6839] hover:bg-[#FEE4D7] dark:hover:bg-[#2E180E] transition-colors cursor-pointer"
                               title="Editar insumo"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
-                            <button
+                            <button type="button"
                               onClick={() => handleDeleteIngredient(ing)}
                               className="p-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
                               title="Eliminar insumo"

@@ -263,7 +263,7 @@ export default function Profile() {
             </div>
 
             {/* Botón de Acción */}
-            <button
+            <button type="button"
               onClick={openEditModal}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white text-xs font-extrabold shadow-md cursor-pointer transition-all border border-white/20"
             >

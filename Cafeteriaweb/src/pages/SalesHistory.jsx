@@ -361,7 +361,7 @@ export default function SalesHistory() {
               </button>
             </div>
           ) : (
-            <button
+            <button type="button"
               onClick={() => setIsFilterModalOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#2A150C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] text-[#432414] dark:text-[#FEE4D7] rounded-2xl text-xs font-bold transition-colors cursor-pointer border border-[#D4B28E]/70 dark:border-[#9F6839]/40 shadow-xs"
             >
@@ -374,7 +374,7 @@ export default function SalesHistory() {
           {/* Exportar a Excel & CSV (Exclusivo Dueño / Administrador) */}
           {!isEmployee && (
             <div className="inline-flex items-center p-1 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl shadow-xs">
-              <button
+              <button type="button"
                 onClick={() => exportSalesToExcel(filteredSales)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-all cursor-pointer whitespace-nowrap"
                 title="Descargar reporte de ventas en formato Excel (.xls)"
@@ -383,7 +383,7 @@ export default function SalesHistory() {
                 <span>Excel</span>
               </button>
               <div className="h-3.5 w-px bg-[#D4B28E]/60 dark:bg-[#9F6839]/40 mx-0.5" />
-              <button
+              <button type="button"
                 onClick={() => exportSalesToCSV(filteredSales)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] rounded-xl transition-all cursor-pointer whitespace-nowrap"
                 title="Descargar en formato CSV"
@@ -487,7 +487,7 @@ export default function SalesHistory() {
         {/* Filtro por Método de Pago */}
         <div className="flex items-center gap-1.5 overflow-x-auto">
           {['Todos', 'efectivo', 'transferencia', 'mixto', 'credito'].map((m) => (
-            <button
+            <button type="button"
               key={m}
               onClick={() => setSelectedMethod(m)}
               className={`px-3 py-2 rounded-xl text-xs font-bold capitalize whitespace-nowrap transition-all cursor-pointer ${
@@ -683,7 +683,7 @@ export default function SalesHistory() {
                       <td className="p-4 text-center whitespace-nowrap">
                         <div className="inline-flex items-center justify-center gap-1.5">
                           {/* Ver / Imprimir Comprobante */}
-                          <button
+                          <button type="button"
                             onClick={() => handleOpenReceiptModal(sale)}
                             title="Ver / Imprimir Comprobante"
                             className="p-1.5 rounded-xl text-red-600 dark:text-amber-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
@@ -693,7 +693,7 @@ export default function SalesHistory() {
 
                           {/* Cancelar Venta */}
                           {!isCancelled && (
-                            <button
+                            <button type="button"
                               onClick={() => handleCancelSale(sale)}
                               title="Cancelar Venta"
                               className="p-1.5 rounded-xl text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/40 transition-colors cursor-pointer"
@@ -704,7 +704,7 @@ export default function SalesHistory() {
 
                           {/* Editar Venta (Exclusivo Dueño) */}
                           {isOwner && (
-                            <button
+                            <button type="button"
                               onClick={() => handleOpenEditSale(sale)}
                               title="Editar Venta (Dueño)"
                               className="p-1.5 rounded-xl text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
@@ -715,7 +715,7 @@ export default function SalesHistory() {
 
                           {/* Eliminar Venta (Exclusivo Dueño) */}
                           {isOwner && (
-                            <button
+                            <button type="button"
                               onClick={() => handleDeleteSale(sale)}
                               title="Eliminar Venta Definitivamente (Dueño)"
                               className="p-1.5 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
@@ -1036,7 +1036,7 @@ export default function SalesHistory() {
                   { key: 'year', label: 'Este Año' },
                   { key: 'all', label: 'Histórico Total' }
                 ].map((item) => (
-                  <button
+                  <button type="button"
                     key={item.key}
                     onClick={() => handleSelectPreset(item.key, item.label)}
                     className="p-3 bg-[#FEE4D7]/40 dark:bg-[#2A150C] hover:bg-[#9F6839] hover:text-white border border-[#D4B28E]/60 dark:border-[#9F6839]/30 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
@@ -1050,14 +1050,14 @@ export default function SalesHistory() {
             {activeTab === 'month' && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <button
+                  <button type="button"
                     onClick={() => setSelectedYear(selectedYear - 1)}
                     className="p-1 rounded-lg hover:bg-[#FEE4D7]"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <span className="font-extrabold text-sm">{selectedYear}</span>
-                  <button
+                  <button type="button"
                     onClick={() => setSelectedYear(selectedYear + 1)}
                     className="p-1 rounded-lg hover:bg-[#FEE4D7]"
                   >
@@ -1066,7 +1066,7 @@ export default function SalesHistory() {
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {MONTH_NAMES.map((m) => (
-                    <button
+                    <button type="button"
                       key={m.num}
                       onClick={() => handleSelectMonthYear(selectedYear, m.num, m.full)}
                       className="p-2.5 bg-[#FEE4D7]/40 dark:bg-[#2A150C] hover:bg-[#9F6839] hover:text-white border border-[#D4B28E]/60 dark:border-[#9F6839]/30 rounded-xl text-xs font-bold text-center cursor-pointer transition-colors"

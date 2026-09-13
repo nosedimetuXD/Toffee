@@ -157,7 +157,7 @@ export default function Recipe() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4 pb-4 border-b border-[#D4B28E]/40">
-        <button
+        <button type="button"
           onClick={() => navigate('/products')}
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-[#201009] border border-[#D4B28E] text-xs font-bold text-[#9F6839] hover:bg-[#9F6839] hover:text-white transition-colors cursor-pointer"
         >
@@ -309,7 +309,7 @@ export default function Recipe() {
             Volver a Productos
           </button>
           {!isEmployee && (
-            <button
+            <button type="button"
               onClick={handleSave}
               disabled={saving}
               className="px-5 py-2.5 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white text-xs font-extrabold shadow-md cursor-pointer disabled:opacity-50"

@@ -476,7 +476,7 @@ export default function Users() {
           </p>
         </div>
 
-        <button
+        <button type="button"
           onClick={openCreateModal}
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
         >
@@ -558,7 +558,7 @@ export default function Users() {
               </div>
 
               <div className="mt-5 pt-3 border-t border-[#D4B28E]/40 dark:border-[#9F6839]/30 space-y-2">
-                <button
+                <button type="button"
                   onClick={() => openStatsModal(u)}
                   className="w-full flex items-center justify-center gap-1.5 py-2 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white text-xs font-extrabold shadow-xs transition-all cursor-pointer"
                 >
@@ -567,7 +567,7 @@ export default function Users() {
                 </button>
 
                 <div className="flex items-center gap-2">
-                  <button
+                  <button type="button"
                     onClick={() => openEditModal(u)}
                     className="flex-1 flex items-center justify-center gap-1 py-2 rounded-2xl bg-[#FEE4D7]/50 dark:bg-[#2E180E] hover:bg-[#D4B28E]/40 text-[#432414] dark:text-[#FEE4D7] border border-[#D4B28E]/60 text-xs font-bold transition-all cursor-pointer"
                   >
@@ -576,7 +576,7 @@ export default function Users() {
                   </button>
 
                   {!isPrimary && !isCurrentUser && (
-                    <button
+                    <button type="button"
                       onClick={() => handleDeleteUser(u)}
                       className="p-2 rounded-2xl bg-red-50 dark:bg-red-950/40 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 dark:border-red-800 text-xs font-bold transition-all cursor-pointer"
                       title="Eliminar usuario"

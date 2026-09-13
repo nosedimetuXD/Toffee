@@ -118,7 +118,7 @@ export default function Tasks() {
           </p>
         </div>
 
-        <button
+        <button type="button"
           onClick={openCreateModal}
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
         >
@@ -155,7 +155,7 @@ export default function Tasks() {
       {/* Filtros */}
       <div className="flex items-center gap-2">
         {['Todos', 'Pendientes', 'Completadas'].map((filter) => (
-          <button
+          <button type="button"
             key={filter}
             onClick={() => setSelectedShift(filter)}
             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${

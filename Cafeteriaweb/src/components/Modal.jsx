@@ -30,7 +30,8 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#34180D] transition-colors cursor-pointer"
+            aria-label="Cerrar ventana modal"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#34180D] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9F6839]"
           >
             <X className="w-5 h-5" />
           </button>

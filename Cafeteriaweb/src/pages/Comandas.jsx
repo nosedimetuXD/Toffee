@@ -221,7 +221,7 @@ export default function Comandas() {
         <div className="pt-2 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30">
           {colType === 'pending' && (
             <div className="flex flex-col gap-2">
-              <button
+              <button type="button"
                 disabled={isCurrentProcessing}
                 onClick={() => handleStatusChange(c.id, 'en_preparacion')}
                 className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-[#9F6839] hover:bg-[#835229] disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
@@ -229,7 +229,7 @@ export default function Comandas() {
                 {isCurrentProcessing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />}
                 <span>{isCurrentProcessing ? 'Procesando...' : 'Iniciar Preparación'}</span>
               </button>
-              <button
+              <button type="button"
                 disabled={isCurrentProcessing}
                 onClick={() => handleStatusChange(c.id, 'cancelado')}
                 className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-2xl border border-red-300 dark:border-red-800/60 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-50 text-xs font-bold transition-all shadow-xs cursor-pointer"
@@ -241,7 +241,7 @@ export default function Comandas() {
           )}
 
           {colType === 'in_prep' && (
-            <button
+            <button type="button"
               disabled={isCurrentProcessing}
               onClick={() => handleStatusChange(c.id, 'listo')}
               className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
@@ -252,7 +252,7 @@ export default function Comandas() {
           )}
 
           {colType === 'ready' && (
-            <button
+            <button type="button"
               disabled={isCurrentProcessing}
               onClick={() => handleStatusChange(c.id, 'entregado')}
               className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-2xl bg-[#432414] hover:bg-[#201009] disabled:opacity-50 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
