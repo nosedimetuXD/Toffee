@@ -241,31 +241,36 @@ export default function Inventory() {
   if (loading) return <p className="p-4 text-sm font-semibold text-[#9F6839]">Cargando inventario...</p>
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-[#432414] dark:text-[#FEE4D7]">
       {/* Header Page Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#D4B28E]/40">
-        <div>
-          <h2 className="text-2xl font-black text-[#432414] dark:text-[#FEE4D7] tracking-tight">
-            Control de Inventario & Reporte de Mermas
-          </h2>
-          <p className="text-xs font-semibold text-[#9F6839] mt-1">
-            Existencias, alertas de stock mínimo, costos por unidad y registro unificado de daños
-          </p>
+      <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-[#FEE4D7] dark:bg-[#2A150C] rounded-xl text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
+            <Package className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7]">
+              Control de Inventario & Reporte de Mermas
+            </h1>
+            <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
+              Existencias, alertas de stock mínimo, costos por unidad y registro de daños
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
           <button type="button"
             onClick={openWasteModal}
-            className="px-4 py-2.5 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
           >
             <ShieldAlert className="w-4 h-4" />
-            <span>Reportar Daño / Merma</span>
+            <span>Reportar Merma</span>
           </button>
 
           {!isEmployee && (
             <button type="button"
               onClick={openCreateModal}
-              className="px-4 py-2.5 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white text-xs font-extrabold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-[#9F6839] hover:bg-[#835229] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Nuevo Insumo</span>
@@ -275,120 +280,124 @@ export default function Inventory() {
       </div>
 
       {pageError && (
-        <div className="p-3.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 text-xs font-bold">
+        <div className="p-3.5 rounded-xl bg-red-50 text-red-700 border border-red-200 text-xs font-medium">
           {pageError}
         </div>
       )}
 
       {/* Alerta de Stock Bajo */}
       {lowStockCount > 0 && (
-        <div className="p-4 rounded-3xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center gap-3 shadow-xs">
-          <AlertTriangle className="w-5 h-5 shrink-0 text-amber-600" />
+        <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2.5 shadow-xs">
+          <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
           <div>
-            <span className="font-extrabold text-sm block">¡Alerta de Inventario Bajo!</span>
-            <span>
-              Tienes {lowStockCount} insumo(s) por debajo de su stock mínimo configurado.
-            </span>
+            <span className="font-semibold text-xs">Alerta de Inventario:</span>{' '}
+            <span>Tienes {lowStockCount} insumo(s) por debajo de su stock mínimo.</span>
           </div>
         </div>
       )}
 
       {/* Buscador & Tabs */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="relative w-full sm:max-w-md">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9F6839]" />
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9F6839] dark:text-[#DABA8C]" />
           <input
             type="text"
-            placeholder="Buscar insumo por nombre (ej. Café, Leche, Vaso)..."
+            placeholder="Buscar insumo (ej. Café, Leche, Vaso)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 focus:border-[#9F6839] rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#432414] dark:text-[#FEE4D7] focus:outline-none shadow-xs"
+            className="w-full bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl pl-10 pr-3 py-2 text-xs text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:border-[#9F6839]"
           />
         </div>
 
-        <div className="flex items-center gap-2 border-b border-[#D4B28E]/40 pb-2 w-full sm:w-auto overflow-x-auto">
+        <div className="inline-flex p-0.5 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/40 dark:border-[#9F6839]/30 rounded-lg shrink-0">
           <button type="button"
             onClick={() => setActiveTab('inventory')}
-            className={`px-4 py-2 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'inventory'
-                ? 'bg-[#9F6839] text-white shadow-xs'
-                : 'bg-white dark:bg-[#201009] border border-[#D4B28E] text-[#432414] dark:text-[#FEE4D7]'
+                ? 'bg-[#9F6839] text-white font-bold'
+                : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50'
             }`}
           >
-            <Package className={`w-3.5 h-3.5 ${activeTab === 'inventory' ? 'text-white' : 'text-[#9F6839]'}`} />
+            <Package className="w-3.5 h-3.5" />
             <span>Existencias ({ingredients.length})</span>
           </button>
           <button type="button"
             onClick={() => setActiveTab('waste')}
-            className={`px-4 py-2 rounded-2xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'waste'
-                ? 'bg-[#9F6839] text-white shadow-xs'
-                : 'bg-white dark:bg-[#201009] border border-[#D4B28E] text-[#432414] dark:text-[#FEE4D7]'
+                ? 'bg-[#9F6839] text-white font-bold'
+                : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50'
             }`}
           >
-            <ShieldAlert className={`w-3.5 h-3.5 ${activeTab === 'waste' ? 'text-white' : 'text-amber-500'}`} />
-            <span>Reportes de Mermas ({wasteReports.length})</span>
+            <ShieldAlert className="w-3.5 h-3.5" />
+            <span>Mermas ({wasteReports.length})</span>
           </button>
         </div>
       </div>
 
       {/* Pestaña 1: Tabla de Insumos */}
       {activeTab === 'inventory' && (
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden">
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[650px] text-left text-xs">
-              <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider text-[10px] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 font-bold">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider text-[11px] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 font-semibold">
                 <tr>
-                  <th className="py-3 px-4">Insumo</th>
-                  <th className="py-3 px-4 text-right">Stock</th>
-                  <th className="py-3 px-4 text-right">Costo/u</th>
-                  <th className="py-3 px-4 text-right">Min</th>
-                  <th className="py-3 px-4 text-center">Estado</th>
-                  {!isEmployee && <th className="py-3 px-4 text-center">Ajuste</th>}
-                  {!isEmployee && <th className="py-3 px-4 text-right">Acciones</th>}
+                  <th className="py-2.5 px-3.5">Insumo</th>
+                  <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Stock</th>
+                  <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Costo/u</th>
+                  <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Min</th>
+                  <th className="py-2.5 px-3.5 text-center whitespace-nowrap">Estado</th>
+                  {!isEmployee && <th className="py-2.5 px-3.5 text-center whitespace-nowrap">Ajuste</th>}
+                  {!isEmployee && <th className="py-2.5 px-3.5 text-right whitespace-nowrap w-20">Acciones</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#D4B28E]/30 dark:divide-[#9F6839]/20 text-[#432414] dark:text-[#FEE4D7]">
+              <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 text-[#432414] dark:text-[#FEE4D7]">
                 {filteredIngredients.map((ing) => {
                   const isLow = ing.quantity <= ing.min_quantity
                   return (
-                    <tr key={ing.id} className={`hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A150C]/60 transition-colors group ${isLow ? 'bg-amber-50/40 dark:bg-amber-950/20' : ''}`}>
-                      <td className="py-2.5 px-4 font-bold">{ing.name}</td>
-                      <td className="py-2.5 px-4 font-black text-sm text-right tabular-nums">
-                        {ing.quantity} <span className="text-xs font-semibold text-[#9F6839] dark:text-[#DABA8C]">{ing.unit}</span>
+                    <tr key={ing.id} className={`hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/70 transition-colors group ${isLow ? 'bg-amber-500/[0.03]' : ''}`}>
+                      <td className="py-2 px-3.5 font-medium text-xs text-[#432414] dark:text-[#FEE4D7]">{ing.name}</td>
+                      <td className="py-2 px-3.5 font-bold text-xs text-right tabular-nums whitespace-nowrap">
+                        {ing.quantity} <span className="text-[11px] font-normal text-[#9F6839] dark:text-[#DABA8C]">{ing.unit}</span>
                       </td>
-                      <td className="py-2.5 px-4 font-bold text-emerald-600 dark:text-emerald-400 text-right tabular-nums">
-                        ${(ing.unit_cost || 0).toLocaleString()}
+                      <td className="py-2 px-3.5 font-normal text-right tabular-nums whitespace-nowrap text-xs">
+                        ${(ing.unit_cost || 0).toLocaleString('es-CO')}
                       </td>
-                      <td className="py-2.5 px-4 text-[#9F6839] dark:text-[#DABA8C] text-right tabular-nums font-semibold">{ing.min_quantity}</td>
-                      <td className="py-2.5 px-4 text-center">
+                      <td className="py-2 px-3.5 text-[#9F6839] dark:text-[#DABA8C] text-right tabular-nums text-xs whitespace-nowrap">{ing.min_quantity}</td>
+                      <td className="py-2 px-3.5 text-center whitespace-nowrap">
                         {isLow ? (
-                          <span className="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-[10px] font-bold border border-amber-300 dark:border-amber-700">¡Bajo!</span>
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            Bajo
+                          </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-md bg-emerald-100/70 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold border border-emerald-300 dark:border-emerald-800">OK</span>
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            OK
+                          </span>
                         )}
                       </td>
                       {!isEmployee && (
-                        <td className="py-2.5 px-4 text-center">
-                          <div className="flex justify-center gap-1">
-                            <button type="button" onClick={() => quickAdjustStock(ing, -1)} className="p-1 rounded-md bg-[#FEE4D7] dark:bg-[#34180D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#9F6839] hover:text-white transition-colors"><Minus className="w-3 h-3" /></button>
-                            <button type="button" onClick={() => quickAdjustStock(ing, 1)} className="p-1 rounded-md bg-[#FEE4D7] dark:bg-[#34180D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#9F6839] hover:text-white transition-colors"><Plus className="w-3 h-3" /></button>
+                        <td className="py-2 px-3.5 text-center whitespace-nowrap">
+                          <div className="flex justify-center items-center gap-1">
+                            <button type="button" onClick={() => quickAdjustStock(ing, -1)} className="p-1 rounded-md text-[#9F6839] hover:text-[#432414] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] transition-colors"><Minus className="w-3 h-3" /></button>
+                            <button type="button" onClick={() => quickAdjustStock(ing, 1)} className="p-1 rounded-md text-[#9F6839] hover:text-[#432414] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] transition-colors"><Plus className="w-3 h-3" /></button>
                           </div>
                         </td>
                       )}
                       {!isEmployee && (
-                        <td className="py-2.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <td className="py-2 px-3.5 text-right whitespace-nowrap w-20">
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                             <button type="button"
                               onClick={() => openEditModal(ing)}
-                              className="p-1.5 rounded-lg text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#2E180E] transition-colors cursor-pointer"
+                              className="p-1 rounded-md text-[#9F6839] hover:text-[#432414] dark:hover:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] transition-colors cursor-pointer"
                               title="Editar insumo"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button type="button"
                               onClick={() => handleDeleteIngredient(ing)}
-                              className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                              className="p-1 rounded-md text-[#9F6839] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
                               title="Eliminar insumo"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -401,7 +410,7 @@ export default function Inventory() {
                 })}
                 {filteredIngredients.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="text-center py-8 text-[#9F6839] font-medium">
+                    <td colSpan={7} className="text-center py-8 text-[#9F6839]/70 font-normal">
                       No se encontraron insumos.
                     </td>
                   </tr>
@@ -414,41 +423,41 @@ export default function Inventory() {
 
       {/* Pestaña 2: Historial de Reportes de Mermas */}
       {activeTab === 'waste' && (
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden">
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px] text-left text-xs">
-              <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider text-[10px] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 font-bold">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider text-[11px] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 font-semibold">
                 <tr>
-                  <th className="py-3 px-4">Fecha / Hora</th>
-                  <th className="py-3 px-4">Insumo</th>
-                  <th className="py-3 px-4 text-right">Cantidad Reportada</th>
-                  <th className="py-3 px-4 text-right">Descontado del Stock</th>
-                  <th className="py-3 px-4 text-right">Pérdida Estimada ($)</th>
-                  <th className="py-3 px-4">Motivo del Daño</th>
+                  <th className="py-2.5 px-3.5 whitespace-nowrap">Fecha / Hora</th>
+                  <th className="py-2.5 px-3.5">Insumo</th>
+                  <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Cantidad</th>
+                  <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Descontado</th>
+                  <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Pérdida ($)</th>
+                  <th className="py-2.5 px-3.5">Motivo</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#D4B28E]/30 dark:divide-[#9F6839]/20 text-[#432414] dark:text-[#FEE4D7]">
+              <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 text-[#432414] dark:text-[#FEE4D7]">
                 {wasteReports.map((w) => (
-                  <tr key={w.id} className="hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A150C]/60 transition-colors">
-                    <td className="py-2.5 px-4 font-semibold text-[#9F6839] dark:text-[#DABA8C] tabular-nums">
-                      {new Date(w.created_at).toLocaleString()}
+                  <tr key={w.id} className="hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/70 transition-colors">
+                    <td className="py-2 px-3.5 font-medium text-[#9F6839] dark:text-[#DABA8C] tabular-nums whitespace-nowrap text-xs">
+                      {new Date(w.created_at).toLocaleString('es-CO')}
                     </td>
-                    <td className="py-2.5 px-4 font-bold">{w.ingredient_name || 'Insumo'}</td>
-                    <td className="py-2.5 px-4 font-extrabold text-amber-700 dark:text-amber-300 text-right tabular-nums">
+                    <td className="py-2 px-3.5 font-semibold text-xs">{w.ingredient_name || 'Insumo'}</td>
+                    <td className="py-2 px-3.5 text-right tabular-nums whitespace-nowrap text-xs">
                       {w.user_quantity} {w.user_unit}
                     </td>
-                    <td className="py-2.5 px-4 font-bold text-red-600 text-right tabular-nums">
+                    <td className="py-2 px-3.5 text-rose-600 dark:text-rose-400 text-right tabular-nums whitespace-nowrap text-xs">
                       -{w.quantity_used} {w.ingredient_unit}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-black text-red-600 text-sm tabular-nums">
-                      -${(w.estimated_loss || 0).toLocaleString()}
+                    <td className="py-2 px-3.5 text-right font-semibold text-rose-600 dark:text-rose-400 tabular-nums whitespace-nowrap text-xs">
+                      -${(w.estimated_loss || 0).toLocaleString('es-CO')}
                     </td>
-                    <td className="py-2.5 px-4 italic text-[#9F6839] dark:text-[#DABA8C]">{w.reason}</td>
+                    <td className="py-2 px-3.5 text-[#9F6839] dark:text-[#DABA8C] text-xs truncate max-w-xs">{w.reason}</td>
                   </tr>
                 ))}
                 {wasteReports.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-[#9F6839] font-medium">
+                    <td colSpan={6} className="text-center py-8 text-[#9F6839]/70 font-normal">
                       No hay mermas reportadas.
                     </td>
                   </tr>

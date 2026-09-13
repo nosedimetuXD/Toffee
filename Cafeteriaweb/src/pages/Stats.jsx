@@ -110,111 +110,113 @@ export default function Stats() {
   const mStats = summary?.monthly_stats
 
   return (
-    <div className="space-y-6">
-      {/* Header Banner con Patron de Marca Toffe */}
-      <div className="relative rounded-3xl overflow-hidden p-6 border border-[#D4B28E] dark:border-[#9F6839]/40 shadow-sm bg-[#432414] text-[#FEE4D7]">
-        <div className="absolute inset-0 opacity-15 bg-cover bg-center pointer-events-none" style={{ backgroundImage: "url('/toffe-pattern-dark.png')" }} />
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 text-[#432414] dark:text-[#FEE4D7]">
+      {/* Header Banner */}
+      <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-[#FEE4D7] dark:bg-[#2A150C] rounded-xl text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
+            <BarChart3 className="w-5 h-5" />
+          </div>
           <div>
-            <h2 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
-              <BarChart3 className="w-6 h-6 text-[#DABA8C]" />
-              <span>Estadísticas Ejecutivas & Reportes</span>
-            </h2>
-            <p className="text-xs font-semibold text-[#DABA8C] mt-1">
-              Dashboard exclusivo del dueño con ranking de ventas, productos estrella y clientes top
+            <h1 className="text-xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7]">
+              Estadísticas Ejecutivas & Reportes
+            </h1>
+            <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
+              Dashboard de rendimiento financiero, productos estrella y clientes top
             </p>
           </div>
-
-          <button type="button"
-            onClick={() => setIsFilterModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-xs font-bold text-white shadow-sm transition-all cursor-pointer shrink-0"
-          >
-            <Calendar className="w-4 h-4 text-[#DABA8C]" />
-            <span>{displayLabel}</span>
-            <ChevronDown className="w-3.5 h-3.5 text-[#DABA8C]" />
-          </button>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setIsFilterModalOpen(true)}
+          className="inline-flex items-center gap-2 px-3.5 py-2 bg-white dark:bg-[#2A150C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] text-[#432414] dark:text-[#FEE4D7] rounded-xl text-xs font-semibold border border-[#D4B28E]/70 dark:border-[#9F6839]/40 shadow-xs transition-colors cursor-pointer"
+        >
+          <Calendar className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
+          <span>{displayLabel}</span>
+          <ChevronDown className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C]" />
+        </button>
       </div>
 
       {pageError && (
-        <div className="p-3.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 text-xs font-bold flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-red-600" />
+        <div className="p-3.5 rounded-xl bg-red-50 text-red-700 border border-red-200 text-xs font-medium flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
           <span>{pageError}</span>
         </div>
       )}
 
-      {/* Tarjetas KPI Financieras Exec — Jerarquía De-AI (Hero + Secundarias) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Ventas Totales — Hero Primary */}
-        <div className="sm:col-span-2 bg-[#432414] text-[#FEE4D7] dark:bg-[#25120A] border border-[#9F6839]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#DABA8C] mb-1">
+      {/* Unified Metrics Bar — Linear Style (Single container, 1 accent, pure hierarchy) */}
+      <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 overflow-hidden">
+        {/* Ventas Totales */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
             <span>Ventas Totales</span>
-            <TrendingUp className="w-4 h-4 text-[#DABA8C]" />
+            <TrendingUp className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="text-3xl font-black tabular-nums tracking-tight">
-            ${(mStats?.monthly_income || 0).toLocaleString()}
+          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+            ${(mStats?.monthly_income || 0).toLocaleString('es-CO')}
           </div>
-          <p className="text-[11px] opacity-75 mt-1 font-medium">
+          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
             Ingreso bruto facturado en el período
-          </p>
+          </span>
         </div>
 
         {/* Ganancia Neta */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] mb-1">
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
             <span>Ganancia Neta</span>
-            <DollarSign className="w-4 h-4 text-[#9F6839]" />
+            <DollarSign className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className={`text-2xl font-black tabular-nums tracking-tight ${(mStats?.net_profit || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-            ${(mStats?.net_profit || 0).toLocaleString()}
+          <div className={`mt-2 text-2xl lg:text-3xl font-bold tracking-tight tabular-nums ${(mStats?.net_profit || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+            ${(mStats?.net_profit || 0).toLocaleString('es-CO')}
           </div>
-          <p className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 mt-1 font-medium">
-            Utilidad disponible
-          </p>
+          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
+            Utilidad operativa disponible
+          </span>
         </div>
 
         {/* Gastos Totales */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] mb-1">
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
             <span>Gastos Totales</span>
-            <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
+            <TrendingDown className="w-3.5 h-3.5 opacity-60 text-rose-500" />
           </div>
-          <div className="text-2xl font-black text-red-600 dark:text-red-400 tabular-nums tracking-tight">
-            ${(mStats?.monthly_expenses || 0).toLocaleString()}
+          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+            ${(mStats?.monthly_expenses || 0).toLocaleString('es-CO')}
           </div>
-          <p className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 mt-1 font-medium">
-            Egresos del período
-          </p>
+          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
+            Egresos e insumos del período
+          </span>
         </div>
       </div>
 
       {/* Rankings Grid: Top 10 Productos Más Vendidos y Top 10 Clientes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Top 10 Productos Más Vendidos */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 space-y-3">
-          <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30">
-            <h3 className="text-sm font-extrabold text-[#432414] dark:text-[#FEE4D7] flex items-center gap-2">
-              <Award className="w-4 h-4 text-amber-500" />
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 sm:p-5 space-y-3">
+          <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/20 dark:border-[#9F6839]/20">
+            <h3 className="text-xs font-semibold text-[#432414] dark:text-[#FEE4D7] flex items-center gap-2 uppercase tracking-wider">
+              <Award className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
               <span>Top 10 Productos Más Vendidos</span>
             </h3>
-            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C]">Por unidades</span>
+            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70">Por unidades</span>
           </div>
 
           {!mStats?.top_products || mStats.top_products.length === 0 ? (
-            <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] font-medium py-6 text-center">No hay productos vendidos en este periodo.</p>
+            <p className="text-xs text-[#9F6839]/70 dark:text-[#DABA8C]/70 py-6 text-center">No hay productos vendidos en este periodo.</p>
           ) : (
-            <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
+            <div className="divide-y divide-[#D4B28E]/15 dark:divide-[#9F6839]/15 max-h-[380px] overflow-y-auto pr-1">
               {mStats.top_products.slice(0, 10).map((prod, idx) => (
-                <div key={prod.product_name || idx} className="p-2.5 rounded-xl bg-[#FEE4D7]/20 dark:bg-[#2A150C]/50 border border-[#D4B28E]/40 dark:border-[#9F6839]/30 flex items-center justify-between gap-3 hover:bg-[#FEE4D7]/40 dark:hover:bg-[#2A150C] transition-colors">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className={`w-5 h-5 rounded-md text-white text-[10px] font-black flex items-center justify-center shrink-0 ${idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-amber-700' : 'bg-[#9F6839]/70'}`}>
+                <div key={prod.product_name || idx} className="py-2.5 px-2 flex items-center justify-between gap-3 hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/50 transition-colors rounded-lg">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-5 h-5 rounded text-[11px] font-semibold text-[#9F6839] dark:text-[#DABA8C] bg-[#FEE4D7]/50 dark:bg-[#2A160D] border border-[#D4B28E]/40 dark:border-[#9F6839]/30 flex items-center justify-center shrink-0 tabular-nums">
                       {idx + 1}
                     </span>
-                    <span className="text-xs font-extrabold text-[#432414] dark:text-[#FEE4D7] truncate">{prod.product_name}</span>
+                    <span className="text-xs font-medium text-[#432414] dark:text-[#FEE4D7] truncate">{prod.product_name}</span>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-xs font-extrabold text-[#9F6839] dark:text-[#DABA8C] block tabular-nums">{prod.total_qty} ud(s)</span>
-                    <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">${prod.total_amount.toLocaleString()}</span>
+                    <span className="text-xs font-semibold text-[#432414] dark:text-[#FEE4D7] block tabular-nums">{prod.total_qty} ud(s)</span>
+                    <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 tabular-nums">${prod.total_amount.toLocaleString('es-CO')}</span>
                   </div>
                 </div>
               ))}
@@ -223,30 +225,30 @@ export default function Stats() {
         </div>
 
         {/* Top 10 Clientes del Periodo */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 space-y-3">
-          <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30">
-            <h3 className="text-sm font-extrabold text-[#432414] dark:text-[#FEE4D7] flex items-center gap-2">
-              <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 sm:p-5 space-y-3">
+          <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/20 dark:border-[#9F6839]/20">
+            <h3 className="text-xs font-semibold text-[#432414] dark:text-[#FEE4D7] flex items-center gap-2 uppercase tracking-wider">
+              <Users className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
               <span>Top 10 Clientes del Periodo</span>
             </h3>
-            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C]">Por inversión</span>
+            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70">Por facturación</span>
           </div>
 
           {!mStats?.top_customers || mStats.top_customers.length === 0 ? (
-            <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] font-medium py-6 text-center">No hay compras registradas con nombre de cliente este mes.</p>
+            <p className="text-xs text-[#9F6839]/70 dark:text-[#DABA8C]/70 py-6 text-center">No hay compras registradas con nombre de cliente este mes.</p>
           ) : (
-            <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
+            <div className="divide-y divide-[#D4B28E]/15 dark:divide-[#9F6839]/15 max-h-[380px] overflow-y-auto pr-1">
               {mStats.top_customers.slice(0, 10).map((c, idx) => (
-                <div key={c.customer_name || idx} className="p-2.5 rounded-xl bg-[#FEE4D7]/20 dark:bg-[#2A150C]/50 border border-[#D4B28E]/40 dark:border-[#9F6839]/30 flex items-center justify-between gap-3 hover:bg-[#FEE4D7]/40 dark:hover:bg-[#2A150C] transition-colors">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className={`w-5 h-5 rounded-md text-white text-[10px] font-black flex items-center justify-center shrink-0 ${idx === 0 ? 'bg-emerald-600' : idx === 1 ? 'bg-emerald-500' : idx === 2 ? 'bg-teal-600' : 'bg-[#9F6839]/70'}`}>
+                <div key={c.customer_name || idx} className="py-2.5 px-2 flex items-center justify-between gap-3 hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/50 transition-colors rounded-lg">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-5 h-5 rounded text-[11px] font-semibold text-[#9F6839] dark:text-[#DABA8C] bg-[#FEE4D7]/50 dark:bg-[#2A160D] border border-[#D4B28E]/40 dark:border-[#9F6839]/30 flex items-center justify-center shrink-0 tabular-nums">
                       {idx + 1}
                     </span>
-                    <span className="text-xs font-extrabold text-[#432414] dark:text-[#FEE4D7] truncate">{c.customer_name}</span>
+                    <span className="text-xs font-medium text-[#432414] dark:text-[#FEE4D7] truncate">{c.customer_name}</span>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 block tabular-nums">${c.total_spent.toLocaleString()}</span>
-                    <span className="text-[10px] font-bold text-[#9F6839] dark:text-[#DABA8C] tabular-nums">{c.orders_count} compra(s)</span>
+                    <span className="text-xs font-semibold text-[#432414] dark:text-[#FEE4D7] block tabular-nums">${c.total_spent.toLocaleString('es-CO')}</span>
+                    <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 tabular-nums">{c.orders_count} compra(s)</span>
                   </div>
                 </div>
               ))}
@@ -302,32 +304,32 @@ export default function Stats() {
             </button>
           </div>
 
-          {/* TAB 1: Mes & Año (Exacto a la imagen del usuario) */}
+          {/* TAB 1: Mes & Año */}
           {activeTab === 'month_year' && (
-            <div className="space-y-4 p-4 rounded-3xl bg-white dark:bg-[#150904] border border-[#D4B28E] shadow-2xs">
+            <div className="space-y-4 p-4 rounded-xl bg-white dark:bg-[#150904] border border-[#D4B28E]/40 shadow-xs">
               {/* Selector de Año */}
-              <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/40">
+              <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/30">
                 <button
                   type="button"
                   onClick={() => setSelectedYear(selectedYear - 1)}
-                  className="p-2 rounded-xl border border-[#D4B28E] hover:bg-[#FEE4D7] dark:hover:bg-[#2E180E] text-[#432414] dark:text-[#FEE4D7] cursor-pointer"
+                  className="p-1.5 rounded-lg border border-[#D4B28E]/50 hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2E180E] text-[#432414] dark:text-[#FEE4D7] cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="text-base font-extrabold text-[#432414] dark:text-[#FEE4D7]">
+                <span className="text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums">
                   {selectedYear}
                 </span>
                 <button
                   type="button"
                   onClick={() => setSelectedYear(selectedYear + 1)}
-                  className="p-2 rounded-xl border border-[#D4B28E] hover:bg-[#FEE4D7] dark:hover:bg-[#2E180E] text-[#432414] dark:text-[#FEE4D7] cursor-pointer"
+                  className="p-1.5 rounded-lg border border-[#D4B28E]/50 hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2E180E] text-[#432414] dark:text-[#FEE4D7] cursor-pointer"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Grid de 12 Meses */}
-              <div className="grid grid-cols-4 gap-2.5 pt-1">
+              <div className="grid grid-cols-4 gap-2 pt-1">
                 {MONTH_NAMES.map((m) => {
                   const isSelected = selectedMonth === m.num
 
@@ -336,10 +338,10 @@ export default function Stats() {
                       key={m.num}
                       type="button"
                       onClick={() => handleSelectMonthYear(selectedYear, m.num, m.full)}
-                      className={`py-3 rounded-xl text-xs font-bold text-center transition-all cursor-pointer ${
+                      className={`py-2 px-1 rounded-lg text-xs font-semibold text-center transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-[#0066FF] text-white font-black shadow-md border-2 border-black dark:border-white ring-2 ring-blue-400'
-                          : 'bg-gray-100 dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] hover:bg-blue-100 dark:hover:bg-blue-950/60 border border-gray-200 dark:border-[#9F6839]/40'
+                          ? 'bg-[#9F6839] text-white shadow-xs'
+                          : 'bg-[#FEE4D7]/30 dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] hover:bg-[#FEE4D7] dark:hover:bg-[#34180D] border border-[#D4B28E]/30 dark:border-[#9F6839]/30'
                       }`}
                     >
                       {m.short}

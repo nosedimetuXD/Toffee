@@ -369,18 +369,18 @@ export default function Customers() {
   return (
     <div className="space-y-6 text-[#432414] dark:text-[#FEE4D7]">
       {/* Encabezado Principal */}
-      <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-[#FEE4D7] dark:bg-[#2A150C] rounded-2xl text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
-              <Users className="w-6 h-6" />
+            <div className="p-2.5 bg-[#FEE4D7] dark:bg-[#2A150C] rounded-xl text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
+              <Users className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7]">
+              <h1 className="text-xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7]">
                 Clientes & CRM
               </h1>
-              <p className="text-xs font-semibold text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
-                Gestión de clientes habituales, notas de preferencias y fidelización
+              <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
+                Gestión de clientes habituales, preferencias y fidelización
               </p>
             </div>
           </div>
@@ -389,19 +389,19 @@ export default function Customers() {
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
           {/* Grupo Exportacion (Solo Dueño y Administrador) */}
           {canExport && (
-            <div className="inline-flex items-center p-1 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl shadow-xs">
+            <div className="inline-flex items-center p-0.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-xl shadow-xs">
               <button type="button"
                 onClick={() => exportCustomersToExcel(customers)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-all cursor-pointer whitespace-nowrap"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-all cursor-pointer whitespace-nowrap"
                 title="Descargar listado de clientes en formato Excel (.xls)"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>Excel</span>
               </button>
-              <div className="h-3.5 w-px bg-[#D4B28E]/60 dark:bg-[#9F6839]/40 mx-0.5" />
+              <div className="h-3.5 w-px bg-[#D4B28E]/40 dark:bg-[#9F6839]/40 mx-0.5" />
               <button type="button"
                 onClick={() => exportCustomersToCSV(customers)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] rounded-xl transition-all cursor-pointer whitespace-nowrap"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] rounded-lg transition-all cursor-pointer whitespace-nowrap"
                 title="Descargar en formato CSV"
               >
                 <Download className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C]" />
@@ -412,7 +412,7 @@ export default function Customers() {
 
           <button type="button"
             onClick={handleOpenCreate}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#9F6839] hover:bg-[#835229] text-white rounded-2xl text-xs font-black shadow-xs transition-all cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#9F6839] hover:bg-[#835229] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer whitespace-nowrap"
           >
             <UserPlus className="w-4 h-4" />
             <span>Nuevo Cliente</span>
@@ -420,47 +420,47 @@ export default function Customers() {
         </div>
       </div>
 
-      {/* Tarjetas Resumen — Jerarquía De-AI (Hero + Secundarias) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Facturación Total — Hero Primary */}
-        <div className="bg-[#432414] text-[#FEE4D7] dark:bg-[#25120A] border border-[#9F6839]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#DABA8C] mb-1">
+      {/* Unified Metrics Bar — Linear Style (Single cohesive container, one flat accent) */}
+      <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 overflow-hidden">
+        {/* Facturación Clientes */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
             <span>Facturación Clientes</span>
-            <DollarSign className="w-4 h-4 text-[#DABA8C]" />
+            <DollarSign className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="text-3xl font-black tabular-nums tracking-tight">
+          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
             ${Number(totalSpentAll).toLocaleString('es-CO')}
           </div>
-          <span className="text-[11px] opacity-75 font-medium block mt-1">
+          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
             Total acumulado facturado a clientes
           </span>
         </div>
 
         {/* Total Clientes */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] mb-1">
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
             <span>Total Clientes</span>
-            <Users className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
+            <Users className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="text-2xl font-black text-[#432414] dark:text-[#FEE4D7] tabular-nums tracking-tight">
+          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
             {totalCustomersCount}
           </div>
-          <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-medium block mt-1">
-            Clientes registrados en el sistema
+          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
+            Clientes registrados en CRM
           </span>
         </div>
 
         {/* Deuda Pendiente */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 mb-1">
-            <span>Deuda Pendiente</span>
-            <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+            <span>Cartera Pendiente</span>
+            <AlertTriangle className="w-3.5 h-3.5 opacity-60 text-rose-500" />
           </div>
-          <div className={`text-2xl font-black tabular-nums tracking-tight ${totalDebtAll > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+          <div className={`mt-2 text-2xl lg:text-3xl font-bold tracking-tight tabular-nums ${totalDebtAll > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
             ${Number(totalDebtAll).toLocaleString('es-CO')}
           </div>
-          <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-medium block mt-1">
-            {totalDebtAll > 0 ? `${withDebtCount} clientes con saldo pendiente` : 'Sin cartera pendiente (al día)'}
+          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
+            {totalDebtAll > 0 ? `${withDebtCount} clientes con saldo pendiente` : 'Cartera al día (sin saldo pendiente)'}
           </span>
         </div>
       </div>
@@ -574,80 +574,80 @@ export default function Customers() {
               <div
                 key={c.id}
                 onClick={() => handleOpenDetails(c)}
-                className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 hover:border-[#9F6839] rounded-3xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between group"
+                className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 hover:border-[#9F6839] rounded-2xl p-4 shadow-xs hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between group"
               >
                 <div>
                   {/* Cabecera Tarjeta */}
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-2xl bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] font-black text-base flex items-center justify-center border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
+                  <div className="flex items-start justify-between gap-3 mb-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-9 h-9 rounded-xl bg-[#FEE4D7]/60 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] font-bold text-xs flex items-center justify-center border border-[#D4B28E]/40 dark:border-[#9F6839]/30 shrink-0">
                         {c.first_name?.[0]?.toUpperCase() || 'C'}
                       </div>
-                      <div>
-                        <h3 className="font-extrabold text-[#432414] dark:text-[#FEE4D7] text-sm leading-tight group-hover:text-[#9F6839] dark:group-hover:text-[#DABA8C] transition-colors">
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-[#432414] dark:text-[#FEE4D7] text-xs leading-tight truncate group-hover:text-[#9F6839] dark:group-hover:text-[#DABA8C] transition-colors">
                           {fullName}
                         </h3>
-                        <span className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] font-medium">
-                          Registrado por: {c.created_by_username || 'Personal'}
+                        <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 truncate block mt-0.5">
+                          {c.created_by_username ? `Registrado por ${c.created_by_username}` : 'Cliente Registrado'}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0">
                       {canSendMessages && c.phone && (
                         <button type="button"
                           onClick={(e) => handleOpenWhatsApp(c, e)}
                           title="Enviar WhatsApp"
-                          className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-colors cursor-pointer"
+                          className="p-1 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-md transition-colors cursor-pointer"
                         >
-                          <MessageCircle className="w-4 h-4" />
+                          <MessageCircle className="w-3.5 h-3.5" />
                         </button>
                       )}
                       <button type="button"
                         onClick={(e) => handleOpenEdit(c, e)}
                         title="Editar Cliente"
-                        className="p-2 text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#2A150C] rounded-xl transition-colors cursor-pointer"
+                        className="p-1 text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] rounded-md transition-colors cursor-pointer"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       {(isOwner || isAdmin) && (
                         <button type="button"
                           onClick={(e) => handleDeleteCustomer(c, e)}
                           title="Eliminar Cliente"
-                          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-colors cursor-pointer"
+                          className="p-1 text-[#9F6839] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors cursor-pointer"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
                   </div>
 
                   {/* Badges de Estado (Deuda / Al Día) */}
-                  <div className="mb-3 flex items-center gap-2">
+                  <div className="mb-2.5 flex items-center gap-1.5">
                     {hasDebt ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-300 dark:border-red-800">
-                        <AlertTriangle className="w-3 h-3 text-red-600" />
-                        <span>Debe ${Number(c.total_debt).toLocaleString('es-CO')}</span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 tabular-nums">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        Debe ${Number(c.total_debt).toLocaleString('es-CO')}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        <span>Al día</span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        Al día
                       </span>
                     )}
                   </div>
 
                   {/* Datos de contacto */}
-                  <div className="space-y-1.5 mb-3 text-xs text-[#432414]/80 dark:text-[#FEE4D7]/80 font-medium">
+                  <div className="space-y-1 mb-2.5 text-xs text-[#432414]/80 dark:text-[#FEE4D7]/80">
                     {c.phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C]" />
-                        <span>{c.phone}</span>
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        <Phone className="w-3 h-3 text-[#9F6839] dark:text-[#DABA8C] shrink-0" />
+                        <span className="tabular-nums">{c.phone}</span>
                       </div>
                     )}
                     {c.email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C]" />
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        <Mail className="w-3 h-3 text-[#9F6839] dark:text-[#DABA8C] shrink-0" />
                         <span className="truncate">{c.email}</span>
                       </div>
                     )}
@@ -655,22 +655,22 @@ export default function Customers() {
 
                   {/* Preferencias / Gustos destacados */}
                   {c.notes && (
-                    <div className="p-3 bg-[#FEE4D7]/40 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl text-xs text-[#432414] dark:text-[#FEE4D7] mb-3 flex items-start gap-2">
-                      <Coffee className="w-4 h-4 flex-shrink-0 text-[#9F6839] dark:text-[#DABA8C] mt-0.5" />
-                      <div className="line-clamp-2 italic">
+                    <div className="p-2 bg-[#FEE4D7]/30 dark:bg-[#2A160D] border border-[#D4B28E]/30 dark:border-[#9F6839]/20 rounded-lg text-xs text-[#432414] dark:text-[#FEE4D7] mb-2.5 flex items-start gap-1.5">
+                      <Coffee className="w-3.5 h-3.5 shrink-0 text-[#9F6839] dark:text-[#DABA8C] mt-0.5" />
+                      <div className="line-clamp-2 text-[11px] italic text-[#9F6839] dark:text-[#DABA8C]">
                         &ldquo;{c.notes}&rdquo;
                       </div>
                     </div>
                   )}
 
                   {/* Botones de Acción de Cuenta y Abonos */}
-                  <div className="pt-2.5 mb-3 border-t border-[#D4B28E]/30 dark:border-[#9F6839]/20 flex items-center justify-between gap-2">
+                  <div className="pt-2 mb-2 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 flex items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={(e) => openAccountStatement(c, e)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FEE4D7]/70 dark:bg-[#2A150C] hover:bg-[#9F6839] hover:text-white text-[#9F6839] dark:text-[#DABA8C] font-bold text-xs transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#FEE4D7]/40 dark:bg-[#2A160D] hover:bg-[#9F6839] hover:text-white text-[#9F6839] dark:text-[#DABA8C] font-semibold text-[11px] transition-colors cursor-pointer"
                     >
-                      <Wallet className="w-3.5 h-3.5" />
+                      <Wallet className="w-3 h-3" />
                       <span>Estado de Cuenta</span>
                     </button>
 
@@ -678,9 +678,9 @@ export default function Customers() {
                       <button
                         type="button"
                         onClick={(e) => handleOpenAbono(c, e)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-xs transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-semibold text-[11px] shadow-xs transition-all cursor-pointer"
                       >
-                        <BadgeDollarSign className="w-3.5 h-3.5" />
+                        <BadgeDollarSign className="w-3 h-3" />
                         <span>Abonar</span>
                       </button>
                     )}
@@ -688,12 +688,12 @@ export default function Customers() {
                 </div>
 
                 {/* Footer Tarjeta */}
-                <div className="pt-3 border-t border-[#D4B28E]/40 dark:border-[#9F6839]/30 flex items-center justify-between text-xs text-[#9F6839] dark:text-[#DABA8C]">
-                  <div className="flex items-center gap-1.5">
-                    <ShoppingBag className="w-3.5 h-3.5" />
-                    <span>{c.total_orders || 0} pedidos</span>
+                <div className="pt-2 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 flex items-center justify-between text-xs text-[#9F6839] dark:text-[#DABA8C]">
+                  <div className="flex items-center gap-1 text-[11px]">
+                    <ShoppingBag className="w-3 h-3" />
+                    <span className="tabular-nums">{c.total_orders || 0} pedidos</span>
                   </div>
-                  <div className="font-extrabold text-[#432414] dark:text-[#FEE4D7]">
+                  <div className="font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums text-xs">
                     ${Number(c.total_spent || 0).toLocaleString('es-CO')}
                   </div>
                 </div>

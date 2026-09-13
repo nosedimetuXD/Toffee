@@ -308,24 +308,24 @@ export default function SalesHistory() {
   return (
     <div className="space-y-6 text-[#432414] dark:text-[#FEE4D7]">
       {/* Cabecera Principal y Filtros */}
-      <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-[#FEE4D7] dark:bg-[#2A150C] rounded-2xl text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
-              <FileText className="w-6 h-6" />
+            <div className="p-2.5 bg-[#FEE4D7] dark:bg-[#2A150C] rounded-xl text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
+              <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7]">
+              <h1 className="text-xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7]">
                 Historial de Ventas
               </h1>
-              <p className="text-xs font-semibold text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
+              <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
                 Auditoría de transacciones, tickets y comprobantes
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
           {/* Selector de Periodo */}
           {isEmployee ? (
             <div className="inline-flex p-1 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl shadow-xs">
@@ -396,61 +396,61 @@ export default function SalesHistory() {
         </div>
       </div>
 
-      {/* Tarjetas de Metricas Resumen — Jerarquía De-AI (Hero + Secundarias) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Facturado — Hero Primary */}
-        <div className="bg-[#432414] text-[#FEE4D7] dark:bg-[#25120A] border border-[#9F6839]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#DABA8C] mb-1">
+      {/* Unified Metrics Bar — Linear / De-AI Style (Single cohesive container, one flat accent, 0 rainbow clutter) */}
+      <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 overflow-hidden">
+        {/* Total Facturado */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
             <span>Total Facturado</span>
-            <DollarSign className="w-4 h-4 text-[#DABA8C]" />
+            <DollarSign className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="text-3xl font-black tabular-nums tracking-tight">
+          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
             ${Number(totalBilled).toLocaleString('es-CO')}
           </div>
-          <span className="text-[11px] opacity-75 font-medium block mt-1">
+          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
             Total en ventas del período
           </span>
         </div>
 
         {/* Recaudado en Caja */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 mb-1">
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
             <span>Recaudado en Caja</span>
-            <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Wallet className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tight">
+          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
             ${Number(totalCollectedInCash + totalCollectedInTransfer).toLocaleString('es-CO')}
           </div>
-          <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-medium block mt-1">
-            Efec: <span className="tabular-nums font-bold">${Number(totalCollectedInCash).toLocaleString('es-CO')}</span> · Transf: <span className="tabular-nums font-bold">${Number(totalCollectedInTransfer).toLocaleString('es-CO')}</span>
+          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
+            Efec: <span className="tabular-nums font-medium text-[#432414] dark:text-[#FEE4D7]">${Number(totalCollectedInCash).toLocaleString('es-CO')}</span> · Transf: <span className="tabular-nums font-medium text-[#432414] dark:text-[#FEE4D7]">${Number(totalCollectedInTransfer).toLocaleString('es-CO')}</span>
           </span>
         </div>
 
-        {/* Por Cobrar (Deuda) */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 mb-1">
+        {/* Por Cobrar */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
             <span>Por Cobrar (Deuda)</span>
-            <Coins className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+            <Coins className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="text-2xl font-black text-rose-600 dark:text-rose-400 tabular-nums tracking-tight">
+          <div className={`mt-2 text-2xl lg:text-3xl font-bold tracking-tight tabular-nums ${totalPendingDebt > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
             ${Number(totalPendingDebt).toLocaleString('es-CO')}
           </div>
-          <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-medium block mt-1">
+          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
             {totalPendingDebt > 0 ? 'Saldo pendiente por recaudar' : 'Cartera al día (sin deuda)'}
           </span>
         </div>
 
         {/* Ventas Realizadas */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
-          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] mb-1">
-            <span>Ventas Realizadas</span>
-            <ShoppingBag className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+            <span>Transacciones</span>
+            <ShoppingBag className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="text-2xl font-black text-[#432414] dark:text-[#FEE4D7] tabular-nums tracking-tight">
+          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
             {totalSalesCount}
           </div>
-          <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-medium block mt-1">
-            Ticket prom: <span className="tabular-nums font-bold">${Number(averageTicket).toLocaleString('es-CO')}</span>
+          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
+            Ticket prom: <span className="tabular-nums font-medium text-[#432414] dark:text-[#FEE4D7]">${Number(averageTicket).toLocaleString('es-CO')}</span>
           </span>
         </div>
       </div>
@@ -458,26 +458,26 @@ export default function SalesHistory() {
       {/* Buscador y Filtros */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#9F6839] dark:text-[#DABA8C]" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9F6839] dark:text-[#DABA8C]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por cliente, vendedor o ID..."
-            className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:border-[#9F6839]"
+            className="w-full pl-10 pr-4 py-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:border-[#9F6839]"
           />
         </div>
 
         {/* Filtro por Método de Pago */}
-        <div className="flex items-center gap-1.5 overflow-x-auto">
+        <div className="flex items-center gap-1 overflow-x-auto">
           {['Todos', 'efectivo', 'transferencia', 'mixto', 'credito'].map((m) => (
             <button type="button"
               key={m}
               onClick={() => setSelectedMethod(m)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize whitespace-nowrap transition-all cursor-pointer ${
                 selectedMethod === m
-                  ? 'bg-[#9F6839] text-white shadow-xs'
-                  : 'bg-white dark:bg-[#201009] text-[#432414] dark:text-[#FEE4D7] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A150C]'
+                  ? 'bg-[#9F6839] text-white font-bold'
+                  : 'bg-white dark:bg-[#1E0F08] text-[#432414] dark:text-[#FEE4D7] border border-[#D4B28E]/40 dark:border-[#9F6839]/30 hover:bg-[#FEE4D7]/40 dark:hover:bg-[#2A160D]'
               }`}
             >
               {m === 'credito' ? 'Crédito' : m}
@@ -486,14 +486,14 @@ export default function SalesHistory() {
         </div>
 
         {/* Filtro por Estado de Deuda */}
-        <div className="inline-flex p-1 bg-white dark:bg-[#201009] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-xl shrink-0">
+        <div className="inline-flex p-0.5 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/40 dark:border-[#9F6839]/30 rounded-lg shrink-0">
           <button
             type="button"
             onClick={() => setDebtStatusFilter('all')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer ${
               debtStatusFilter === 'all'
-                ? 'bg-[#9F6839] text-white shadow-xs'
-                : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50'
+                ? 'bg-[#9F6839] text-white font-bold'
+                : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 font-medium'
             }`}
           >
             Todas
@@ -501,10 +501,10 @@ export default function SalesHistory() {
           <button
             type="button"
             onClick={() => setDebtStatusFilter('debt')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer ${
               debtStatusFilter === 'debt'
-                ? 'bg-red-600 text-white shadow-xs'
-                : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30'
+                ? 'bg-[#9F6839] text-white font-bold'
+                : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 font-medium'
             }`}
           >
             Con Deuda
@@ -512,10 +512,10 @@ export default function SalesHistory() {
           <button
             type="button"
             onClick={() => setDebtStatusFilter('paid')}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer ${
               debtStatusFilter === 'paid'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
+                ? 'bg-[#9F6839] text-white font-bold'
+                : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 font-medium'
             }`}
           >
             Pagadas
@@ -523,35 +523,35 @@ export default function SalesHistory() {
         </div>
       </div>
 
-      {/* Tabla / Lista de Ventas */}
+      {/* Tabla Linear de Ventas */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 text-[#9F6839] dark:text-[#DABA8C] gap-3">
-          <div className="w-8 h-8 border-3 border-[#9F6839] border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs font-bold">Cargando historial de ventas...</span>
+          <div className="w-6 h-6 border-2 border-[#9F6839] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-semibold">Cargando transacciones...</span>
         </div>
       ) : filteredSales.length === 0 ? (
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-12 text-center">
-          <FileText className="w-12 h-12 text-[#9F6839]/50 dark:text-[#DABA8C]/40 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-[#432414] dark:text-[#FEE4D7] mb-1">No hay ventas registradas</h3>
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-12 text-center">
+          <FileText className="w-10 h-10 text-[#9F6839]/40 dark:text-[#DABA8C]/40 mx-auto mb-3" />
+          <h3 className="text-sm font-bold text-[#432414] dark:text-[#FEE4D7] mb-1">No hay ventas registradas</h3>
           <p className="text-xs text-[#9F6839] dark:text-[#DABA8C]">No se encontraron transacciones para los filtros seleccionados.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden">
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] font-black uppercase text-[10px] tracking-wider">
+              <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] font-semibold uppercase text-[11px] tracking-wider">
                 <tr>
-                  <th className="px-4 py-3 whitespace-nowrap">Fecha & Hora</th>
-                  <th className="px-4 py-3">Cliente</th>
-                  <th className="px-4 py-3">Productos</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Pago / Estado</th>
-                  <th className="px-4 py-3 text-right whitespace-nowrap">Total</th>
-                  <th className="px-4 py-3 text-right whitespace-nowrap">Cobrado</th>
-                  <th className="px-4 py-3 text-right whitespace-nowrap">Pendiente</th>
-                  <th className="px-4 py-3 text-center whitespace-nowrap">Acciones</th>
+                  <th className="px-3.5 py-2.5 whitespace-nowrap">Fecha & Hora</th>
+                  <th className="px-3.5 py-2.5">Cliente</th>
+                  <th className="px-3.5 py-2.5">Productos</th>
+                  <th className="px-3.5 py-2.5 whitespace-nowrap">Estado</th>
+                  <th className="px-3.5 py-2.5 text-right whitespace-nowrap">Total</th>
+                  <th className="px-3.5 py-2.5 text-right whitespace-nowrap">Cobrado</th>
+                  <th className="px-3.5 py-2.5 text-right whitespace-nowrap">Pendiente</th>
+                  <th className="px-3.5 py-2.5 text-right whitespace-nowrap w-24">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#D4B28E]/30 dark:divide-[#9F6839]/20">
+              <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
                 {filteredSales.map((sale) => {
                   const isCancelled = sale.status === 'cancelado' || sale.status === 'cancelada'
                   const paid =
@@ -570,39 +570,35 @@ export default function SalesHistory() {
 
                   const isFullyPaid = !isCancelled && pending === 0
                   const isPartial = !isCancelled && paid > 0 && pending > 0
-                  const isFullDebt = !isCancelled && (sale.payment_method === 'credito' || (paid === 0 && pending > 0))
                   const itemsList = (sale.items || []).map((it) => `${it.quantity}x ${it.product_name}`).join(', ')
 
                   return (
                     <tr
                       key={sale.id}
-                      className={`hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A150C]/60 transition-colors group ${
-                        isCancelled ? 'opacity-60 bg-[#FEE4D7]/10 dark:bg-[#150904]/40' : ''
+                      className={`hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/70 transition-colors duration-100 group ${
+                        isCancelled ? 'opacity-50 bg-[#FEE4D7]/10 dark:bg-[#150904]/40' : ''
                       }`}
                     >
                       {/* Fecha & Hora */}
-                      <td className="px-4 py-2.5 whitespace-nowrap">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-                            {new Date(sale.created_at).toLocaleDateString('es-CO', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric'
-                            })}
-                          </span>
-                          <span className="font-semibold text-[10px] text-[#9F6839] dark:text-[#DABA8C] tabular-nums">
-                            {new Date(sale.created_at).toLocaleTimeString('es-CO', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: true
-                            })}
-                          </span>
-                        </div>
+                      <td className="px-3.5 py-2 whitespace-nowrap font-medium text-[#432414] dark:text-[#FEE4D7] text-xs">
+                        <span className="tabular-nums">
+                          {new Date(sale.created_at).toLocaleDateString('es-CO', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </span>
+                        <span className="text-[#9F6839]/70 dark:text-[#DABA8C]/60 text-[11px] ml-1.5 tabular-nums">
+                          {new Date(sale.created_at).toLocaleTimeString('es-CO', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
                       </td>
 
                       {/* Cliente */}
                       <td
-                        className="px-4 py-2.5 font-extrabold text-[#432414] dark:text-[#FEE4D7] max-w-[150px]"
+                        className="px-3.5 py-2 font-semibold text-[#432414] dark:text-[#FEE4D7] text-xs max-w-[140px]"
                         title={sale.customer_name || 'Cliente General'}
                       >
                         <div className="truncate">{sale.customer_name || 'Cliente General'}</div>
@@ -610,32 +606,36 @@ export default function SalesHistory() {
 
                       {/* Productos */}
                       <td
-                        className="px-4 py-2.5 max-w-[220px] truncate font-medium text-[#432414]/80 dark:text-[#FEE4D7]/80"
+                        className="px-3.5 py-2 max-w-[200px] truncate text-xs text-[#9F6839] dark:text-[#DABA8C] font-normal"
                         title={itemsList}
                       >
                         {itemsList || 'Sin detalle'}
                       </td>
 
-                      {/* Pago / Estado */}
-                      <td className="px-4 py-2.5 whitespace-nowrap">
+                      {/* Pago / Estado Minimal Badge */}
+                      <td className="px-3.5 py-2 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-bold uppercase text-[#432414] dark:text-[#FEE4D7]">
+                          <span className="text-[11px] font-medium uppercase text-[#9F6839] dark:text-[#DABA8C]">
                             {sale.payment_method}
                           </span>
                           {isCancelled ? (
-                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-neutral-500/10 text-neutral-600 dark:text-neutral-400 border border-neutral-500/20">
+                              <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
                               Cancelada
                             </span>
                           ) : isFullyPaid ? (
-                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-emerald-100/80 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                               Pagado
                             </span>
                           ) : isPartial ? (
-                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                               Parcial
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                               Crédito
                             </span>
                           )}
@@ -643,36 +643,36 @@ export default function SalesHistory() {
                       </td>
 
                       {/* Total */}
-                      <td className="px-4 py-2.5 text-right font-black text-[#432414] dark:text-[#FEE4D7] whitespace-nowrap tabular-nums">
+                      <td className="px-3.5 py-2 text-right font-bold text-[#432414] dark:text-[#FEE4D7] whitespace-nowrap tabular-nums text-xs">
                         ${Number(sale.total).toLocaleString('es-CO')}
                       </td>
 
                       {/* Cobrado */}
-                      <td className="px-4 py-2.5 text-right font-black text-emerald-600 dark:text-emerald-400 whitespace-nowrap tabular-nums">
+                      <td className="px-3.5 py-2 text-right font-normal text-[#432414]/90 dark:text-[#FEE4D7]/90 whitespace-nowrap tabular-nums text-xs">
                         ${Number(paid).toLocaleString('es-CO')}
                       </td>
 
                       {/* Pendiente */}
-                      <td className="px-4 py-2.5 text-right whitespace-nowrap tabular-nums">
+                      <td className="px-3.5 py-2 text-right whitespace-nowrap tabular-nums text-xs">
                         {pending > 0 ? (
-                          <span className="font-black text-rose-600 dark:text-rose-400">
+                          <span className="font-semibold text-rose-600 dark:text-rose-400">
                             ${Number(pending).toLocaleString('es-CO')}
                           </span>
                         ) : (
-                          <span className="text-gray-400 dark:text-gray-500 font-bold">$0</span>
+                          <span className="text-[#9F6839]/40 font-normal">$0</span>
                         )}
                       </td>
 
-                      {/* Acciones */}
-                      <td className="p-4 text-center whitespace-nowrap">
-                        <div className="inline-flex items-center justify-center gap-1.5">
+                      {/* Acciones — Reveal on hover (Guide 3 Decision 07: An action column is noise) */}
+                      <td className="px-3.5 py-2 text-right whitespace-nowrap w-24">
+                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                           {/* Ver / Imprimir Comprobante */}
                           <button type="button"
                             onClick={() => handleOpenReceiptModal(sale)}
-                            title="Ver / Imprimir Comprobante"
-                            className="p-1.5 rounded-xl text-red-600 dark:text-amber-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                            title="Ver Comprobante"
+                            className="p-1 rounded-md text-[#9F6839] hover:text-[#432414] dark:hover:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] transition-colors cursor-pointer"
                           >
-                            <Printer className="w-4 h-4" />
+                            <Printer className="w-3.5 h-3.5" />
                           </button>
 
                           {/* Cancelar Venta */}
@@ -680,9 +680,9 @@ export default function SalesHistory() {
                             <button type="button"
                               onClick={() => handleCancelSale(sale)}
                               title="Cancelar Venta"
-                              className="p-1.5 rounded-xl text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/40 transition-colors cursor-pointer"
+                              className="p-1 rounded-md text-[#9F6839] hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
                             >
-                              <Ban className="w-4 h-4" />
+                              <Ban className="w-3.5 h-3.5" />
                             </button>
                           )}
 
@@ -690,10 +690,10 @@ export default function SalesHistory() {
                           {isOwner && (
                             <button type="button"
                               onClick={() => handleOpenEditSale(sale)}
-                              title="Editar Venta (Dueño)"
-                              className="p-1.5 rounded-xl text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                              title="Editar Venta"
+                              className="p-1 rounded-md text-[#9F6839] hover:text-[#432414] dark:hover:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] transition-colors cursor-pointer"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-3.5 h-3.5" />
                             </button>
                           )}
 
@@ -701,10 +701,10 @@ export default function SalesHistory() {
                           {isOwner && (
                             <button type="button"
                               onClick={() => handleDeleteSale(sale)}
-                              title="Eliminar Venta Definitivamente (Dueño)"
-                              className="p-1.5 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                              title="Eliminar Venta"
+                              className="p-1 rounded-md text-[#9F6839] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>

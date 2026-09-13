@@ -254,10 +254,10 @@ export default function Layout() {
                         end={item.end}
                         onClick={() => setMobileOpen(false)}
                         className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 group relative ${
+                          `flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors duration-150 group relative ${
                             isActive
                               ? 'bg-[#9F6839] text-white shadow-xs'
-                              : 'text-[#432414]/80 dark:text-[#FEE4D7]/80 hover:text-[#432414] dark:hover:text-[#FEE4D7] hover:bg-[#FEE4D7]/70 dark:hover:bg-[#2E180E]'
+                              : 'text-[#432414]/80 dark:text-[#FEE4D7]/80 hover:text-[#432414] dark:hover:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#2A160D]'
                           } ${isCollapsed ? 'lg:justify-center lg:px-0' : ''}`
                         }
                         title={isCollapsed ? item.label : undefined}
@@ -265,8 +265,8 @@ export default function Layout() {
                         {({ isActive }) => (
                           <>
                             <Icon
-                              className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-105 ${
-                                isActive ? 'text-[#FEE4D7]' : 'text-[#9F6839] dark:text-[#DABA8C]'
+                              className={`w-4 h-4 shrink-0 transition-transform ${
+                                isActive ? 'text-white' : 'text-[#9F6839] dark:text-[#DABA8C]'
                               }`}
                             />
                             {!isCollapsed && <span className="truncate flex-1 text-left">{item.label}</span>}
@@ -282,23 +282,20 @@ export default function Layout() {
         </div>
 
         {/* Dark Mode Switcher Section */}
-        <div className="px-3 py-2 border-t border-[#D4B28E]/40 dark:border-[#9F6839]/30 bg-[#FEE4D7]/20 dark:bg-[#1B0C06]">
+        <div className="px-3 py-2 border-t border-[#D4B28E]/30 dark:border-[#9F6839]/20 bg-[#FEE4D7]/20 dark:bg-[#1B0C06]">
           {!isCollapsed ? (
-            <div className="flex items-center justify-between p-2 rounded-2xl bg-white dark:bg-[#2B160C] border border-[#D4B28E]/70 dark:border-[#9F6839]/50 shadow-xs">
-              <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 shadow-xs">
+              <div className="flex items-center gap-2">
                 <div
-                  className={`p-1.5 rounded-xl transition-colors ${
+                  className={`p-1 rounded-lg transition-colors ${
                     isDarkMode ? 'bg-[#432414] text-[#DABA8C]' : 'bg-[#FEE4D7] text-[#9F6839]'
                   }`}
                 >
                   {isDarkMode ? <Moon className="w-3.5 h-3.5 text-[#DABA8C]" /> : <Sun className="w-3.5 h-3.5 text-[#9F6839]" />}
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs font-extrabold text-[#432414] dark:text-[#FEE4D7] leading-none">
+                  <span className="text-xs font-semibold text-[#432414] dark:text-[#FEE4D7] leading-none">
                     {isDarkMode ? 'Modo Oscuro' : 'Modo Claro'}
-                  </span>
-                  <span className="text-[9px] font-semibold text-[#9F6839] dark:text-[#DABA8C] mt-0.5 leading-none">
-                    Paleta Tostada
                   </span>
                 </div>
               </div>
@@ -306,17 +303,17 @@ export default function Layout() {
               <button
                 type="button"
                 onClick={toggleDarkMode}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
                   isDarkMode ? 'bg-[#9F6839]' : 'bg-[#D4B28E]'
                 }`}
                 title={isDarkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
               >
                 <span
-                  className={`pointer-events-none inline-flex items-center justify-center h-5 w-5 transform rounded-full bg-white dark:bg-[#FEE4D7] shadow-lg transition duration-200 ${
+                  className={`pointer-events-none inline-flex items-center justify-center h-4 w-4 transform rounded-full bg-white dark:bg-[#FEE4D7] shadow-sm transition duration-200 ${
                     isDarkMode ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 >
-                  {isDarkMode ? <Moon className="w-2.5 h-2.5 text-[#432414]" /> : <Sun className="w-2.5 h-2.5 text-[#9F6839]" />}
+                  {isDarkMode ? <Moon className="w-2 h-2 text-[#432414]" /> : <Sun className="w-2 h-2 text-[#9F6839]" />}
                 </span>
               </button>
             </div>
@@ -324,10 +321,10 @@ export default function Layout() {
             <div className="flex justify-center">
               <button type="button"
                 onClick={toggleDarkMode}
-                className={`p-2.5 rounded-2xl border transition-all cursor-pointer ${
+                className={`p-2 rounded-xl border transition-all cursor-pointer ${
                   isDarkMode
-                    ? 'bg-[#2B160C] border-[#9F6839] text-[#DABA8C] hover:bg-[#3B1F11]'
-                    : 'bg-white border-[#D4B28E] text-[#9F6839] hover:bg-[#FEE4D7]'
+                    ? 'bg-[#1E0F08] border-[#9F6839]/40 text-[#DABA8C] hover:bg-[#2A160D]'
+                    : 'bg-white border-[#D4B28E]/60 text-[#9F6839] hover:bg-[#FEE4D7]'
                 }`}
                 title={isDarkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
               >
@@ -338,7 +335,7 @@ export default function Layout() {
         </div>
 
         {/* Active User Footer */}
-        <div className="p-3 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/40 bg-[#FEE4D7]/50 dark:bg-[#241209]">
+        <div className="p-3 border-t border-[#D4B28E]/30 dark:border-[#9F6839]/20 bg-[#FEE4D7]/30 dark:bg-[#1E0F08]">
           <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between gap-2'}`}>
             <div
               onClick={() => navigate('/profile')}
@@ -349,21 +346,21 @@ export default function Layout() {
                 <img
                   src={userAvatarUrl}
                   alt={user?.username}
-                  className="w-9 h-9 rounded-full object-cover border border-[#9F6839] shrink-0 shadow-xs group-hover:scale-105 transition-transform"
+                  className="w-8 h-8 rounded-full object-cover border border-[#9F6839] shrink-0 shadow-xs group-hover:scale-105 transition-transform"
                 />
               ) : (
-                <div className="w-9 h-9 rounded-full bg-[#9F6839] text-[#FEE4D7] font-bold flex items-center justify-center text-sm shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                <div className="w-8 h-8 rounded-full bg-[#9F6839] text-[#FEE4D7] font-bold flex items-center justify-center text-xs shrink-0 shadow-xs group-hover:scale-105 transition-transform">
                   {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
                 </div>
               )}
 
               {!isCollapsed && (
                 <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-bold text-[#432414] dark:text-[#FEE4D7] truncate group-hover:text-[#9F6839] transition-colors">
+                  <span className="text-xs font-semibold text-[#432414] dark:text-[#FEE4D7] truncate group-hover:text-[#9F6839] transition-colors">
                     {user?.username}
                   </span>
                   <span className="inline-block mt-0.5">
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white dark:bg-[#1C0D07] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E] dark:border-[#9F6839] uppercase tracking-wider">
+                    <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-white dark:bg-[#150904] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/50 dark:border-[#9F6839]/40 uppercase tracking-wider">
                       {roleLabels[user?.role] || user?.role}
                     </span>
                   </span>
@@ -374,7 +371,7 @@ export default function Layout() {
             {!isCollapsed && (
               <button type="button"
                 onClick={handleLogout}
-                className="p-2 rounded-xl text-[#9F6839] dark:text-[#DABA8C] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0 cursor-pointer"
+                className="p-1.5 rounded-lg text-[#9F6839] dark:text-[#DABA8C] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0 cursor-pointer"
                 title="Cerrar sesión"
               >
                 <LogOut className="w-4 h-4" />

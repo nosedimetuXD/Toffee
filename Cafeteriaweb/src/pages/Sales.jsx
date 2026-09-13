@@ -620,18 +620,18 @@ export default function Sales() {
   return (
     <div className="relative flex flex-col lg:flex-row h-[calc(100vh-5.5rem)] gap-4 select-none text-[#432414] dark:text-[#FEE4D7] pb-16 lg:pb-0">
       {/* SECCIÓN IZQUIERDA: Catálogo de Productos */}
-      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-4 shadow-sm overflow-hidden h-full">
+      <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 shadow-sm overflow-hidden h-full">
         {/* Cabecera y Buscador */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 bg-[#FEE4D7] dark:bg-[#2A150C] rounded-2xl text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
+            <div className="p-2 bg-[#FEE4D7] dark:bg-[#2A150C] rounded-xl text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
               <Coffee className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-black tracking-tight text-[#432414] dark:text-[#FEE4D7]">
+              <h2 className="text-base font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7]">
                 Punto de Venta
               </h2>
-              <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] font-semibold">Toffee Espresso & Bakery</p>
+              <p className="text-[11px] text-[#9F6839] dark:text-[#DABA8C]">Toffee Espresso & Bakery</p>
             </div>
           </div>
 
@@ -642,21 +642,21 @@ export default function Sales() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar café, postre o bebida..."
-              className="w-full pl-10 pr-3.5 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:border-[#9F6839]"
+              className="w-full pl-10 pr-3.5 py-1.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:border-[#9F6839]"
             />
           </div>
         </div>
 
         {/* Categorías */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-3 scrollbar-none">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 scrollbar-none">
           {categories.map((cat) => (
             <button type="button"
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === cat
-                  ? 'bg-[#9F6839] text-white shadow-xs'
-                  : 'bg-[#FEE4D7]/50 dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border border-[#D4B28E]/60 dark:border-[#9F6839]/30 hover:bg-[#FEE4D7]'
+                  ? 'bg-[#9F6839] text-white font-bold'
+                  : 'bg-[#FEE4D7]/40 dark:bg-[#2A150C] text-[#432414] dark:text-[#FEE4D7] border border-[#D4B28E]/40 dark:border-[#9F6839]/30 hover:bg-[#FEE4D7]'
               }`}
             >
               {cat}
@@ -668,17 +668,17 @@ export default function Sales() {
         <div className="flex-1 overflow-y-auto pr-1">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64 text-[#9F6839] dark:text-[#DABA8C] gap-2">
-              <div className="w-6 h-6 border-2 border-[#9F6839] border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs font-bold">Cargando menú...</span>
+              <div className="w-5 h-5 border-2 border-[#9F6839] border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs font-semibold">Cargando menú...</span>
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-[#9F6839] dark:text-[#DABA8C] text-center">
-              <Coffee className="w-10 h-10 text-[#9F6839]/40 mb-2" />
-              <p className="text-xs font-bold">No hay productos en esta vista</p>
+              <Coffee className="w-8 h-8 text-[#9F6839]/40 mb-2" />
+              <p className="text-xs font-semibold">No hay productos en esta vista</p>
               <p className="text-[11px] opacity-70">Verifica la categoría o búsqueda ingresada.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5">
               {filteredProducts.map((p) => {
                 const imgUrl = productImages[p.id] || p.image_url || DEFAULT_PRODUCT_IMAGE
                 const cartMatch = cartItems.find((ci) => ci.product.id === p.id)
@@ -687,19 +687,19 @@ export default function Sales() {
                   <div
                     key={p.id}
                     onClick={() => addToCart(p)}
-                    className="group bg-white dark:bg-[#25120B] hover:bg-[#FEE4D7]/40 dark:hover:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 hover:border-[#9F6839] rounded-2xl p-2.5 transition-all cursor-pointer flex flex-col justify-between relative shadow-xs"
+                    className="group bg-white dark:bg-[#25120B] hover:bg-[#FEE4D7]/30 dark:hover:bg-[#2A150C] border border-[#D4B28E]/40 dark:border-[#9F6839]/30 hover:border-[#9F6839] rounded-xl p-2 transition-all cursor-pointer flex flex-col justify-between relative shadow-xs"
                   >
                     {cartMatch && (
-                      <div className="absolute top-2 right-2 bg-[#9F6839] text-white font-black text-xs px-2 py-0.5 rounded-full shadow-md z-10 animate-scale">
+                      <div className="absolute top-2 right-2 bg-[#9F6839] text-white font-bold text-[11px] px-1.5 py-0.2 rounded-full shadow-xs z-10">
                         {cartMatch.quantity}
                       </div>
                     )}
 
-                    <div className="aspect-square w-full rounded-xl overflow-hidden mb-2 bg-[#FEE4D7]/50 dark:bg-[#1A0C06] relative">
+                    <div className="aspect-square w-full rounded-lg overflow-hidden mb-1.5 bg-[#FEE4D7]/30 dark:bg-[#1A0C06] relative">
                       <img
                         src={processImageUrl(imgUrl)}
                         alt={p.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         onError={(e) => {
                           e.target.src = DEFAULT_PRODUCT_IMAGE
                         }}
@@ -707,14 +707,14 @@ export default function Sales() {
                     </div>
 
                     <div>
-                      <h4 className="font-extrabold text-xs text-[#432414] dark:text-[#FEE4D7] line-clamp-1 group-hover:text-[#9F6839] dark:group-hover:text-[#DABA8C]">
+                      <h4 className="font-semibold text-xs text-[#432414] dark:text-[#FEE4D7] line-clamp-1 group-hover:text-[#9F6839] dark:group-hover:text-[#DABA8C]">
                         {p.name}
                       </h4>
                       <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs font-black text-[#9F6839] dark:text-[#DABA8C]">
+                        <span className="text-xs font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums">
                           ${Number(p.price).toLocaleString('es-CO')}
                         </span>
-                        <div className="w-5 h-5 rounded-lg bg-[#FEE4D7] dark:bg-[#3E2114] text-[#9F6839] dark:text-[#DABA8C] flex items-center justify-center group-hover:bg-[#9F6839] group-hover:text-white transition-colors">
+                        <div className="w-5 h-5 rounded-md bg-[#FEE4D7] dark:bg-[#3E2114] text-[#9F6839] dark:text-[#DABA8C] flex items-center justify-center group-hover:bg-[#9F6839] group-hover:text-white transition-colors">
                           <Plus className="w-3 h-3" />
                         </div>
                       </div>
@@ -736,25 +736,25 @@ export default function Sales() {
       )}
 
       {/* BARRA FLOTANTE FIJA INFERIOR EN MÓVIL (CUANDO EL DRAWER ESTÁ MINIMIZADO) */}
-      <div className="lg:hidden fixed bottom-3 left-3 right-3 z-30 bg-[#201009] dark:bg-[#201009] border border-[#9F6839]/60 text-white rounded-3xl p-3 shadow-2xl flex items-center justify-between transition-all duration-200 active:scale-[0.99]">
+      <div className="lg:hidden fixed bottom-3 left-3 right-3 z-30 bg-[#201009] dark:bg-[#201009] border border-[#9F6839]/60 text-white rounded-2xl p-3 shadow-xl flex items-center justify-between transition-all duration-200 active:scale-[0.99]">
         <button type="button"
           onClick={() => setIsMobileCartOpen(true)}
           className="flex items-center gap-3 flex-1 text-left cursor-pointer focus:outline-none"
         >
-          <div className="relative p-2.5 bg-[#9F6839] rounded-2xl text-white shadow-xs">
-            <ShoppingBag className="w-5 h-5" />
+          <div className="relative p-2 bg-[#9F6839] rounded-xl text-white shadow-xs">
+            <ShoppingBag className="w-4 h-4" />
             {totalCartCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-[#FEE4D7] text-[#432414] text-[10px] font-black px-1.5 py-0.2 rounded-full border border-[#9F6839]">
+              <span className="absolute -top-1.5 -right-1.5 bg-[#FEE4D7] text-[#432414] text-[10px] font-bold px-1 py-0.2 rounded-full border border-[#9F6839]">
                 {totalCartCount}
               </span>
             )}
           </div>
           <div>
-            <span className="text-xs font-bold text-[#DABA8C] flex items-center gap-1">
+            <span className="text-xs font-semibold text-[#DABA8C] flex items-center gap-1">
               <span>{cartItems.length > 0 ? `Orden (${cartItems.length} tipos)` : 'Ver Orden'}</span>
-              <ChevronUp className="w-3.5 h-3.5 animate-bounce duration-1000" />
+              <ChevronUp className="w-3.5 h-3.5" />
             </span>
-            <span className="text-base font-black text-[#FEE4D7] block leading-tight">
+            <span className="text-sm font-bold text-[#FEE4D7] block leading-tight tabular-nums">
               ${Number(cartTotal).toLocaleString('es-CO')}
             </span>
           </div>
@@ -763,7 +763,7 @@ export default function Sales() {
         {cartItems.length > 0 && (
           <button type="button"
             onClick={openCheckout}
-            className="px-4 py-2.5 bg-[#9F6839] hover:bg-[#835229] active:scale-95 text-white text-xs font-black rounded-2xl shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+            className="px-3.5 py-2 bg-[#9F6839] hover:bg-[#835229] active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
           >
             <CreditCard className="w-4 h-4" />
             <span>Cobrar</span>
@@ -773,7 +773,7 @@ export default function Sales() {
 
       {/* CONTENEDOR DEL CARRITO (SIDEBAR EN DESKTOP / DRAWER DESPLEGABLE EN MÓVIL) */}
       <div
-        className={`fixed lg:static bottom-0 left-0 right-0 z-50 lg:z-auto w-full lg:w-96 flex flex-col bg-white dark:bg-[#201009] border-t lg:border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-t-3xl lg:rounded-3xl p-4 shadow-2xl lg:shadow-sm max-h-[85vh] lg:max-h-full drawer-motion ${
+        className={`fixed lg:static bottom-0 left-0 right-0 z-50 lg:z-auto w-full lg:w-96 flex flex-col bg-white dark:bg-[#1E0F08] border-t lg:border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-t-2xl lg:rounded-2xl p-4 shadow-xl lg:shadow-sm max-h-[85vh] lg:max-h-full drawer-motion ${
           isMobileCartOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'
         }`}
       >

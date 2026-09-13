@@ -153,44 +153,50 @@ export default function Products() {
   if (loading) return <p className="p-4 text-sm font-semibold text-[#9F6839]">Cargando productos...</p>
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-[#432414] dark:text-[#FEE4D7]">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-extrabold text-[#432414] dark:text-[#FEE4D7] tracking-tight">
-            Catálogo de Productos & Menú Toffee
-          </h2>
-          <p className="text-xs font-semibold text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
-            Configuración de precios, recetas, fotos e insumos consumidos por venta
-          </p>
+      <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-[#FEE4D7] dark:bg-[#2A150C] rounded-xl text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
+            <Coffee className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7]">
+              Catálogo de Productos & Menú Toffee
+            </h1>
+            <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
+              Configuración de precios, recetas, fotos e insumos consumidos
+            </p>
+          </div>
         </div>
 
         {!isEmployee && (
           <button type="button"
             onClick={openCreateModal}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#9F6839] hover:bg-[#835229] text-white font-semibold text-xs shadow-xs transition-all cursor-pointer whitespace-nowrap"
           >
-            <Plus className="w-4 h-4" /> Nuevo Producto
+            <Plus className="w-4 h-4" />
+            <span>Nuevo Producto</span>
           </button>
         )}
       </div>
 
       {pageError && (
-        <div className="p-3.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 text-xs font-bold">
+        <div className="p-3.5 rounded-xl bg-red-50 text-red-700 border border-red-200 text-xs font-medium">
           {pageError}
         </div>
       )}
 
       {/* Buscador & Categorías */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9F6839]" />
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
           <input
             type="text"
             placeholder="Buscar producto por nombre..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 focus:border-[#9F6839] rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#432414] dark:text-[#FEE4D7] focus:outline-none shadow-xs"
+            className="w-full bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl pl-10 pr-3 py-2 text-xs text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:border-[#9F6839]"
           />
         </div>
 
@@ -199,10 +205,10 @@ export default function Products() {
             <button type="button"
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-2 rounded-2xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === cat
-                  ? 'bg-[#9F6839] text-white shadow-xs'
-                  : 'bg-white dark:bg-[#201009] border border-[#D4B28E] text-[#432414] dark:text-[#FEE4D7]'
+                  ? 'bg-[#9F6839] text-white font-bold'
+                  : 'bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/40 dark:border-[#9F6839]/30 text-[#432414] dark:text-[#FEE4D7] hover:bg-[#FEE4D7]/50'
               }`}
             >
               {cat}
@@ -220,36 +226,36 @@ export default function Products() {
           return (
             <div
               key={prod.id}
-              className={`bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 rounded-3xl overflow-hidden flex flex-col justify-between shadow-xs transition-all ${
-                !activeState ? 'opacity-65' : ''
+              className={`bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 hover:border-[#9F6839] rounded-2xl overflow-hidden flex flex-col justify-between shadow-xs transition-all group ${
+                !activeState ? 'opacity-60' : ''
               }`}
             >
               <div>
-                <div className="relative h-36 w-full bg-[#FEE4D7]/50 dark:bg-[#2A150C] overflow-hidden">
+                <div className="relative h-36 w-full bg-[#FEE4D7]/30 dark:bg-[#2A160D] overflow-hidden">
                   <img
                     src={img}
                     alt={prod.name}
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
                       e.target.src = DEFAULT_PRODUCT_IMAGE
                     }}
                   />
-                  <div className="absolute top-2.5 left-2.5">
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#432414]/90 text-[#FEE4D7] font-extrabold text-[10px] backdrop-blur-xs shadow-xs">
+                  <div className="absolute top-2 left-2">
+                    <span className="px-2 py-0.5 rounded-md bg-[#201009]/85 text-[#FEE4D7] font-semibold text-[10px] backdrop-blur-xs shadow-xs">
                       {prod.category || 'General'}
                     </span>
                   </div>
-                  <div className="absolute top-2.5 right-2.5">
+                  <div className="absolute top-2 right-2">
                     <button
                       type="button"
                       disabled={isEmployee}
                       onClick={(e) => !isEmployee && toggleProductActive(prod, e)}
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold shadow-xs ${
-                        isEmployee ? 'cursor-default' : 'cursor-pointer transition-transform hover:scale-105'
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium shadow-xs transition-transform ${
+                        isEmployee ? 'cursor-default' : 'cursor-pointer hover:scale-105'
                       } ${
                         activeState
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-red-600 text-white'
+                          ? 'bg-emerald-500/90 text-white'
+                          : 'bg-neutral-600/90 text-white'
                       }`}
                       title={isEmployee ? 'Estado de disponibilidad en POS' : 'Haz clic para activar o desactivar este producto'}
                     >
@@ -266,50 +272,50 @@ export default function Products() {
                   </div>
                 </div>
 
-                <div className="p-4">
-                  <h3 className="font-extrabold text-base text-[#432414] dark:text-[#FEE4D7]">{prod.name}</h3>
+                <div className="p-3.5">
+                  <h3 className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">{prod.name}</h3>
                   {prod.description && (
-                    <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] line-clamp-2 mt-1">
+                    <p className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 line-clamp-2 mt-1">
                       {prod.description}
                     </p>
                   )}
                 </div>
               </div>
 
-              <div className="px-4 pb-4 pt-2 border-t border-[#D4B28E]/40 flex items-center justify-between">
+              <div className="px-3.5 pb-3 pt-2 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] text-[#9F6839] font-semibold block">Precio Venta</span>
-                  <span className="text-lg font-extrabold text-[#432414] dark:text-[#FEE4D7]">
-                    ${prod.price.toLocaleString()}
+                  <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 block leading-tight">Precio Venta</span>
+                  <span className="text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+                    ${prod.price.toLocaleString('es-CO')}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   <Link
                     to={`/products/${prod.id}/recipe`}
-                    className="p-2 rounded-xl bg-[#FEE4D7]/60 dark:bg-[#2E180E] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#9F6839] hover:text-white transition-colors flex items-center gap-1 text-xs font-bold"
+                    className="p-1.5 rounded-lg bg-[#FEE4D7]/40 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#9F6839] hover:text-white transition-colors flex items-center gap-1 text-[11px] font-semibold"
                     title={isEmployee ? "Ver Receta (Modo Lectura)" : "Ver / Editar Receta"}
                   >
-                    <BookOpen className="w-4 h-4" />
-                    {isEmployee && <span className="text-[10px]">Ver Receta</span>}
+                    <BookOpen className="w-3.5 h-3.5" />
+                    {isEmployee && <span className="text-[10px]">Receta</span>}
                   </Link>
 
                   {!isEmployee && (
                     <button type="button"
                       onClick={() => openEditModal(prod)}
-                      className="p-2 rounded-xl text-[#9F6839] hover:bg-[#FEE4D7] dark:hover:bg-[#2E180E] transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] transition-colors cursor-pointer"
                       title="Editar producto"
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="w-3.5 h-3.5" />
                     </button>
                   )}
                   {!isEmployee && (
                     <button type="button"
                       onClick={() => handleDelete(prod.id, prod.name)}
-                      className="p-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-[#9F6839] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
                       title="Eliminar producto"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
