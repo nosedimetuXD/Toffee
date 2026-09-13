@@ -20,7 +20,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
       onClick={onClose}
     >
       <div
-        className={`w-full ${maxWidth} bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/60 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200`}
+        className={`w-full ${maxWidth} bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/60 rounded-3xl shadow-2xl overflow-hidden modal-enter`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 bg-[#FEE4D7]/30 dark:bg-[#2A150C]">

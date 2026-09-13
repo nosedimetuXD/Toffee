@@ -730,13 +730,13 @@ export default function Sales() {
       {/* BACKDROP MÓVIL CUANDO EL CARRITO ESTÁ EXPANDIDO */}
       {isMobileCartOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-40 transition-opacity animate-in fade-in"
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-xs z-40 transition-opacity duration-300 ease-out animate-in fade-in"
           onClick={() => setIsMobileCartOpen(false)}
         />
       )}
 
       {/* BARRA FLOTANTE FIJA INFERIOR EN MÓVIL (CUANDO EL DRAWER ESTÁ MINIMIZADO) */}
-      <div className="lg:hidden fixed bottom-3 left-3 right-3 z-30 bg-[#201009] dark:bg-[#201009] border border-[#9F6839]/60 text-white rounded-3xl p-3 shadow-2xl flex items-center justify-between">
+      <div className="lg:hidden fixed bottom-3 left-3 right-3 z-30 bg-[#201009] dark:bg-[#201009] border border-[#9F6839]/60 text-white rounded-3xl p-3 shadow-2xl flex items-center justify-between transition-all duration-200 active:scale-[0.99]">
         <button type="button"
           onClick={() => setIsMobileCartOpen(true)}
           className="flex items-center gap-3 flex-1 text-left cursor-pointer focus:outline-none"
@@ -752,7 +752,7 @@ export default function Sales() {
           <div>
             <span className="text-xs font-bold text-[#DABA8C] flex items-center gap-1">
               <span>{cartItems.length > 0 ? `Orden (${cartItems.length} tipos)` : 'Ver Orden'}</span>
-              <ChevronUp className="w-3.5 h-3.5" />
+              <ChevronUp className="w-3.5 h-3.5 animate-bounce duration-1000" />
             </span>
             <span className="text-base font-black text-[#FEE4D7] block leading-tight">
               ${Number(cartTotal).toLocaleString('es-CO')}
@@ -763,7 +763,7 @@ export default function Sales() {
         {cartItems.length > 0 && (
           <button type="button"
             onClick={openCheckout}
-            className="px-4 py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white text-xs font-black rounded-2xl shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+            className="px-4 py-2.5 bg-[#9F6839] hover:bg-[#835229] active:scale-95 text-white text-xs font-black rounded-2xl shadow-md transition-all cursor-pointer flex items-center gap-1.5"
           >
             <CreditCard className="w-4 h-4" />
             <span>Cobrar</span>
@@ -773,10 +773,13 @@ export default function Sales() {
 
       {/* CONTENEDOR DEL CARRITO (SIDEBAR EN DESKTOP / DRAWER DESPLEGABLE EN MÓVIL) */}
       <div
-        className={`fixed lg:static bottom-0 left-0 right-0 z-50 lg:z-auto w-full lg:w-96 flex flex-col bg-white dark:bg-[#201009] border-t lg:border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-t-3xl lg:rounded-3xl p-4 shadow-2xl lg:shadow-sm max-h-[85vh] lg:max-h-full transition-transform duration-300 ease-out ${
+        className={`fixed lg:static bottom-0 left-0 right-0 z-50 lg:z-auto w-full lg:w-96 flex flex-col bg-white dark:bg-[#201009] border-t lg:border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-t-3xl lg:rounded-3xl p-4 shadow-2xl lg:shadow-sm max-h-[85vh] lg:max-h-full drawer-motion ${
           isMobileCartOpen ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'
         }`}
       >
+        {/* Handle visual de arrastre en móvil */}
+        <div className="lg:hidden w-12 h-1.5 rounded-full bg-[#9F6839]/40 dark:bg-[#DABA8C]/30 mx-auto mb-2.5 cursor-grab" onClick={() => setIsMobileCartOpen(false)} />
+
         {/* Encabezado Carrito */}
         <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 mb-3">
           <div className="flex items-center gap-2">

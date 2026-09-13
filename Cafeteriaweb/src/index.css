@@ -10,13 +10,21 @@
     --color-caramel: #DABA8C;
     --color-espresso: #47241E;
     --color-crema: #FEE4D7;
+
+    /* Motion Tokens (improve-animations / Emil Kowalski standards) */
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+    --duration-fast: 150ms;
+    --duration-normal: 250ms;
+    --duration-drawer: 320ms;
   }
 
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     background-color: #FEE4D7;
     color: #432414;
-    transition: background-color 0.25s ease, color 0.25s ease;
+    transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
   }
 
   html.dark {
@@ -102,5 +110,51 @@ html.dark ::-webkit-scrollbar-thumb:hover {
     width: 100%;
     background: white !important;
     color: #432414 !important;
+  }
+}
+
+/* Motion utility classes (improve-animations) */
+.drawer-motion {
+  transition: transform var(--duration-drawer) var(--ease-drawer);
+  will-change: transform;
+}
+
+.modal-enter {
+  animation: modalIn var(--duration-fast) var(--ease-out) forwards;
+}
+
+.card-enter {
+  animation: cardFadeIn var(--duration-fast) var(--ease-out) forwards;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

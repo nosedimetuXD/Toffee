@@ -157,7 +157,7 @@ export default function Comandas() {
     return (
       <div
         key={c.id}
-        className="bg-[#FEE4D7]/20 dark:bg-[#2A150C] border border-[#D4B28E] dark:border-[#9F6839]/40 rounded-3xl p-4 flex flex-col justify-between gap-3 shadow-xs hover:border-[#9F6839] transition-all"
+        className="bg-[#FEE4D7]/20 dark:bg-[#2A150C] border border-[#D4B28E] dark:border-[#9F6839]/40 rounded-3xl p-4 flex flex-col justify-between gap-3 shadow-xs hover:border-[#9F6839] transition-all card-enter"
       >
         <div>
           <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30">
