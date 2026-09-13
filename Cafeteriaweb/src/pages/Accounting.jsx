@@ -356,15 +356,15 @@ export default function Accounting() {
         </div>
       </div>
 
-      {/* Unified Metrics Bar — Linear / De-AI Style */}
+      {/* Unified Metrics Bar — Linear / De-AI Style (Hero visual hierarchy) */}
       <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 overflow-hidden">
-        {/* Balance Neto */}
+        {/* Balance Neto — Hero Metric */}
         <div className="p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
             <span>Ganancia Neta</span>
             <Wallet className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className={`mt-2 text-2xl lg:text-3xl font-bold tracking-tight tabular-nums ${balanceNetoCalc >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-rose-600 dark:text-rose-400'}`}>
+          <div className={`mt-1 text-3xl sm:text-4xl font-black tracking-tight tabular-nums ${balanceNetoCalc >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-rose-600 dark:text-rose-400'}`}>
             ${Number(balanceNetoCalc).toLocaleString('es-CO')}
           </div>
           <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
@@ -378,7 +378,7 @@ export default function Accounting() {
             <span>Ingresos Totales</span>
             <TrendingUp className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+          <div className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
             ${Number(totalIngresosCalc).toLocaleString('es-CO')}
           </div>
           <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
@@ -392,7 +392,7 @@ export default function Accounting() {
             <span>Gastos Totales</span>
             <TrendingDown className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+          <div className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
             ${Number(totalGastosCalc).toLocaleString('es-CO')}
           </div>
           <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
@@ -459,78 +459,143 @@ export default function Accounting() {
               <p className="font-semibold text-xs">No hay gastos registrados</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-semibold text-[11px] tracking-wider">
-                  <tr>
-                    <th className="px-3.5 py-2.5">Fecha</th>
-                    <th className="px-3.5 py-2.5">Descripción & Categoría</th>
-                    <th className="px-3.5 py-2.5">Método de Pago</th>
-                    <th className="px-3.5 py-2.5">Insumo Reabastecido</th>
-                    <th className="px-3.5 py-2.5 text-right">Monto</th>
-                    <th className="px-3.5 py-2.5">Registrado Por</th>
-                    <th className="px-3.5 py-2.5 text-right w-20">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
-                  {expenses.map((e) => (
-                    <tr key={e.id} className="hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/70 transition-colors duration-100 group">
-                      <td className="px-3.5 py-2 font-medium text-[#432414] dark:text-[#FEE4D7] whitespace-nowrap text-xs">
-                        <span className="tabular-nums">{new Date(e.created_at).toLocaleDateString('es-CO')}</span>
-                        <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 font-normal tabular-nums ml-1.5">
-                          {new Date(e.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </td>
-                      <td className="px-3.5 py-2">
-                        <div className="font-semibold text-[#432414] dark:text-[#FEE4D7] text-xs">{e.description}</div>
-                        <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded-md bg-[#FEE4D7]/60 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] text-[10px] font-medium uppercase border border-[#D4B28E]/40 dark:border-[#9F6839]/30">
+            <>
+              {/* MOBILE VIEW FOR GASTOS (Guide 3: Stacked Identity · Value · State) */}
+              <div className="block md:hidden divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
+                {expenses.map((e) => (
+                  <div key={e.id} className="p-4 space-y-2 hover:bg-[#FEE4D7]/10 transition-colors">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
+                          {e.description}
+                        </div>
+                        <div className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums mt-0.5">
+                          {new Date(e.created_at).toLocaleDateString('es-CO')} · {new Date(e.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0 font-bold text-rose-600 dark:text-rose-400 text-sm tabular-nums">
+                        -${Number(e.amount).toLocaleString('es-CO')}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#D4B28E]/15 dark:border-[#9F6839]/15">
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.5 rounded-md bg-[#FEE4D7]/60 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] text-[10px] font-medium uppercase border border-[#D4B28E]/40 dark:border-[#9F6839]/30">
                           {e.category}
                         </span>
-                      </td>
-                      <td className="px-3.5 py-2 capitalize text-[#432414] dark:text-[#FEE4D7] font-normal text-xs">
-                        {e.payment_method}
-                      </td>
-                      <td className="px-3.5 py-2">
-                        {e.ingredient_name ? (
-                          <div className="text-[#432414] dark:text-[#FEE4D7] font-medium text-xs">
-                            {e.ingredient_name}
-                            <span className="text-emerald-600 dark:text-emerald-400 text-[11px] block tabular-nums">+{e.quantity_added} agregados</span>
-                          </div>
-                        ) : (
-                          <span className="text-[#9F6839]/40">-</span>
-                        )}
-                      </td>
-                      <td className="px-3.5 py-2 font-bold text-rose-600 dark:text-rose-400 text-xs text-right tabular-nums whitespace-nowrap">
-                        -${Number(e.amount).toLocaleString('es-CO')}
-                      </td>
-                      <td className="px-3.5 py-2 text-[#9F6839] dark:text-[#DABA8C] font-normal text-xs">
+                        <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 capitalize">
+                          {e.payment_method}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/60">
                         {e.registerer_name || 'Personal'}
-                      </td>
-                      <td className="px-3.5 py-2 text-right w-20">
-                        {isOwner && (
-                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                            <button type="button"
-                              onClick={() => handleOpenEditExpense(e)}
-                              className="p-1 text-[#9F6839] hover:text-[#432414] dark:hover:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] rounded-md transition-colors cursor-pointer"
-                              title="Editar Gasto"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button type="button"
-                              onClick={() => handleDeleteExpense(e)}
-                              className="p-1 text-[#9F6839] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-md transition-colors cursor-pointer"
-                              title="Eliminar Gasto"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
-                      </td>
+                      </span>
+                    </div>
+
+                    {e.ingredient_name && (
+                      <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                        +{e.quantity_added} agregados a {e.ingredient_name}
+                      </div>
+                    )}
+
+                    {isOwner && (
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#D4B28E]/15 dark:border-[#9F6839]/15">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditExpense(e)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#FEE4D7]/70 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] transition-colors cursor-pointer"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span>Editar</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExpense(e)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Eliminar</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* DESKTOP VIEW FOR GASTOS */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-semibold text-[11px] tracking-wider">
+                    <tr>
+                      <th className="px-3.5 py-2.5">Fecha</th>
+                      <th className="px-3.5 py-2.5">Descripción & Categoría</th>
+                      <th className="px-3.5 py-2.5">Método de Pago</th>
+                      <th className="px-3.5 py-2.5">Insumo Reabastecido</th>
+                      <th className="px-3.5 py-2.5 text-right">Monto</th>
+                      <th className="px-3.5 py-2.5">Registrado Por</th>
+                      <th className="px-4 py-2.5 text-right w-32 min-w-[120px]">Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
+                    {expenses.map((e) => (
+                      <tr key={e.id} className="hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/70 transition-colors duration-100 group">
+                        <td className="px-3.5 py-2 font-medium text-[#432414] dark:text-[#FEE4D7] whitespace-nowrap text-xs">
+                          <span className="tabular-nums">{new Date(e.created_at).toLocaleDateString('es-CO')}</span>
+                          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 font-normal tabular-nums ml-1.5">
+                            {new Date(e.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </td>
+                        <td className="px-3.5 py-2">
+                          <div className="font-semibold text-[#432414] dark:text-[#FEE4D7] text-xs">{e.description}</div>
+                          <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded-md bg-[#FEE4D7]/60 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] text-[10px] font-medium uppercase border border-[#D4B28E]/40 dark:border-[#9F6839]/30">
+                            {e.category}
+                          </span>
+                        </td>
+                        <td className="px-3.5 py-2 capitalize text-[#432414] dark:text-[#FEE4D7] font-normal text-xs">
+                          {e.payment_method}
+                        </td>
+                        <td className="px-3.5 py-2">
+                          {e.ingredient_name ? (
+                            <div className="text-[#432414] dark:text-[#FEE4D7] font-medium text-xs">
+                              {e.ingredient_name}
+                              <span className="text-emerald-600 dark:text-emerald-400 text-[11px] block tabular-nums">+{e.quantity_added} agregados</span>
+                            </div>
+                          ) : (
+                            <span className="text-[#9F6839]/40">-</span>
+                          )}
+                        </td>
+                        <td className="px-3.5 py-2 font-bold text-rose-600 dark:text-rose-400 text-xs text-right tabular-nums whitespace-nowrap">
+                          -${Number(e.amount).toLocaleString('es-CO')}
+                        </td>
+                        <td className="px-3.5 py-2 text-[#9F6839] dark:text-[#DABA8C] font-normal text-xs">
+                          {e.registerer_name || 'Personal'}
+                        </td>
+                        <td className="px-4 py-2 text-right w-32 min-w-[120px]">
+                          {isOwner && (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button type="button"
+                                onClick={() => handleOpenEditExpense(e)}
+                                className="p-1 text-[#9F6839] hover:text-[#432414] dark:hover:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] rounded-md transition-colors cursor-pointer"
+                                title="Editar Gasto"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button type="button"
+                                onClick={() => handleDeleteExpense(e)}
+                                className="p-1 text-[#9F6839] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-md transition-colors cursor-pointer"
+                                title="Eliminar Gasto"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}
@@ -575,47 +640,36 @@ export default function Accounting() {
               <p className="font-semibold text-xs">No hay ingresos registrados para este filtro o periodo</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-semibold text-[11px] tracking-wider">
-                  <tr>
-                    <th className="px-3.5 py-2.5 whitespace-nowrap">Fecha & Hora</th>
-                    <th className="px-3.5 py-2.5 whitespace-nowrap">Tipo / Origen</th>
-                    <th className="px-3.5 py-2.5">Descripción / Concepto</th>
-                    <th className="px-3.5 py-2.5 whitespace-nowrap">Método de Pago</th>
-                    <th className="px-3.5 py-2.5 text-right whitespace-nowrap">Monto Cobrado</th>
-                    <th className="px-3.5 py-2.5 text-right whitespace-nowrap w-20">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
-                  {filteredIncomes.map((inc) => {
-                    const isSale = inc.type === 'sale'
-                    const isManual = !isSale
+            <>
+              {/* MOBILE VIEW FOR INGRESOS */}
+              <div className="block md:hidden divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
+                {filteredIncomes.map((inc) => {
+                  const isSale = inc.type === 'sale'
+                  const isManual = !isSale
 
-                    return (
-                      <tr
-                        key={`${inc.type || 'inc'}-${inc.id}`}
-                        className="hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/70 transition-colors duration-100 group"
-                      >
-                        {/* Fecha y Hora */}
-                        <td className="px-3.5 py-2 whitespace-nowrap font-medium text-[#432414] dark:text-[#FEE4D7] text-xs">
-                          <span className="tabular-nums">
-                            {new Date(inc.created_at).toLocaleDateString('es-CO', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric'
-                            })}
-                          </span>
-                          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 font-normal tabular-nums ml-1.5">
-                            {new Date(inc.created_at).toLocaleTimeString('es-CO', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </span>
-                        </td>
+                  return (
+                    <div key={`${inc.type || 'inc'}-${inc.id}`} className="p-4 space-y-2 hover:bg-[#FEE4D7]/10 transition-colors">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
+                            {inc.description || (isSale ? `Orden #${inc.order_number || inc.sale_id}` : 'Ingreso manual')}
+                          </div>
+                          {isSale && inc.customer_name && (
+                            <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 block mt-0.5">
+                              Cliente: {inc.customer_name}
+                            </span>
+                          )}
+                          <div className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums mt-0.5">
+                            {new Date(inc.created_at).toLocaleDateString('es-CO')} · {new Date(inc.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0 font-bold text-emerald-600 dark:text-emerald-400 text-sm tabular-nums">
+                          +${Number(inc.amount).toLocaleString('es-CO')}
+                        </div>
+                      </div>
 
-                        {/* Tipo / Origen Badge */}
-                        <td className="px-3.5 py-2 whitespace-nowrap">
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#D4B28E]/15 dark:border-[#9F6839]/15">
+                        <div className="flex items-center gap-1.5">
                           {isSale ? (
                             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -627,61 +681,146 @@ export default function Accounting() {
                               Ingreso Extra
                             </span>
                           )}
-                        </td>
-
-                        {/* Concepto */}
-                        <td className="px-3.5 py-2">
-                          <div className="font-semibold text-[#432414] dark:text-[#FEE4D7] text-xs">
-                            {inc.description || (isSale ? `Orden #${inc.order_number || inc.sale_id}` : 'Ingreso manual')}
-                          </div>
-                          {isSale && inc.customer_name && (
-                            <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-normal block">
-                              Cliente: {inc.customer_name}
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Método de Pago */}
-                        <td className="px-3.5 py-2 whitespace-nowrap">
-                          <span className="text-xs font-normal capitalize text-[#432414] dark:text-[#FEE4D7]">
+                          <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 capitalize">
                             {inc.payment_method || 'efectivo'}
                           </span>
-                        </td>
+                        </div>
 
-                        {/* Monto Cobrado */}
-                        <td className="px-3.5 py-2 text-right whitespace-nowrap font-bold text-[#432414] dark:text-[#FEE4D7] text-xs tabular-nums">
-                          +${Number(inc.amount).toLocaleString('es-CO')}
-                        </td>
+                        {isManual && isOwner && (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditIncome(inc)}
+                              className="p-1 text-[#9F6839] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] rounded-md transition-colors cursor-pointer"
+                              title="Editar"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteIncome(inc)}
+                              className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-md transition-colors cursor-pointer"
+                              title="Eliminar"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
 
-                        {/* Acciones */}
-                        <td className="px-3.5 py-2 text-right whitespace-nowrap w-20">
-                          {isManual && isOwner ? (
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                              <button type="button"
-                                onClick={() => handleOpenEditIncome(inc)}
-                                className="p-1 text-[#9F6839] hover:text-[#432414] dark:hover:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] rounded-md transition-colors cursor-pointer"
-                                title="Editar Ingreso"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              <button type="button"
-                                onClick={() => handleDeleteIncome(inc)}
-                                className="p-1 text-[#9F6839] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-md transition-colors cursor-pointer"
-                                title="Eliminar Ingreso"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+              {/* DESKTOP VIEW FOR INGRESOS */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-semibold text-[11px] tracking-wider">
+                    <tr>
+                      <th className="px-3.5 py-2.5 whitespace-nowrap">Fecha & Hora</th>
+                      <th className="px-3.5 py-2.5 whitespace-nowrap">Tipo / Origen</th>
+                      <th className="px-3.5 py-2.5">Descripción / Concepto</th>
+                      <th className="px-3.5 py-2.5 whitespace-nowrap">Método de Pago</th>
+                      <th className="px-3.5 py-2.5 text-right whitespace-nowrap">Monto Cobrado</th>
+                      <th className="px-4 py-2.5 text-right whitespace-nowrap w-32 min-w-[120px]">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
+                    {filteredIncomes.map((inc) => {
+                      const isSale = inc.type === 'sale'
+                      const isManual = !isSale
+
+                      return (
+                        <tr
+                          key={`${inc.type || 'inc'}-${inc.id}`}
+                          className="hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/70 transition-colors duration-100 group"
+                        >
+                          {/* Fecha y Hora */}
+                          <td className="px-3.5 py-2 whitespace-nowrap font-medium text-[#432414] dark:text-[#FEE4D7] text-xs">
+                            <span className="tabular-nums">
+                              {new Date(inc.created_at).toLocaleDateString('es-CO', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </span>
+                            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 font-normal tabular-nums ml-1.5">
+                              {new Date(inc.created_at).toLocaleTimeString('es-CO', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </td>
+
+                          {/* Tipo / Origen Badge */}
+                          <td className="px-3.5 py-2 whitespace-nowrap">
+                            {isSale ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                Venta POS
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[#9F6839]/10 text-[#9F6839] dark:text-[#DABA8C] border border-[#9F6839]/20">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#9F6839]" />
+                                Ingreso Extra
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Concepto */}
+                          <td className="px-3.5 py-2">
+                            <div className="font-semibold text-[#432414] dark:text-[#FEE4D7] text-xs">
+                              {inc.description || (isSale ? `Orden #${inc.order_number || inc.sale_id}` : 'Ingreso manual')}
                             </div>
-                          ) : (
-                            <span className="text-[10px] text-[#9F6839]/30">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                            {isSale && inc.customer_name && (
+                              <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-normal block">
+                                Cliente: {inc.customer_name}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Método de Pago */}
+                          <td className="px-3.5 py-2 whitespace-nowrap">
+                            <span className="text-xs font-normal capitalize text-[#432414] dark:text-[#FEE4D7]">
+                              {inc.payment_method || 'efectivo'}
+                            </span>
+                          </td>
+
+                          {/* Monto Cobrado */}
+                          <td className="px-3.5 py-2 text-right whitespace-nowrap font-bold text-[#432414] dark:text-[#FEE4D7] text-xs tabular-nums">
+                            +${Number(inc.amount).toLocaleString('es-CO')}
+                          </td>
+
+                          {/* Acciones */}
+                          <td className="px-4 py-2 text-right whitespace-nowrap w-32 min-w-[120px]">
+                            {isManual && isOwner ? (
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button type="button"
+                                  onClick={() => handleOpenEditIncome(inc)}
+                                  className="p-1 text-[#9F6839] hover:text-[#432414] dark:hover:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] rounded-md transition-colors cursor-pointer"
+                                  title="Editar Ingreso"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button type="button"
+                                  onClick={() => handleDeleteIncome(inc)}
+                                  className="p-1 text-[#9F6839] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-md transition-colors cursor-pointer"
+                                  title="Eliminar Ingreso"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-[#9F6839]/30">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       )}

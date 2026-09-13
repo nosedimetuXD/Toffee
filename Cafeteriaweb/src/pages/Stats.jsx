@@ -145,33 +145,33 @@ export default function Stats() {
         </div>
       )}
 
-      {/* Unified Metrics Bar — Linear Style (Single container, 1 accent, pure hierarchy) */}
+      {/* Unified Metrics Bar — Linear Style (Single container, hero hierarchy) */}
       <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 overflow-hidden">
+        {/* Ganancia Neta — Hero Metric */}
+        <div className="p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+            <span>Ganancia Neta</span>
+            <DollarSign className="w-3.5 h-3.5 opacity-60" />
+          </div>
+          <div className={`mt-1 text-3xl sm:text-4xl font-black tracking-tight tabular-nums ${(mStats?.net_profit || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+            ${(mStats?.net_profit || 0).toLocaleString('es-CO')}
+          </div>
+          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
+            Utilidad operativa neta del período
+          </span>
+        </div>
+
         {/* Ventas Totales */}
         <div className="p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
             <span>Ventas Totales</span>
             <TrendingUp className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+          <div className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
             ${(mStats?.monthly_income || 0).toLocaleString('es-CO')}
           </div>
           <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
             Ingreso bruto facturado en el período
-          </span>
-        </div>
-
-        {/* Ganancia Neta */}
-        <div className="p-4 sm:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-            <span>Ganancia Neta</span>
-            <DollarSign className="w-3.5 h-3.5 opacity-60" />
-          </div>
-          <div className={`mt-2 text-2xl lg:text-3xl font-bold tracking-tight tabular-nums ${(mStats?.net_profit || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-            ${(mStats?.net_profit || 0).toLocaleString('es-CO')}
-          </div>
-          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
-            Utilidad operativa disponible
           </span>
         </div>
 
@@ -181,7 +181,7 @@ export default function Stats() {
             <span>Gastos Totales</span>
             <TrendingDown className="w-3.5 h-3.5 opacity-60 text-rose-500" />
           </div>
-          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+          <div className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
             ${(mStats?.monthly_expenses || 0).toLocaleString('es-CO')}
           </div>
           <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">

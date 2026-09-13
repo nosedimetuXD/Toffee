@@ -335,10 +335,98 @@ export default function Inventory() {
         </div>
       </div>
 
-      {/* Pestaña 1: Tabla de Insumos */}
+      {/* Pestaña 1: Tabla de Insumos (Guide 3: Mobile Cards + Desktop Table) */}
       {activeTab === 'inventory' && (
         <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Mobile Card List for Ingredients */}
+          <div className="block md:hidden divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
+            {filteredIngredients.map((ing) => {
+              const isLow = ing.quantity <= ing.min_quantity
+              return (
+                <div key={ing.id} className={`p-4 space-y-2.5 transition-colors ${isLow ? 'bg-amber-500/[0.03]' : 'hover:bg-[#FEE4D7]/10'}`}>
+                  {/* Top: Name & Current Stock */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
+                        {ing.name}
+                      </div>
+                      <div className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums mt-0.5">
+                        Costo/u: ${(ing.unit_cost || 0).toLocaleString('es-CO')} · Mínimo: {ing.min_quantity} {ing.unit}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="font-bold text-sm text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+                        {ing.quantity} <span className="text-xs font-normal text-[#9F6839] dark:text-[#DABA8C]">{ing.unit}</span>
+                      </div>
+                      <div className="mt-1">
+                        {isLow ? (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            Stock Bajo
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            OK
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom Controls (Ajuste rápido & Acciones) */}
+                  {!isEmployee && (
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#D4B28E]/15 dark:border-[#9F6839]/15">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] mr-1">Ajuste rápido:</span>
+                        <button
+                          type="button"
+                          onClick={() => quickAdjustStock(ing, -1)}
+                          className="px-2 py-1 rounded-md bg-[#FEE4D7]/60 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          -1
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => quickAdjustStock(ing, 1)}
+                          className="px-2 py-1 rounded-md bg-[#FEE4D7]/60 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          +1
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(ing)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#FEE4D7]/70 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] transition-colors cursor-pointer"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span>Editar</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteIngredient(ing)}
+                          className="p-1 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                          title="Eliminar insumo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+            {filteredIngredients.length === 0 && (
+              <div className="p-8 text-center text-[#9F6839]/70 text-xs">
+                No se encontraron insumos.
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider text-[11px] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 font-semibold">
                 <tr>
@@ -348,7 +436,7 @@ export default function Inventory() {
                   <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Min</th>
                   <th className="py-2.5 px-3.5 text-center whitespace-nowrap">Estado</th>
                   {!isEmployee && <th className="py-2.5 px-3.5 text-center whitespace-nowrap">Ajuste</th>}
-                  {!isEmployee && <th className="py-2.5 px-3.5 text-right whitespace-nowrap w-20">Acciones</th>}
+                  {!isEmployee && <th className="py-2.5 px-4 text-right whitespace-nowrap w-36 min-w-[140px]">Acciones</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 text-[#432414] dark:text-[#FEE4D7]">
@@ -386,8 +474,8 @@ export default function Inventory() {
                         </td>
                       )}
                       {!isEmployee && (
-                        <td className="py-2 px-3.5 text-right whitespace-nowrap w-20">
-                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                        <td className="py-2 px-4 text-right whitespace-nowrap w-36 min-w-[140px]">
+                          <div className="flex items-center justify-end gap-1.5">
                             <button type="button"
                               onClick={() => openEditModal(ing)}
                               className="p-1 rounded-md text-[#9F6839] hover:text-[#432414] dark:hover:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] transition-colors cursor-pointer"
@@ -424,7 +512,44 @@ export default function Inventory() {
       {/* Pestaña 2: Historial de Reportes de Mermas */}
       {activeTab === 'waste' && (
         <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Mobile View for Waste */}
+          <div className="block md:hidden divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
+            {wasteReports.map((w) => (
+              <div key={w.id} className="p-4 space-y-1.5 hover:bg-[#FEE4D7]/10 transition-colors">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
+                      {w.ingredient_name || 'Insumo'}
+                    </div>
+                    <div className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums">
+                      {new Date(w.created_at).toLocaleString('es-CO')}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="font-bold text-rose-600 dark:text-rose-400 text-xs tabular-nums">
+                      -${(w.estimated_loss || 0).toLocaleString('es-CO')}
+                    </div>
+                    <div className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 tabular-nums">
+                      -{w.quantity_used} {w.ingredient_unit}
+                    </div>
+                  </div>
+                </div>
+                {w.reason && (
+                  <div className="text-[11px] text-[#432414]/80 dark:text-[#FEE4D7]/80 pt-1 border-t border-[#D4B28E]/15 dark:border-[#9F6839]/15">
+                    Motivo: <span className="italic">{w.reason}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+            {wasteReports.length === 0 && (
+              <div className="p-8 text-center text-[#9F6839]/70 text-xs">
+                No hay registros de mermas.
+              </div>
+            )}
+          </div>
+
+          {/* Desktop View for Waste */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider text-[11px] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 font-semibold">
                 <tr>
@@ -449,19 +574,14 @@ export default function Inventory() {
                     <td className="py-2 px-3.5 text-rose-600 dark:text-rose-400 text-right tabular-nums whitespace-nowrap text-xs">
                       -{w.quantity_used} {w.ingredient_unit}
                     </td>
-                    <td className="py-2 px-3.5 text-right font-semibold text-rose-600 dark:text-rose-400 tabular-nums whitespace-nowrap text-xs">
+                    <td className="py-2 px-3.5 font-bold text-rose-600 dark:text-rose-400 text-right tabular-nums whitespace-nowrap text-xs">
                       -${(w.estimated_loss || 0).toLocaleString('es-CO')}
                     </td>
-                    <td className="py-2 px-3.5 text-[#9F6839] dark:text-[#DABA8C] text-xs truncate max-w-xs">{w.reason}</td>
-                  </tr>
-                ))}
-                {wasteReports.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8 text-[#9F6839]/70 font-normal">
-                      No hay mermas reportadas.
+                    <td className="py-2 px-3.5 text-xs text-[#9F6839] dark:text-[#DABA8C]">
+                      {w.reason || '-'}
                     </td>
                   </tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>

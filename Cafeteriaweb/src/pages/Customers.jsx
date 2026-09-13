@@ -420,15 +420,15 @@ export default function Customers() {
         </div>
       </div>
 
-      {/* Unified Metrics Bar — Linear Style (Single cohesive container, one flat accent) */}
+      {/* Unified Metrics Bar — Linear Style (Single cohesive container, hero hierarchy) */}
       <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 overflow-hidden">
-        {/* Facturación Clientes */}
+        {/* Facturación Clientes — Hero Metric */}
         <div className="p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
             <span>Facturación Clientes</span>
             <DollarSign className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+          <div className="mt-1 text-3xl sm:text-4xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
             ${Number(totalSpentAll).toLocaleString('es-CO')}
           </div>
           <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
@@ -442,7 +442,7 @@ export default function Customers() {
             <span>Total Clientes</span>
             <Users className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+          <div className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
             {totalCustomersCount}
           </div>
           <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
@@ -456,7 +456,7 @@ export default function Customers() {
             <span>Cartera Pendiente</span>
             <AlertTriangle className="w-3.5 h-3.5 opacity-60 text-rose-500" />
           </div>
-          <div className={`mt-2 text-2xl lg:text-3xl font-bold tracking-tight tabular-nums ${totalDebtAll > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
+          <div className={`mt-1 text-xl sm:text-2xl font-bold tracking-tight tabular-nums ${totalDebtAll > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
             ${Number(totalDebtAll).toLocaleString('es-CO')}
           </div>
           <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">

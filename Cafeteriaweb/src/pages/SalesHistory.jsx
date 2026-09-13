@@ -396,15 +396,15 @@ export default function SalesHistory() {
         </div>
       </div>
 
-      {/* Unified Metrics Bar — Linear / De-AI Style (Single cohesive container, one flat accent, 0 rainbow clutter) */}
+      {/* Unified Metrics Bar — Linear / De-AI Style (Hero visual hierarchy) */}
       <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 overflow-hidden">
-        {/* Total Facturado */}
+        {/* Total Facturado — Hero Metric */}
         <div className="p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
             <span>Total Facturado</span>
             <DollarSign className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+          <div className="mt-1 text-3xl sm:text-4xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
             ${Number(totalBilled).toLocaleString('es-CO')}
           </div>
           <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
@@ -418,7 +418,7 @@ export default function SalesHistory() {
             <span>Recaudado en Caja</span>
             <Wallet className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+          <div className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
             ${Number(totalCollectedInCash + totalCollectedInTransfer).toLocaleString('es-CO')}
           </div>
           <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
@@ -432,7 +432,7 @@ export default function SalesHistory() {
             <span>Por Cobrar (Deuda)</span>
             <Coins className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className={`mt-2 text-2xl lg:text-3xl font-bold tracking-tight tabular-nums ${totalPendingDebt > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
+          <div className={`mt-1 text-xl sm:text-2xl font-bold tracking-tight tabular-nums ${totalPendingDebt > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
             ${Number(totalPendingDebt).toLocaleString('es-CO')}
           </div>
           <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
@@ -446,7 +446,7 @@ export default function SalesHistory() {
             <span>Transacciones</span>
             <ShoppingBag className="w-3.5 h-3.5 opacity-60" />
           </div>
-          <div className="mt-2 text-2xl lg:text-3xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+          <div className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
             {totalSalesCount}
           </div>
           <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
@@ -523,7 +523,7 @@ export default function SalesHistory() {
         </div>
       </div>
 
-      {/* Tabla Linear de Ventas */}
+      {/* Tabla & Cards Responsive de Ventas (Guide 3: Mobile Cards + Desktop Table) */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 text-[#9F6839] dark:text-[#DABA8C] gap-3">
           <div className="w-6 h-6 border-2 border-[#9F6839] border-t-transparent rounded-full animate-spin" />
@@ -537,7 +537,138 @@ export default function SalesHistory() {
         </div>
       ) : (
         <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* MOBILE VIEW (Guide 3 Decision 03: Identity · State · Value stacked card list) */}
+          <div className="block md:hidden divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
+            {filteredSales.map((sale) => {
+              const isCancelled = sale.status === 'cancelado' || sale.status === 'cancelada'
+              const paid =
+                sale.paid_amount !== undefined && sale.paid_amount !== null
+                  ? Number(sale.paid_amount)
+                  : sale.payment_method === 'credito'
+                  ? 0
+                  : Number(sale.total)
+
+              const pending =
+                sale.pending_amount !== undefined && sale.pending_amount !== null
+                  ? Number(sale.pending_amount)
+                  : sale.payment_method === 'credito'
+                  ? Number(sale.total)
+                  : 0
+
+              const isFullyPaid = !isCancelled && pending === 0
+              const isPartial = !isCancelled && paid > 0 && pending > 0
+              const itemsList = (sale.items || []).map((it) => `${it.quantity}x ${it.product_name}`).join(', ')
+
+              return (
+                <div
+                  key={sale.id}
+                  className={`p-4 space-y-2.5 transition-colors ${
+                    isCancelled ? 'opacity-50 bg-[#FEE4D7]/10 dark:bg-[#150904]/40' : 'hover:bg-[#FEE4D7]/10'
+                  }`}
+                >
+                  {/* Top: Identity (Client + Date/Time) & Value (Total Amount) */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
+                        {sale.customer_name || 'Cliente General'}
+                      </div>
+                      <div className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums mt-0.5">
+                        {new Date(sale.created_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })} · {new Date(sale.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="font-bold text-sm text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+                        ${Number(sale.total).toLocaleString('es-CO')}
+                      </div>
+                      {pending > 0 && (
+                        <div className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 tabular-nums">
+                          Debe: ${Number(pending).toLocaleString('es-CO')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Middle: Products Summary & State Badges */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#D4B28E]/15 dark:border-[#9F6839]/15">
+                    <span className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] truncate max-w-[190px]">
+                      {itemsList || 'Sin detalle de productos'}
+                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[10px] font-medium uppercase text-[#9F6839] dark:text-[#DABA8C] px-1.5 py-0.5 rounded bg-[#FEE4D7]/50 dark:bg-[#2A150C]">
+                        {sale.payment_method}
+                      </span>
+                      {isCancelled ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-neutral-500/10 text-neutral-600 dark:text-neutral-400 border border-neutral-500/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
+                          Cancelada
+                        </span>
+                      ) : isFullyPaid ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          Pagado
+                        </span>
+                      ) : isPartial ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                          Parcial
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          Crédito
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Bottom: Direct Actions */}
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#D4B28E]/15 dark:border-[#9F6839]/15">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenReceiptModal(sale)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#FEE4D7]/70 dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] transition-colors cursor-pointer"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>Ticket</span>
+                    </button>
+                    {!isCancelled && (
+                      <button
+                        type="button"
+                        onClick={() => handleCancelSale(sale)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
+                      >
+                        <Ban className="w-3.5 h-3.5" />
+                        <span>Cancelar</span>
+                      </button>
+                    )}
+                    {isOwner && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditSale(sale)}
+                          className="p-1.5 rounded-lg text-[#9F6839] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] transition-colors cursor-pointer"
+                          title="Editar Venta"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSale(sale)}
+                          className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                          title="Eliminar Venta"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* DESKTOP TABLE VIEW (Full wide columns, ample action column with 0 clipping) */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] font-semibold uppercase text-[11px] tracking-wider">
                 <tr>
@@ -548,7 +679,7 @@ export default function SalesHistory() {
                   <th className="px-3.5 py-2.5 text-right whitespace-nowrap">Total</th>
                   <th className="px-3.5 py-2.5 text-right whitespace-nowrap">Cobrado</th>
                   <th className="px-3.5 py-2.5 text-right whitespace-nowrap">Pendiente</th>
-                  <th className="px-3.5 py-2.5 text-right whitespace-nowrap w-24">Acciones</th>
+                  <th className="px-4 py-2.5 text-right whitespace-nowrap w-40 min-w-[160px]">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
@@ -663,9 +794,9 @@ export default function SalesHistory() {
                         )}
                       </td>
 
-                      {/* Acciones — Reveal on hover (Guide 3 Decision 07: An action column is noise) */}
-                      <td className="px-3.5 py-2 text-right whitespace-nowrap w-24">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                      {/* Acciones — Full width, no clipping on PC */}
+                      <td className="px-4 py-2 text-right whitespace-nowrap w-40 min-w-[160px]">
+                        <div className="flex items-center justify-end gap-1.5">
                           {/* Ver / Imprimir Comprobante */}
                           <button type="button"
                             onClick={() => handleOpenReceiptModal(sale)}
