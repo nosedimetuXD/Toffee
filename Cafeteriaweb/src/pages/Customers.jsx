@@ -420,40 +420,48 @@ export default function Customers() {
         </div>
       </div>
 
-      {/* Tarjetas Resumen */}
+      {/* Tarjetas Resumen — Jerarquía De-AI (Hero + Secundarias) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] rounded-2xl border border-[#D4B28E]/50 dark:border-[#9F6839]/30">
-            <Users className="w-6 h-6" />
+        {/* Facturación Total — Hero Primary */}
+        <div className="bg-[#432414] text-[#FEE4D7] dark:bg-[#25120A] border border-[#9F6839]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#DABA8C] mb-1">
+            <span>Facturación Clientes</span>
+            <DollarSign className="w-4 h-4 text-[#DABA8C]" />
           </div>
-          <div>
-            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Total Clientes</span>
-            <div className="text-2xl font-black text-[#432414] dark:text-[#FEE4D7]">{totalCustomersCount}</div>
+          <div className="text-3xl font-black tabular-nums tracking-tight">
+            ${Number(totalSpentAll).toLocaleString('es-CO')}
           </div>
+          <span className="text-[11px] opacity-75 font-medium block mt-1">
+            Total acumulado facturado a clientes
+          </span>
         </div>
 
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40">
-            <DollarSign className="w-6 h-6" />
+        {/* Total Clientes */}
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] mb-1">
+            <span>Total Clientes</span>
+            <Users className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
           </div>
-          <div>
-            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Facturación Total</span>
-            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-              ${Number(totalSpentAll).toLocaleString('es-CO')}
-            </div>
+          <div className="text-2xl font-black text-[#432414] dark:text-[#FEE4D7] tabular-nums tracking-tight">
+            {totalCustomersCount}
           </div>
+          <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-medium block mt-1">
+            Clientes registrados en el sistema
+          </span>
         </div>
 
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 rounded-2xl border border-amber-200/60 dark:border-amber-900/40">
-            <AlertTriangle className="w-6 h-6" />
+        {/* Deuda Pendiente */}
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 mb-1">
+            <span>Deuda Pendiente</span>
+            <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
           </div>
-          <div>
-            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Deuda Pendiente</span>
-            <div className={`text-2xl font-black ${totalDebtAll > 0 ? 'text-red-600 dark:text-red-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
-              ${Number(totalDebtAll).toLocaleString('es-CO')}
-            </div>
+          <div className={`text-2xl font-black tabular-nums tracking-tight ${totalDebtAll > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+            ${Number(totalDebtAll).toLocaleString('es-CO')}
           </div>
+          <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-medium block mt-1">
+            {totalDebtAll > 0 ? `${withDebtCount} clientes con saldo pendiente` : 'Sin cartera pendiente (al día)'}
+          </span>
         </div>
       </div>
 

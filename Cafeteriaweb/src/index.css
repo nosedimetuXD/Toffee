@@ -24,6 +24,7 @@
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     background-color: #FEE4D7;
     color: #432414;
+    letter-spacing: -0.01em;
     transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
   }
 
@@ -39,6 +40,17 @@
   h1, h2, h3, .font-serif-display {
     font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
     font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Linear-style dark mode image dimming */
+  html.dark img:not(.no-dim) {
+    filter: brightness(0.92) contrast(1.05);
   }
 
   .font-instrument {

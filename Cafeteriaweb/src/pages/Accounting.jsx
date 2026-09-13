@@ -356,54 +356,52 @@ export default function Accounting() {
         </div>
       </div>
 
-      {/* Tarjetas Resumen Financiero */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Ingresos Totales */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40">
-            <TrendingUp className="w-6 h-6" />
+      {/* Tarjetas Resumen Financiero — Jerarquía De-AI (1 Principal Hero + 2 Secundarias) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Balance Neto — Métrica Hero Principal */}
+        <div className={`border rounded-3xl p-5 transition-all ${
+          balanceNetoCalc >= 0
+            ? 'bg-[#432414] text-[#FEE4D7] border-[#9F6839]/60 dark:bg-[#25120A] dark:border-[#9F6839]/40'
+            : 'bg-red-950/90 text-red-100 border-red-800'
+        }`}>
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#DABA8C] dark:text-[#DABA8C]/80 mb-1">
+            <span>Ganancia Neta</span>
+            <Wallet className="w-4 h-4 opacity-80" />
           </div>
-          <div>
-            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Ingresos Totales</span>
-            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-              ${Number(totalIngresosCalc).toLocaleString('es-CO')}
-            </div>
-            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
-              Ventas: ${Number(salesIncomeTotal).toLocaleString('es-CO')} | Extra: ${Number(manualIncomeTotal).toLocaleString('es-CO')}
-            </span>
+          <div className="text-3xl font-black tabular-nums tracking-tight">
+            ${Number(balanceNetoCalc).toLocaleString('es-CO')}
           </div>
+          <span className="text-[11px] opacity-75 font-medium block mt-1">
+            Balance neto del período seleccionado
+          </span>
         </div>
 
-        {/* Gastos Totales */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 rounded-2xl border border-red-200/60 dark:border-red-900/40">
-            <TrendingDown className="w-6 h-6" />
+        {/* Ingresos Totales — Secundaria */}
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] mb-1">
+            <span>Ingresos Totales</span>
+            <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div>
-            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Gastos Totales</span>
-            <div className="text-2xl font-black text-red-600 dark:text-red-400">
-              ${Number(totalGastosCalc).toLocaleString('es-CO')}
-            </div>
-            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
-              {expenses.length} movimientos registrados
-            </span>
+          <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tight">
+            ${Number(totalIngresosCalc).toLocaleString('es-CO')}
           </div>
+          <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-medium block mt-1">
+            Ventas: <span className="tabular-nums font-bold">${Number(salesIncomeTotal).toLocaleString('es-CO')}</span> · Extras: <span className="tabular-nums font-bold">${Number(manualIncomeTotal).toLocaleString('es-CO')}</span>
+          </span>
         </div>
 
-        {/* Balance Neto */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className={`p-3 rounded-2xl border ${balanceNetoCalc >= 0 ? 'bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] border-[#D4B28E]/50 dark:border-[#9F6839]/30' : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200'}`}>
-            <Wallet className="w-6 h-6" />
+        {/* Gastos Totales — Secundaria */}
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] mb-1">
+            <span>Gastos Totales</span>
+            <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
           </div>
-          <div>
-            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">Ganancia Neta</span>
-            <div className={`text-2xl font-black ${balanceNetoCalc >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-red-600 dark:text-red-400'}`}>
-              ${Number(balanceNetoCalc).toLocaleString('es-CO')}
-            </div>
-            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
-              Balance neto acumulado
-            </span>
+          <div className="text-2xl font-black text-red-600 dark:text-red-400 tabular-nums tracking-tight">
+            ${Number(totalGastosCalc).toLocaleString('es-CO')}
           </div>
+          <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-medium block mt-1">
+            <span className="tabular-nums font-bold">{expenses.length}</span> egresos registrados
+          </span>
         </div>
       </div>
 
@@ -412,7 +410,7 @@ export default function Accounting() {
         <div className="flex items-center gap-2">
           <button type="button"
             onClick={() => setActiveTab('expenses')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'expenses'
                 ? 'bg-[#9F6839] text-white shadow-xs'
                 : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A150C]'
@@ -422,7 +420,7 @@ export default function Accounting() {
           </button>
           <button type="button"
             onClick={() => setActiveTab('incomes')}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'incomes'
                 ? 'bg-emerald-600 text-white shadow-xs'
                 : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A150C]'
@@ -433,7 +431,7 @@ export default function Accounting() {
         </div>
 
         {/* Selector de Periodo */}
-        <div className="flex items-center gap-1 bg-[#FEE4D7]/40 dark:bg-[#2A150C] p-1 rounded-2xl border border-[#D4B28E]/60 dark:border-[#9F6839]/30 self-start sm:self-auto overflow-x-auto">
+        <div className="flex items-center gap-1 bg-[#FEE4D7]/40 dark:bg-[#2A150C] p-1 rounded-xl border border-[#D4B28E]/60 dark:border-[#9F6839]/30 self-start sm:self-auto overflow-x-auto">
           {[
             { id: 'today', label: 'Hoy' },
             { id: 'week', label: '7 Días' },
@@ -444,7 +442,7 @@ export default function Accounting() {
             <button type="button"
               key={p.id}
               onClick={() => setPeriod(p.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 period === p.id
                   ? 'bg-[#9F6839] text-white shadow-xs font-black'
                   : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#3E2114]'
@@ -458,7 +456,7 @@ export default function Accounting() {
 
       {/* TAB GASTOS */}
       {activeTab === 'expenses' && (
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden">
           {expenses.length === 0 ? (
             <div className="p-12 text-center text-[#9F6839] dark:text-[#DABA8C]">
               <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
@@ -469,65 +467,65 @@ export default function Accounting() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-bold text-[10px] tracking-wider">
                   <tr>
-                    <th className="px-5 py-3.5">Fecha</th>
-                    <th className="px-4 py-3.5">Descripción & Categoría</th>
-                    <th className="px-4 py-3.5">Método de Pago</th>
-                    <th className="px-4 py-3.5">Insumo Reabastecido</th>
-                    <th className="px-4 py-3.5">Monto</th>
-                    <th className="px-4 py-3.5">Registrado Por</th>
-                    <th className="px-5 py-3.5 text-right">Acciones</th>
+                    <th className="px-4 py-3">Fecha</th>
+                    <th className="px-4 py-3">Descripción & Categoría</th>
+                    <th className="px-4 py-3">Método de Pago</th>
+                    <th className="px-4 py-3">Insumo Reabastecido</th>
+                    <th className="px-4 py-3 text-right">Monto</th>
+                    <th className="px-4 py-3">Registrado Por</th>
+                    <th className="px-4 py-3 text-right">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#D4B28E]/40 dark:divide-[#9F6839]/20">
+                <tbody className="divide-y divide-[#D4B28E]/30 dark:divide-[#9F6839]/20">
                   {expenses.map((e) => (
-                    <tr key={e.id} className="hover:bg-[#FEE4D7]/30 dark:hover:bg-[#2A150C]/60 transition-colors">
-                      <td className="px-5 py-4 font-bold text-[#432414] dark:text-[#FEE4D7]">
-                        {new Date(e.created_at).toLocaleDateString('es-CO')}
-                        <span className="block text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-normal">
+                    <tr key={e.id} className="hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A150C]/60 transition-colors group">
+                      <td className="px-4 py-3 font-bold text-[#432414] dark:text-[#FEE4D7] whitespace-nowrap">
+                        <span className="tabular-nums">{new Date(e.created_at).toLocaleDateString('es-CO')}</span>
+                        <span className="block text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-normal tabular-nums">
                           {new Date(e.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-3">
                         <div className="font-extrabold text-[#432414] dark:text-[#FEE4D7]">{e.description}</div>
                         <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-[#FEE4D7] dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] text-[10px] font-bold uppercase border border-[#D4B28E]/60 dark:border-[#9F6839]/30">
                           {e.category}
                         </span>
                       </td>
-                      <td className="px-4 py-4 capitalize text-[#432414] dark:text-[#FEE4D7] font-medium">
+                      <td className="px-4 py-3 capitalize text-[#432414] dark:text-[#FEE4D7] font-medium">
                         {e.payment_method}
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-3">
                         {e.ingredient_name ? (
                           <div className="text-[#432414] dark:text-[#FEE4D7] font-bold">
                             {e.ingredient_name}
-                            <span className="text-emerald-600 dark:text-emerald-400 text-[11px] block">+{e.quantity_added} agregados</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 text-[11px] block tabular-nums">+{e.quantity_added} agregados</span>
                           </div>
                         ) : (
                           <span className="text-[#9F6839] dark:text-[#DABA8C]">-</span>
                         )}
                       </td>
-                      <td className="px-4 py-4 font-black text-red-600 dark:text-red-400 text-sm">
+                      <td className="px-4 py-3 font-black text-red-600 dark:text-red-400 text-sm text-right tabular-nums">
                         -${Number(e.amount).toLocaleString('es-CO')}
                       </td>
-                      <td className="px-4 py-4 text-[#9F6839] dark:text-[#DABA8C] font-medium">
+                      <td className="px-4 py-3 text-[#9F6839] dark:text-[#DABA8C] font-medium">
                         {e.registerer_name || 'Personal'}
                       </td>
-                      <td className="px-5 py-4 text-right">
+                      <td className="px-4 py-3 text-right">
                         {isOwner && (
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                             <button type="button"
                               onClick={() => handleOpenEditExpense(e)}
-                              className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl transition-colors cursor-pointer"
+                              className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg transition-colors cursor-pointer"
                               title="Editar Gasto"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button type="button"
                               onClick={() => handleDeleteExpense(e)}
-                              className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
+                              className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
                               title="Eliminar Gasto"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         )}
@@ -543,7 +541,7 @@ export default function Accounting() {
 
       {/* TAB INGRESOS */}
       {activeTab === 'incomes' && (
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden">
           {/* Sub-filtros de Tipo de Ingreso */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-[#FEE4D7]/30 dark:bg-[#2A150C] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30">
             <div className="flex items-center gap-1.5 overflow-x-auto">
@@ -555,7 +553,7 @@ export default function Accounting() {
                 <button type="button"
                   key={f.id}
                   onClick={() => setIncomeFilter(f.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                     incomeFilter === f.id
                       ? 'bg-emerald-600 text-white shadow-xs font-black'
                       : 'bg-white dark:bg-[#201009] text-[#432414] dark:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#3E2114] border border-[#D4B28E]/50 dark:border-[#9F6839]/30'
@@ -585,15 +583,15 @@ export default function Accounting() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-bold text-[10px] tracking-wider">
                   <tr>
-                    <th className="px-5 py-3.5 whitespace-nowrap">Fecha & Hora</th>
-                    <th className="px-4 py-3.5 whitespace-nowrap">Tipo / Origen</th>
-                    <th className="px-4 py-3.5">Descripción / Concepto</th>
-                    <th className="px-4 py-3.5 whitespace-nowrap">Método de Pago</th>
-                    <th className="px-4 py-3.5 text-right whitespace-nowrap">Monto Cobrado</th>
-                    <th className="px-5 py-3.5 text-center whitespace-nowrap">Acciones</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Fecha & Hora</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Tipo / Origen</th>
+                    <th className="px-4 py-3">Descripción / Concepto</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Método de Pago</th>
+                    <th className="px-4 py-3 text-right whitespace-nowrap">Monto Cobrado</th>
+                    <th className="px-4 py-3 text-center whitespace-nowrap">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#D4B28E]/40 dark:divide-[#9F6839]/20">
+                <tbody className="divide-y divide-[#D4B28E]/30 dark:divide-[#9F6839]/20">
                   {filteredIncomes.map((inc) => {
                     const isSale = inc.type === 'sale'
                     const isManual = !isSale
@@ -601,19 +599,19 @@ export default function Accounting() {
                     return (
                       <tr
                         key={`${inc.type || 'inc'}-${inc.id}`}
-                        className="hover:bg-[#FEE4D7]/30 dark:hover:bg-[#2A150C]/60 transition-colors"
+                        className="hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A150C]/60 transition-colors group"
                       >
                         {/* Fecha y Hora */}
-                        <td className="px-5 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           <div className="flex flex-col">
-                            <span className="font-bold text-[#432414] dark:text-[#FEE4D7]">
+                            <span className="font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums">
                               {new Date(inc.created_at).toLocaleDateString('es-CO', {
                                 day: '2-digit',
                                 month: 'short',
                                 year: 'numeric'
                               })}
                             </span>
-                            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C]">
+                            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] tabular-nums">
                               {new Date(inc.created_at).toLocaleTimeString('es-CO', {
                                 hour: '2-digit',
                                 minute: '2-digit',
@@ -624,74 +622,65 @@ export default function Accounting() {
                         </td>
 
                         {/* Tipo / Origen Badge */}
-                        <td className="px-4 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap">
                           {isSale ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-extrabold text-[10px] uppercase border border-emerald-300/60 dark:border-emerald-800/40">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-emerald-100/80 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-extrabold text-[10px] uppercase border border-emerald-300/60 dark:border-emerald-800/40">
                               <ShoppingBag className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                               <span>Venta POS</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#FEE4D7] dark:bg-[#3E2114] text-[#9F6839] dark:text-[#DABA8C] font-extrabold text-[10px] uppercase border border-[#D4B28E]/70 dark:border-[#9F6839]/50">
-                              <Plus className="w-3 h-3 text-[#9F6839] dark:text-[#DABA8C]" />
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-[#FEE4D7] dark:bg-[#34180D] text-[#9F6839] dark:text-[#DABA8C] font-extrabold text-[10px] uppercase border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
+                              <DollarSign className="w-3 h-3 text-[#9F6839] dark:text-[#DABA8C]" />
                               <span>Ingreso Extra</span>
                             </span>
                           )}
                         </td>
 
-                        {/* Descripción / Concepto */}
-                        <td className="px-4 py-4">
+                        {/* Concepto */}
+                        <td className="px-4 py-3">
                           <div className="font-extrabold text-[#432414] dark:text-[#FEE4D7]">
-                            {isSale ? (inc.customer_name || (inc.description || '').replace(/^Venta POS - /i, '') || 'Cliente General') : inc.description}
+                            {inc.description || (isSale ? `Orden #${inc.order_number || inc.sale_id}` : 'Ingreso manual')}
                           </div>
-                          {inc.category && inc.category !== 'Venta POS' && (
-                            <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md bg-[#FEE4D7]/60 dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] text-[10px] font-bold uppercase border border-[#D4B28E]/50 dark:border-[#9F6839]/30">
-                              {inc.category}
+                          {isSale && inc.customer_name && (
+                            <span className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] font-medium block">
+                              Cliente: {inc.customer_name}
                             </span>
                           )}
                         </td>
 
                         {/* Método de Pago */}
-                        <td className="px-4 py-4 capitalize text-[#432414] dark:text-[#FEE4D7] font-medium whitespace-nowrap">
-                          <div className="flex flex-col">
-                            <span className="uppercase font-bold">{inc.payment_method}</span>
-                            {inc.bank_details && (
-                              <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C]">
-                                ({inc.bank_details})
-                              </span>
-                            )}
-                          </div>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold capitalize bg-white dark:bg-[#1A0C06] border border-[#D4B28E]/60 dark:border-[#9F6839]/30 text-[#432414] dark:text-[#FEE4D7]">
+                            {inc.payment_method || 'efectivo'}
+                          </span>
                         </td>
 
-                        {/* Monto */}
-                        <td className="px-4 py-4 text-right font-black text-emerald-600 dark:text-emerald-400 text-sm whitespace-nowrap">
+                        {/* Monto Cobrado */}
+                        <td className="px-4 py-3 text-right whitespace-nowrap font-black text-emerald-600 dark:text-emerald-400 text-sm tabular-nums">
                           +${Number(inc.amount).toLocaleString('es-CO')}
                         </td>
 
                         {/* Acciones */}
-                        <td className="px-5 py-4 text-center whitespace-nowrap">
-                          {isManual ? (
-                            isOwner && (
-                              <div className="flex items-center justify-center gap-1">
-                                <button type="button"
-                                  onClick={() => handleOpenEditIncome(inc)}
-                                  className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl transition-colors cursor-pointer"
-                                  title="Editar Ingreso"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button type="button"
-                                  onClick={() => handleDeleteIncome(inc)}
-                                  className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-colors cursor-pointer"
-                                  title="Eliminar Ingreso"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            )
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
+                          {isManual && isOwner ? (
+                            <div className="flex items-center justify-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                              <button type="button"
+                                onClick={() => handleOpenEditIncome(inc)}
+                                className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-lg transition-colors cursor-pointer"
+                                title="Editar Ingreso"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button type="button"
+                                onClick={() => handleDeleteIncome(inc)}
+                                className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
+                                title="Eliminar Ingreso"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-bold text-[10px] uppercase border border-emerald-200/60 dark:border-emerald-800/40">
-                              POS
-                            </span>
+                            <span className="text-[10px] text-[#9F6839]/60 dark:text-[#DABA8C]/50 font-medium">—</span>
                           )}
                         </td>
                       </tr>

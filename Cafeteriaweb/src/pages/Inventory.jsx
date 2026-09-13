@@ -334,64 +334,64 @@ export default function Inventory() {
 
       {/* Pestaña 1: Tabla de Insumos */}
       {activeTab === 'inventory' && (
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 rounded-3xl shadow-xs overflow-hidden">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[650px] text-left text-xs">
-              <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider text-[10px] border-b border-[#D4B28E]/60 font-bold">
+              <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider text-[10px] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 font-bold">
                 <tr>
-                  <th className="py-3.5 px-4">Insumo</th>
-                  <th className="py-3.5 px-4">Stock</th>
-                  <th className="py-3.5 px-4">Costo/u</th>
-                  <th className="py-3.5 px-4">Min</th>
-                  <th className="py-3.5 px-4">Estado</th>
-                  {!isEmployee && <th className="py-3.5 px-4 text-center">Ajuste</th>}
-                  {!isEmployee && <th className="py-3.5 px-4 text-center">Acciones</th>}
+                  <th className="py-3 px-4">Insumo</th>
+                  <th className="py-3 px-4 text-right">Stock</th>
+                  <th className="py-3 px-4 text-right">Costo/u</th>
+                  <th className="py-3 px-4 text-right">Min</th>
+                  <th className="py-3 px-4 text-center">Estado</th>
+                  {!isEmployee && <th className="py-3 px-4 text-center">Ajuste</th>}
+                  {!isEmployee && <th className="py-3 px-4 text-right">Acciones</th>}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#D4B28E]/30 text-[#432414] dark:text-[#FEE4D7]">
+              <tbody className="divide-y divide-[#D4B28E]/30 dark:divide-[#9F6839]/20 text-[#432414] dark:text-[#FEE4D7]">
                 {filteredIngredients.map((ing) => {
                   const isLow = ing.quantity <= ing.min_quantity
                   return (
-                    <tr key={ing.id} className={isLow ? 'bg-amber-50/40 dark:bg-amber-950/20' : ''}>
-                      <td className="py-3.5 px-4 font-bold">{ing.name}</td>
-                      <td className="py-3.5 px-4 font-extrabold text-sm">
-                        {ing.quantity} <span className="text-xs font-semibold text-[#9F6839]">{ing.unit}</span>
+                    <tr key={ing.id} className={`hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A150C]/60 transition-colors group ${isLow ? 'bg-amber-50/40 dark:bg-amber-950/20' : ''}`}>
+                      <td className="py-2.5 px-4 font-bold">{ing.name}</td>
+                      <td className="py-2.5 px-4 font-black text-sm text-right tabular-nums">
+                        {ing.quantity} <span className="text-xs font-semibold text-[#9F6839] dark:text-[#DABA8C]">{ing.unit}</span>
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-emerald-600">
+                      <td className="py-2.5 px-4 font-bold text-emerald-600 dark:text-emerald-400 text-right tabular-nums">
                         ${(ing.unit_cost || 0).toLocaleString()}
                       </td>
-                      <td className="py-3.5 px-4 text-[#9F6839]">{ing.min_quantity}</td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-2.5 px-4 text-[#9F6839] dark:text-[#DABA8C] text-right tabular-nums font-semibold">{ing.min_quantity}</td>
+                      <td className="py-2.5 px-4 text-center">
                         {isLow ? (
-                          <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 text-[10px] font-bold">¡Alerta!</span>
+                          <span className="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-[10px] font-bold border border-amber-300 dark:border-amber-700">¡Bajo!</span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 text-[10px] font-bold">OK</span>
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-100/70 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold border border-emerald-300 dark:border-emerald-800">OK</span>
                         )}
                       </td>
                       {!isEmployee && (
-                        <td className="py-3.5 px-4 text-center">
+                        <td className="py-2.5 px-4 text-center">
                           <div className="flex justify-center gap-1">
-                            <button type="button" onClick={() => quickAdjustStock(ing, -1)} className="p-1 rounded bg-[#FEE4D7] text-[#9F6839]"><Minus className="w-3 h-3" /></button>
-                            <button type="button" onClick={() => quickAdjustStock(ing, 1)} className="p-1 rounded bg-[#FEE4D7] text-[#9F6839]"><Plus className="w-3 h-3" /></button>
+                            <button type="button" onClick={() => quickAdjustStock(ing, -1)} className="p-1 rounded-md bg-[#FEE4D7] dark:bg-[#34180D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#9F6839] hover:text-white transition-colors"><Minus className="w-3 h-3" /></button>
+                            <button type="button" onClick={() => quickAdjustStock(ing, 1)} className="p-1 rounded-md bg-[#FEE4D7] dark:bg-[#34180D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#9F6839] hover:text-white transition-colors"><Plus className="w-3 h-3" /></button>
                           </div>
                         </td>
                       )}
                       {!isEmployee && (
-                        <td className="py-3.5 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1">
+                        <td className="py-2.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                             <button type="button"
                               onClick={() => openEditModal(ing)}
-                              className="p-2 rounded-xl text-[#9F6839] hover:bg-[#FEE4D7] dark:hover:bg-[#2E180E] transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#2E180E] transition-colors cursor-pointer"
                               title="Editar insumo"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button type="button"
                               onClick={() => handleDeleteIngredient(ing)}
-                              className="p-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
                               title="Eliminar insumo"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
@@ -414,36 +414,36 @@ export default function Inventory() {
 
       {/* Pestaña 2: Historial de Reportes de Mermas */}
       {activeTab === 'waste' && (
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 rounded-3xl shadow-xs overflow-hidden">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[700px] text-left text-xs">
-              <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider text-[10px] border-b border-[#D4B28E]/60 font-bold">
+              <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider text-[10px] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 font-bold">
                 <tr>
-                  <th className="py-3.5 px-4">Fecha / Hora</th>
-                  <th className="py-3.5 px-4">Insumo</th>
-                  <th className="py-3.5 px-4">Cantidad Reportada</th>
-                  <th className="py-3.5 px-4">Descontado del Stock</th>
-                  <th className="py-3.5 px-4 text-right">Pérdida Estimada ($)</th>
-                  <th className="py-3.5 px-4">Motivo del Daño</th>
+                  <th className="py-3 px-4">Fecha / Hora</th>
+                  <th className="py-3 px-4">Insumo</th>
+                  <th className="py-3 px-4 text-right">Cantidad Reportada</th>
+                  <th className="py-3 px-4 text-right">Descontado del Stock</th>
+                  <th className="py-3 px-4 text-right">Pérdida Estimada ($)</th>
+                  <th className="py-3 px-4">Motivo del Daño</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#D4B28E]/30 text-[#432414] dark:text-[#FEE4D7]">
+              <tbody className="divide-y divide-[#D4B28E]/30 dark:divide-[#9F6839]/20 text-[#432414] dark:text-[#FEE4D7]">
                 {wasteReports.map((w) => (
-                  <tr key={w.id}>
-                    <td className="py-3.5 px-4 font-semibold text-[#9F6839]">
+                  <tr key={w.id} className="hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A150C]/60 transition-colors">
+                    <td className="py-2.5 px-4 font-semibold text-[#9F6839] dark:text-[#DABA8C] tabular-nums">
                       {new Date(w.created_at).toLocaleString()}
                     </td>
-                    <td className="py-3.5 px-4 font-bold">{w.ingredient_name || 'Insumo'}</td>
-                    <td className="py-3.5 px-4 font-extrabold text-amber-700 dark:text-amber-300">
+                    <td className="py-2.5 px-4 font-bold">{w.ingredient_name || 'Insumo'}</td>
+                    <td className="py-2.5 px-4 font-extrabold text-amber-700 dark:text-amber-300 text-right tabular-nums">
                       {w.user_quantity} {w.user_unit}
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-red-600">
+                    <td className="py-2.5 px-4 font-bold text-red-600 text-right tabular-nums">
                       -{w.quantity_used} {w.ingredient_unit}
                     </td>
-                    <td className="py-3.5 px-4 text-right font-black text-red-600 text-sm">
+                    <td className="py-2.5 px-4 text-right font-black text-red-600 text-sm tabular-nums">
                       -${(w.estimated_loss || 0).toLocaleString()}
                     </td>
-                    <td className="py-3.5 px-4 italic text-[#9F6839] dark:text-[#DABA8C]">{w.reason}</td>
+                    <td className="py-2.5 px-4 italic text-[#9F6839] dark:text-[#DABA8C]">{w.reason}</td>
                   </tr>
                 ))}
                 {wasteReports.length === 0 && (

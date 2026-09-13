@@ -143,111 +143,78 @@ export default function Stats() {
         </div>
       )}
 
-      {/* Tarjetas KPI Financieras Exec */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-xs">
-          <div className="flex items-center justify-between text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-2">
+      {/* Tarjetas KPI Financieras Exec — Jerarquía De-AI (Hero + Secundarias) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Ventas Totales — Hero Primary */}
+        <div className="sm:col-span-2 bg-[#432414] text-[#FEE4D7] dark:bg-[#25120A] border border-[#9F6839]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#DABA8C] mb-1">
             <span>Ventas Totales</span>
-            <TrendingUp className="w-4 h-4 text-emerald-600" />
+            <TrendingUp className="w-4 h-4 text-[#DABA8C]" />
           </div>
-          <div className="text-2xl font-extrabold text-emerald-600">
+          <div className="text-3xl font-black tabular-nums tracking-tight">
             ${(mStats?.monthly_income || 0).toLocaleString()}
           </div>
-          <p className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] mt-1 font-semibold">
-            Ingreso bruto facturado
+          <p className="text-[11px] opacity-75 mt-1 font-medium">
+            Ingreso bruto facturado en el período
           </p>
         </div>
 
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-xs">
-          <div className="flex items-center justify-between text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-2">
-            <span>Gastos Totales</span>
-            <TrendingDown className="w-4 h-4 text-red-600" />
-          </div>
-          <div className="text-2xl font-extrabold text-red-600">
-            ${(mStats?.monthly_expenses || 0).toLocaleString()}
-          </div>
-          <p className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] mt-1 font-semibold">
-            Egresos del período
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-xs">
-          <div className="flex items-center justify-between text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-2">
+        {/* Ganancia Neta */}
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] mb-1">
             <span>Ganancia Neta</span>
             <DollarSign className="w-4 h-4 text-[#9F6839]" />
           </div>
-          <div className={`text-2xl font-extrabold ${(mStats?.net_profit || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+          <div className={`text-2xl font-black tabular-nums tracking-tight ${(mStats?.net_profit || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
             ${(mStats?.net_profit || 0).toLocaleString()}
           </div>
-          <p className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] mt-1 font-semibold">
+          <p className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 mt-1 font-medium">
             Utilidad disponible
           </p>
         </div>
 
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-xs">
-          <div className="flex items-center justify-between text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-2">
-            <span>Tiempo Prom. Comandas</span>
-            <Clock className="w-4 h-4 text-amber-600" />
+        {/* Gastos Totales */}
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] mb-1">
+            <span>Gastos Totales</span>
+            <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
           </div>
-          <div className="text-2xl font-extrabold text-[#432414] dark:text-[#FEE4D7]">
-            {mStats?.avg_prep_time_minutes > 0 ? `${Math.round(mStats.avg_prep_time_minutes)} min` : '—'}
+          <div className="text-2xl font-black text-red-600 dark:text-red-400 tabular-nums tracking-tight">
+            ${(mStats?.monthly_expenses || 0).toLocaleString()}
           </div>
-          <p className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] mt-1 font-semibold">
-            Demora salida de comandas
+          <p className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 mt-1 font-medium">
+            Egresos del período
           </p>
         </div>
-
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-xs">
-          <div className="flex items-center justify-between text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-2">
-            <span className="flex items-center gap-1.5">
-              <Trophy className="w-3.5 h-3.5 text-amber-500" /> Mejor Vendedor
-            </span>
-            <Award className="w-4 h-4 text-amber-600" />
-          </div>
-          {mStats?.top_seller ? (
-            <div>
-              <div className="text-base font-extrabold text-[#432414] dark:text-[#FEE4D7]">
-                {mStats.top_seller.username} <span className="text-[10px] bg-[#FEE4D7] dark:bg-[#34180D] px-2 py-0.5 rounded-full border border-[#D4B28E]">({mStats.top_seller.role})</span>
-              </div>
-              <div className="text-xs font-bold text-emerald-600 mt-1">
-                ${mStats.top_seller.total_amount.toLocaleString()} ({mStats.top_seller.sales_count} ventas)
-              </div>
-            </div>
-          ) : (
-            <p className="text-xs text-[#9F6839]">Sin ventas este mes</p>
-          )}
-        </div>
       </div>
-
-
 
       {/* Rankings Grid: Top 10 Productos Más Vendidos y Top 10 Clientes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Top 10 Productos Más Vendidos */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 rounded-3xl p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/40">
-            <h3 className="text-base font-extrabold text-[#432414] dark:text-[#FEE4D7] flex items-center gap-2">
-              <Award className="w-5 h-5 text-amber-500" />
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 space-y-3">
+          <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30">
+            <h3 className="text-sm font-extrabold text-[#432414] dark:text-[#FEE4D7] flex items-center gap-2">
+              <Award className="w-4 h-4 text-amber-500" />
               <span>Top 10 Productos Más Vendidos</span>
             </h3>
-            <span className="text-xs font-bold text-[#9F6839]">Por unidades vendidas</span>
+            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C]">Por unidades</span>
           </div>
 
           {!mStats?.top_products || mStats.top_products.length === 0 ? (
-            <p className="text-xs text-[#9F6839] font-medium py-4 text-center">No hay productos vendidos en este periodo.</p>
+            <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] font-medium py-6 text-center">No hay productos vendidos en este periodo.</p>
           ) : (
-            <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+            <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
               {mStats.top_products.slice(0, 10).map((prod, idx) => (
-                <div key={prod.product_name || idx} className="p-3 rounded-2xl bg-[#FEE4D7]/20 dark:bg-[#2A150C] border border-[#D4B28E]/50 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className={`w-6 h-6 rounded-full text-white text-[11px] font-black flex items-center justify-center shrink-0 ${idx === 0 ? 'bg-amber-500 shadow-xs' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-amber-700' : 'bg-[#9F6839]'}`}>
-                      #{idx + 1}
+                <div key={prod.product_name || idx} className="p-2.5 rounded-xl bg-[#FEE4D7]/20 dark:bg-[#2A150C]/50 border border-[#D4B28E]/40 dark:border-[#9F6839]/30 flex items-center justify-between gap-3 hover:bg-[#FEE4D7]/40 dark:hover:bg-[#2A150C] transition-colors">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`w-5 h-5 rounded-md text-white text-[10px] font-black flex items-center justify-center shrink-0 ${idx === 0 ? 'bg-amber-500' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-amber-700' : 'bg-[#9F6839]/70'}`}>
+                      {idx + 1}
                     </span>
-                    <span className="text-sm font-extrabold text-[#432414] dark:text-[#FEE4D7] truncate">{prod.product_name}</span>
+                    <span className="text-xs font-extrabold text-[#432414] dark:text-[#FEE4D7] truncate">{prod.product_name}</span>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-xs font-extrabold text-[#9F6839] dark:text-[#DABA8C] block">{prod.total_qty} ud(s)</span>
-                    <span className="text-[11px] font-bold text-emerald-600">${prod.total_amount.toLocaleString()}</span>
+                    <span className="text-xs font-extrabold text-[#9F6839] dark:text-[#DABA8C] block tabular-nums">{prod.total_qty} ud(s)</span>
+                    <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">${prod.total_amount.toLocaleString()}</span>
                   </div>
                 </div>
               ))}
@@ -256,30 +223,30 @@ export default function Stats() {
         </div>
 
         {/* Top 10 Clientes del Periodo */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E] dark:border-[#9F6839]/40 rounded-3xl p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/40">
-            <h3 className="text-base font-extrabold text-[#432414] dark:text-[#FEE4D7] flex items-center gap-2">
-              <Users className="w-5 h-5 text-emerald-600" />
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 space-y-3">
+          <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30">
+            <h3 className="text-sm font-extrabold text-[#432414] dark:text-[#FEE4D7] flex items-center gap-2">
+              <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Top 10 Clientes del Periodo</span>
             </h3>
-            <span className="text-xs font-bold text-[#9F6839]">Por total invertido</span>
+            <span className="text-[11px] font-bold text-[#9F6839] dark:text-[#DABA8C]">Por inversión</span>
           </div>
 
           {!mStats?.top_customers || mStats.top_customers.length === 0 ? (
-            <p className="text-xs text-[#9F6839] font-medium py-4 text-center">No hay compras registradas con nombre de cliente este mes.</p>
+            <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] font-medium py-6 text-center">No hay compras registradas con nombre de cliente este mes.</p>
           ) : (
-            <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+            <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
               {mStats.top_customers.slice(0, 10).map((c, idx) => (
-                <div key={c.customer_name || idx} className="p-3 rounded-2xl bg-[#FEE4D7]/20 dark:bg-[#2A150C] border border-[#D4B28E]/50 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className={`w-6 h-6 rounded-full text-white text-[11px] font-black flex items-center justify-center shrink-0 ${idx === 0 ? 'bg-emerald-600 shadow-xs' : idx === 1 ? 'bg-emerald-500' : idx === 2 ? 'bg-teal-600' : 'bg-[#9F6839]'}`}>
-                      #{idx + 1}
+                <div key={c.customer_name || idx} className="p-2.5 rounded-xl bg-[#FEE4D7]/20 dark:bg-[#2A150C]/50 border border-[#D4B28E]/40 dark:border-[#9F6839]/30 flex items-center justify-between gap-3 hover:bg-[#FEE4D7]/40 dark:hover:bg-[#2A150C] transition-colors">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`w-5 h-5 rounded-md text-white text-[10px] font-black flex items-center justify-center shrink-0 ${idx === 0 ? 'bg-emerald-600' : idx === 1 ? 'bg-emerald-500' : idx === 2 ? 'bg-teal-600' : 'bg-[#9F6839]/70'}`}>
+                      {idx + 1}
                     </span>
-                    <span className="text-sm font-extrabold text-[#432414] dark:text-[#FEE4D7] truncate">{c.customer_name}</span>
+                    <span className="text-xs font-extrabold text-[#432414] dark:text-[#FEE4D7] truncate">{c.customer_name}</span>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-xs font-extrabold text-emerald-600 block">${c.total_spent.toLocaleString()}</span>
-                    <span className="text-[10px] font-bold text-[#9F6839]">{c.orders_count} compra(s)</span>
+                    <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 block tabular-nums">${c.total_spent.toLocaleString()}</span>
+                    <span className="text-[10px] font-bold text-[#9F6839] dark:text-[#DABA8C] tabular-nums">{c.orders_count} compra(s)</span>
                   </div>
                 </div>
               ))}

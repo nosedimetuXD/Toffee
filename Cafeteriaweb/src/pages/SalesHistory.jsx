@@ -396,78 +396,62 @@ export default function SalesHistory() {
         </div>
       </div>
 
-      {/* Tarjetas de Metricas Resumen */}
+      {/* Tarjetas de Metricas Resumen — Jerarquía De-AI (Hero + Secundarias) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Facturado */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-2xl border border-red-200/60 dark:border-red-900/40">
-            <DollarSign className="w-6 h-6" />
+        {/* Total Facturado — Hero Primary */}
+        <div className="bg-[#432414] text-[#FEE4D7] dark:bg-[#25120A] border border-[#9F6839]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#DABA8C] mb-1">
+            <span>Total Facturado</span>
+            <DollarSign className="w-4 h-4 text-[#DABA8C]" />
           </div>
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
-              Total Facturado
-            </span>
-            <div className="text-2xl font-black text-[#432414] dark:text-[#FEE4D7]">
-              ${Number(totalBilled).toLocaleString('es-CO')}
-            </div>
-            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
-              Total en ventas
-            </span>
+          <div className="text-3xl font-black tabular-nums tracking-tight">
+            ${Number(totalBilled).toLocaleString('es-CO')}
           </div>
+          <span className="text-[11px] opacity-75 font-medium block mt-1">
+            Total en ventas del período
+          </span>
         </div>
 
         {/* Recaudado en Caja */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-2xl border border-emerald-200/60 dark:border-emerald-900/40">
-            <Wallet className="w-6 h-6" />
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 mb-1">
+            <span>Recaudado en Caja</span>
+            <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 block">
-              Recaudado en Caja
-            </span>
-            <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-              ${Number(totalCollectedInCash + totalCollectedInTransfer).toLocaleString('es-CO')}
-            </div>
-            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
-              Efec: ${Number(totalCollectedInCash).toLocaleString('es-CO')} | Transf: ${Number(totalCollectedInTransfer).toLocaleString('es-CO')}
-            </span>
+          <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums tracking-tight">
+            ${Number(totalCollectedInCash + totalCollectedInTransfer).toLocaleString('es-CO')}
           </div>
+          <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-medium block mt-1">
+            Efec: <span className="tabular-nums font-bold">${Number(totalCollectedInCash).toLocaleString('es-CO')}</span> · Transf: <span className="tabular-nums font-bold">${Number(totalCollectedInTransfer).toLocaleString('es-CO')}</span>
+          </span>
         </div>
 
         {/* Por Cobrar (Deuda) */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-2xl border border-rose-200/60 dark:border-rose-900/40">
-            <Coins className="w-6 h-6" />
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 mb-1">
+            <span>Por Cobrar (Deuda)</span>
+            <Coins className="w-4 h-4 text-rose-600 dark:text-rose-400" />
           </div>
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-300 block">
-              Por Cobrar (Deuda)
-            </span>
-            <div className="text-2xl font-black text-rose-600 dark:text-rose-400">
-              ${Number(totalPendingDebt).toLocaleString('es-CO')}
-            </div>
-            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
-              {totalPendingDebt > 0 ? 'Saldo pendiente' : 'Al día'}
-            </span>
+          <div className="text-2xl font-black text-rose-600 dark:text-rose-400 tabular-nums tracking-tight">
+            ${Number(totalPendingDebt).toLocaleString('es-CO')}
           </div>
+          <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-medium block mt-1">
+            {totalPendingDebt > 0 ? 'Saldo pendiente por recaudar' : 'Cartera al día (sin deuda)'}
+          </span>
         </div>
 
         {/* Ventas Realizadas */}
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-2xl border border-amber-200/60 dark:border-amber-900/40">
-            <ShoppingBag className="w-6 h-6" />
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-5">
+          <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] mb-1">
+            <span>Ventas Realizadas</span>
+            <ShoppingBag className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
           </div>
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900/70 dark:text-amber-300/70 block">
-              Ventas Realizadas
-            </span>
-            <div className="text-2xl font-black text-[#432414] dark:text-[#FEE4D7]">
-              {totalSalesCount}
-            </div>
-            <span className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold block mt-0.5">
-              Promedio: ${Number(averageTicket).toLocaleString('es-CO')}
-            </span>
+          <div className="text-2xl font-black text-[#432414] dark:text-[#FEE4D7] tabular-nums tracking-tight">
+            {totalSalesCount}
           </div>
+          <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-medium block mt-1">
+            Ticket prom: <span className="tabular-nums font-bold">${Number(averageTicket).toLocaleString('es-CO')}</span>
+          </span>
         </div>
       </div>
 
@@ -480,7 +464,7 @@ export default function SalesHistory() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por cliente, vendedor o ID..."
-            className="w-full pl-11 pr-4 py-3 bg-white dark:bg-[#201009] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl text-xs text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:border-[#9F6839] shadow-xs"
+            className="w-full pl-11 pr-4 py-2.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:border-[#9F6839]"
           />
         </div>
 
@@ -490,7 +474,7 @@ export default function SalesHistory() {
             <button type="button"
               key={m}
               onClick={() => setSelectedMethod(m)}
-              className={`px-3 py-2 rounded-xl text-xs font-bold capitalize whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold capitalize whitespace-nowrap transition-all cursor-pointer ${
                 selectedMethod === m
                   ? 'bg-[#9F6839] text-white shadow-xs'
                   : 'bg-white dark:bg-[#201009] text-[#432414] dark:text-[#FEE4D7] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A150C]'
@@ -502,11 +486,11 @@ export default function SalesHistory() {
         </div>
 
         {/* Filtro por Estado de Deuda */}
-        <div className="inline-flex p-1 bg-white dark:bg-[#201009] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-xl shadow-xs shrink-0">
+        <div className="inline-flex p-1 bg-white dark:bg-[#201009] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-xl shrink-0">
           <button
             type="button"
             onClick={() => setDebtStatusFilter('all')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               debtStatusFilter === 'all'
                 ? 'bg-[#9F6839] text-white shadow-xs'
                 : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50'
@@ -517,7 +501,7 @@ export default function SalesHistory() {
           <button
             type="button"
             onClick={() => setDebtStatusFilter('debt')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               debtStatusFilter === 'debt'
                 ? 'bg-red-600 text-white shadow-xs'
                 : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30'
@@ -528,7 +512,7 @@ export default function SalesHistory() {
           <button
             type="button"
             onClick={() => setDebtStatusFilter('paid')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               debtStatusFilter === 'paid'
                 ? 'bg-emerald-600 text-white shadow-xs'
                 : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
@@ -546,28 +530,28 @@ export default function SalesHistory() {
           <span className="text-xs font-bold">Cargando historial de ventas...</span>
         </div>
       ) : filteredSales.length === 0 ? (
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-12 text-center shadow-sm">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-12 text-center">
           <FileText className="w-12 h-12 text-[#9F6839]/50 dark:text-[#DABA8C]/40 mx-auto mb-3" />
           <h3 className="text-base font-bold text-[#432414] dark:text-[#FEE4D7] mb-1">No hay ventas registradas</h3>
           <p className="text-xs text-[#9F6839] dark:text-[#DABA8C]">No se encontraron transacciones para los filtros seleccionados.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-[#FEE4D7]/50 dark:bg-[#2A150C] border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] font-black uppercase text-[10px] tracking-wider">
                 <tr>
-                  <th className="p-4 whitespace-nowrap">Fecha & Hora</th>
-                  <th className="p-4">Cliente</th>
-                  <th className="p-4">Productos</th>
-                  <th className="p-4 whitespace-nowrap">Pago / Estado</th>
-                  <th className="p-4 text-right whitespace-nowrap">Total</th>
-                  <th className="p-4 text-right whitespace-nowrap">Cobrado</th>
-                  <th className="p-4 text-right whitespace-nowrap">Pendiente</th>
-                  <th className="p-4 text-center whitespace-nowrap">Acciones</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Fecha & Hora</th>
+                  <th className="px-4 py-3">Cliente</th>
+                  <th className="px-4 py-3">Productos</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Pago / Estado</th>
+                  <th className="px-4 py-3 text-right whitespace-nowrap">Total</th>
+                  <th className="px-4 py-3 text-right whitespace-nowrap">Cobrado</th>
+                  <th className="px-4 py-3 text-right whitespace-nowrap">Pendiente</th>
+                  <th className="px-4 py-3 text-center whitespace-nowrap">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#D4B28E]/40 dark:divide-[#9F6839]/20">
+              <tbody className="divide-y divide-[#D4B28E]/30 dark:divide-[#9F6839]/20">
                 {filteredSales.map((sale) => {
                   const isCancelled = sale.status === 'cancelado' || sale.status === 'cancelada'
                   const paid =
@@ -592,21 +576,21 @@ export default function SalesHistory() {
                   return (
                     <tr
                       key={sale.id}
-                      className={`hover:bg-[#FEE4D7]/30 dark:hover:bg-[#2A150C]/60 transition-colors ${
+                      className={`hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A150C]/60 transition-colors group ${
                         isCancelled ? 'opacity-60 bg-[#FEE4D7]/10 dark:bg-[#150904]/40' : ''
                       }`}
                     >
                       {/* Fecha & Hora */}
-                      <td className="p-4 whitespace-nowrap">
+                      <td className="px-4 py-2.5 whitespace-nowrap">
                         <div className="flex flex-col">
-                          <span className="font-black text-xs text-[#432414] dark:text-[#FEE4D7]">
+                          <span className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] tabular-nums">
                             {new Date(sale.created_at).toLocaleDateString('es-CO', {
                               day: '2-digit',
                               month: 'short',
                               year: 'numeric'
                             })}
                           </span>
-                          <span className="font-bold text-[11px] text-[#9F6839] dark:text-[#DABA8C]">
+                          <span className="font-semibold text-[10px] text-[#9F6839] dark:text-[#DABA8C] tabular-nums">
                             {new Date(sale.created_at).toLocaleTimeString('es-CO', {
                               hour: '2-digit',
                               minute: '2-digit',
@@ -618,7 +602,7 @@ export default function SalesHistory() {
 
                       {/* Cliente */}
                       <td
-                        className="p-4 font-black text-[#432414] dark:text-[#FEE4D7] max-w-[150px]"
+                        className="px-4 py-2.5 font-extrabold text-[#432414] dark:text-[#FEE4D7] max-w-[150px]"
                         title={sale.customer_name || 'Cliente General'}
                       >
                         <div className="truncate">{sale.customer_name || 'Cliente General'}</div>
@@ -626,32 +610,32 @@ export default function SalesHistory() {
 
                       {/* Productos */}
                       <td
-                        className="p-4 max-w-[220px] truncate font-medium text-[#432414]/80 dark:text-[#FEE4D7]/80"
+                        className="px-4 py-2.5 max-w-[220px] truncate font-medium text-[#432414]/80 dark:text-[#FEE4D7]/80"
                         title={itemsList}
                       >
                         {itemsList || 'Sin detalle'}
                       </td>
 
                       {/* Pago / Estado */}
-                      <td className="p-4 whitespace-nowrap">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[10px] font-black uppercase text-[#432414] dark:text-[#FEE4D7]">
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold uppercase text-[#432414] dark:text-[#FEE4D7]">
                             {sale.payment_method}
                           </span>
                           {isCancelled ? (
-                            <span className="w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300">
+                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800">
                               Cancelada
                             </span>
                           ) : isFullyPaid ? (
-                            <span className="w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-emerald-100/80 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
                               Pagado
                             </span>
                           ) : isPartial ? (
-                            <span className="w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
-                              Abono Parcial
+                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                              Parcial
                             </span>
                           ) : (
-                            <span className="w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400">
+                            <span className="px-2 py-0.5 rounded-md text-[9px] font-black uppercase bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800">
                               Crédito
                             </span>
                           )}
@@ -659,17 +643,17 @@ export default function SalesHistory() {
                       </td>
 
                       {/* Total */}
-                      <td className="p-4 text-right font-black text-[#432414] dark:text-[#FEE4D7] whitespace-nowrap">
+                      <td className="px-4 py-2.5 text-right font-black text-[#432414] dark:text-[#FEE4D7] whitespace-nowrap tabular-nums">
                         ${Number(sale.total).toLocaleString('es-CO')}
                       </td>
 
                       {/* Cobrado */}
-                      <td className="p-4 text-right font-black text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                      <td className="px-4 py-2.5 text-right font-black text-emerald-600 dark:text-emerald-400 whitespace-nowrap tabular-nums">
                         ${Number(paid).toLocaleString('es-CO')}
                       </td>
 
                       {/* Pendiente */}
-                      <td className="p-4 text-right whitespace-nowrap">
+                      <td className="px-4 py-2.5 text-right whitespace-nowrap tabular-nums">
                         {pending > 0 ? (
                           <span className="font-black text-rose-600 dark:text-rose-400">
                             ${Number(pending).toLocaleString('es-CO')}
