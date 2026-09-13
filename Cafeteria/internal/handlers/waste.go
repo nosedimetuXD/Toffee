@@ -46,9 +46,6 @@ func NewWasteHandler(db *pgxpool.Pool, hub *events.Hub) *WasteHandler {
 
 // GET /waste — lista todos los reportes de mermas/daños
 func (h *WasteHandler) List(w http.ResponseWriter, r *http.Request) {
-	_, _ = h.DB.Exec(r.Context(), `ALTER TABLE waste_reports ADD COLUMN IF NOT EXISTS unit_cost NUMERIC DEFAULT 0`)
-	_, _ = h.DB.Exec(r.Context(), `ALTER TABLE waste_reports ADD COLUMN IF NOT EXISTS estimated_loss NUMERIC DEFAULT 0`)
-
 	query := `SELECT w.id, w.ingredient_id, COALESCE(i.name, 'Insumo Eliminado'), COALESCE(i.unit, 'unidades'), 
 	                 w.quantity_lost, COALESCE(w.unit_cost, 0), COALESCE(w.estimated_loss, 0), w.reason, w.reported_by, COALESCE(u.username, 'Personal'), w.created_at
 	          FROM waste_reports w
