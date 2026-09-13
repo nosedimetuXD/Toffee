@@ -19,7 +19,8 @@ import {
   AlertCircle,
   Tag,
   ShoppingBag,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ChevronDown
 } from 'lucide-react'
 import { exportAccountingToCSV, exportAccountingToExcel } from '../utils/csvExport'
 import { useAuth } from '../context/AuthContext'
@@ -52,6 +53,8 @@ export default function Accounting() {
   const [incomeFilter, setIncomeFilter] = useState('all') // 'all' | 'sale' | 'manual'
   const [loading, setLoading] = useState(true)
   const [pageError, setPageError] = useState('')
+  const [expandedExpenseId, setExpandedExpenseId] = useState(null)
+  const [expandedIncomeId, setExpandedIncomeId] = useState(null)
 
   // Modal Crear / Editar Gasto
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
@@ -287,6 +290,7 @@ export default function Accounting() {
   }, [summary, expenses])
 
   const balanceNetoCalc = totalIngresosCalc - totalGastosCalc
+  const margenOperativo = totalIngresosCalc > 0 ? Math.round((balanceNetoCalc / totalIngresosCalc) * 100) : 0
 
   const filteredIncomes = useMemo(() => {
     if (incomeFilter === 'all') return incomes
@@ -356,48 +360,98 @@ export default function Accounting() {
         </div>
       </div>
 
-      {/* Unified Metrics Bar — Linear / De-AI Style (Hero visual hierarchy) */}
-      <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 overflow-hidden">
-        {/* Balance Neto — Hero Metric */}
-        <div className="p-4 sm:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-            <span>Ganancia Neta</span>
-            <Wallet className="w-3.5 h-3.5 opacity-60" />
+      {/* Unified Metrics Bar — Linear / De-AI Style (Hero 2:1 Asymmetric Layout) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+        {/* Large Hero Box (2 cols) */}
+        <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-xs relative overflow-hidden">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+                Ganancia Neta
+              </span>
+              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border ${balanceNetoCalc >= 0 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${balanceNetoCalc >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                {balanceNetoCalc >= 0 ? 'Balance Positivo' : 'Déficit'}
+              </span>
+            </div>
+
+            <div className={`mt-2 text-4xl sm:text-5xl font-black tracking-tight tabular-nums ${balanceNetoCalc >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-rose-600 dark:text-rose-400'}`}>
+              ${Number(balanceNetoCalc).toLocaleString('es-CO')}
+            </div>
+            <p className="text-xs text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-1 font-normal">
+              Balance neto consolidado del período seleccionado
+            </p>
           </div>
-          <div className={`mt-1 text-3xl sm:text-4xl font-black tracking-tight tabular-nums ${balanceNetoCalc >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-rose-600 dark:text-rose-400'}`}>
-            ${Number(balanceNetoCalc).toLocaleString('es-CO')}
+
+          {/* Sub-breakdown 3 columns at bottom */}
+          <div className="mt-6 pt-4 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 grid grid-cols-3 gap-2 sm:gap-4">
+            <div>
+              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+                Ventas POS
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums block mt-0.5">
+                ${Number(salesIncomeTotal).toLocaleString('es-CO')}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+                Ingresos Extras
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums block mt-0.5">
+                ${Number(manualIncomeTotal).toLocaleString('es-CO')}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+                Egresos / Gastos
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 tabular-nums block mt-0.5">
+                -${Number(totalGastosCalc).toLocaleString('es-CO')}
+              </span>
+            </div>
           </div>
-          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
-            Balance neto del período
-          </span>
         </div>
 
-        {/* Ingresos Totales */}
-        <div className="p-4 sm:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-            <span>Ingresos Totales</span>
-            <TrendingUp className="w-3.5 h-3.5 opacity-60" />
+        {/* Stacked Side Cards (1 col) */}
+        <div className="lg:col-span-1 flex flex-col gap-2.5">
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+              <span>Ingresos Totales</span>
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
+              +${Number(totalIngresosCalc).toLocaleString('es-CO')}
+            </div>
+            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+              {incomes.length} ingresos registrados
+            </span>
           </div>
-          <div className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-            ${Number(totalIngresosCalc).toLocaleString('es-CO')}
-          </div>
-          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
-            Ventas: <span className="tabular-nums font-medium text-[#432414] dark:text-[#FEE4D7]">${Number(salesIncomeTotal).toLocaleString('es-CO')}</span> · Extras: <span className="tabular-nums font-medium text-[#432414] dark:text-[#FEE4D7]">${Number(manualIncomeTotal).toLocaleString('es-CO')}</span>
-          </span>
-        </div>
 
-        {/* Gastos Totales */}
-        <div className="p-4 sm:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-            <span>Gastos Totales</span>
-            <TrendingDown className="w-3.5 h-3.5 opacity-60" />
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+              <span>Gastos Totales</span>
+              <TrendingDown className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+            </div>
+            <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 tabular-nums">
+              -${Number(totalGastosCalc).toLocaleString('es-CO')}
+            </div>
+            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+              {expenses.length} egresos clasificados
+            </span>
           </div>
-          <div className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-            ${Number(totalGastosCalc).toLocaleString('es-CO')}
+
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+              <span>Margen Operativo</span>
+              <Wallet className="w-3.5 h-3.5 opacity-60" />
+            </div>
+            <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+              {margenOperativo}%
+            </div>
+            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+              Rentabilidad estimada del período
+            </span>
           </div>
-          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
-            {expenses.length} egresos registrados
-          </span>
         </div>
       </div>
 
@@ -460,69 +514,127 @@ export default function Accounting() {
             </div>
           ) : (
             <>
-              {/* MOBILE VIEW FOR GASTOS (Guide 3: Stacked Identity · Value · State) */}
+              {/* MOBILE VIEW FOR GASTOS (Images 3 & 4: Avatar bubble + Status dot + Expandable drawer) */}
               <div className="block md:hidden divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
-                {expenses.map((e) => (
-                  <div key={e.id} className="p-4 space-y-2 hover:bg-[#FEE4D7]/10 transition-colors">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
-                          {e.description}
+                {expenses.map((e) => {
+                  const isExpanded = expandedExpenseId === e.id
+                  const catInitials = (e.category || 'GA').substring(0, 2).toUpperCase()
+
+                  return (
+                    <div key={e.id} className="transition-colors">
+                      {/* Compact Tappable Summary Row */}
+                      <div
+                        onClick={() => setExpandedExpenseId(isExpanded ? null : e.id)}
+                        className="p-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#FEE4D7]/15 transition-colors select-none"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          {/* Avatar Initials Bubble */}
+                          <div className="w-9 h-9 rounded-full bg-[#FEE4D7]/70 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] font-black text-xs flex items-center justify-center border border-[#D4B28E]/40 dark:border-[#9F6839]/30 shrink-0">
+                            {catInitials}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
+                              {e.description}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#9F6839] dark:text-[#DABA8C]">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#9F6839]" />
+                                {e.category}
+                              </span>
+                              <span className="text-[10px] text-[#9F6839]/60 dark:text-[#DABA8C]/50 tabular-nums">
+                                · {new Date(e.created_at).toLocaleDateString('es-CO')}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums mt-0.5">
-                          {new Date(e.created_at).toLocaleDateString('es-CO')} · {new Date(e.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+
+                        {/* Amount & Chevron */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-bold text-xs sm:text-sm text-rose-600 dark:text-rose-400 tabular-nums">
+                            -${Number(e.amount).toLocaleString('es-CO')}
+                          </span>
+                          <ChevronDown
+                            className={`w-4 h-4 text-[#9F6839] dark:text-[#DABA8C] transition-transform duration-200 ${
+                              isExpanded ? 'rotate-180' : ''
+                            }`}
+                          />
                         </div>
                       </div>
-                      <div className="text-right shrink-0 font-bold text-rose-600 dark:text-rose-400 text-sm tabular-nums">
-                        -${Number(e.amount).toLocaleString('es-CO')}
-                      </div>
+
+                      {/* Expandable Accordion Drawer ("Hidden isn't deleted") */}
+                      {isExpanded && (
+                        <div className="px-4 pb-4 pt-2 bg-[#FEE4D7]/10 dark:bg-[#201009]/50 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 space-y-3 animate-in fade-in duration-150">
+                          {/* Metadata Grid */}
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="p-2 rounded-xl bg-white/70 dark:bg-[#150904]/70 border border-[#D4B28E]/30 dark:border-[#9F6839]/20">
+                              <span className="text-[10px] uppercase font-semibold text-[#9F6839] dark:text-[#DABA8C] block">
+                                Método de Pago
+                              </span>
+                              <span className="font-medium text-[#432414] dark:text-[#FEE4D7] capitalize block mt-0.5">
+                                {e.payment_method}
+                              </span>
+                            </div>
+                            <div className="p-2 rounded-xl bg-white/70 dark:bg-[#150904]/70 border border-[#D4B28E]/30 dark:border-[#9F6839]/20">
+                              <span className="text-[10px] uppercase font-semibold text-[#9F6839] dark:text-[#DABA8C] block">
+                                Registrado Por
+                              </span>
+                              <span className="font-medium text-[#432414] dark:text-[#FEE4D7] block mt-0.5 truncate">
+                                {e.registerer_name || 'Personal'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {e.ingredient_name && (
+                            <div className="p-2 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-500/20 text-xs">
+                              <span className="text-[10px] uppercase font-semibold text-emerald-700 dark:text-emerald-400 block">
+                                Reabastecimiento de Insumo
+                              </span>
+                              <span className="font-medium text-emerald-800 dark:text-emerald-300 block mt-0.5">
+                                +{e.quantity_added} agregados al stock de {e.ingredient_name}
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums">
+                            Fecha y hora exacta: {new Date(e.created_at).toLocaleString('es-CO')}
+                          </div>
+
+                          {/* Action Buttons Full Width */}
+                          {isOwner && (
+                            <div className="flex items-center gap-2 pt-2 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20">
+                              <button
+                                type="button"
+                                onClick={(ev) => {
+                                  ev.stopPropagation()
+                                  handleOpenEditExpense(e)
+                                }}
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#FEE4D7]/80 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] text-xs font-bold transition-all cursor-pointer shadow-xs"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                                <span>Editar Gasto</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(ev) => {
+                                  ev.stopPropagation()
+                                  handleDeleteExpense(e)
+                                }}
+                                className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition-all cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Eliminar</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#D4B28E]/15 dark:border-[#9F6839]/15">
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.5 rounded-md bg-[#FEE4D7]/60 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] text-[10px] font-medium uppercase border border-[#D4B28E]/40 dark:border-[#9F6839]/30">
-                          {e.category}
-                        </span>
-                        <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 capitalize">
-                          {e.payment_method}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/60">
-                        {e.registerer_name || 'Personal'}
-                      </span>
-                    </div>
-
-                    {e.ingredient_name && (
-                      <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                        +{e.quantity_added} agregados a {e.ingredient_name}
-                      </div>
-                    )}
-
-                    {isOwner && (
-                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#D4B28E]/15 dark:border-[#9F6839]/15">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditExpense(e)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#FEE4D7]/70 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] transition-colors cursor-pointer"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                          <span>Editar</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteExpense(e)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Eliminar</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
-              {/* DESKTOP VIEW FOR GASTOS */}
+              {/* DESKTOP VIEW FOR GASTOS (Image 2: Linear Table) */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-semibold text-[11px] tracking-wider">
@@ -533,7 +645,7 @@ export default function Accounting() {
                       <th className="px-3.5 py-2.5">Insumo Reabastecido</th>
                       <th className="px-3.5 py-2.5 text-right">Monto</th>
                       <th className="px-3.5 py-2.5">Registrado Por</th>
-                      <th className="px-4 py-2.5 text-right w-32 min-w-[120px]">Acciones</th>
+                      <th className="px-4 py-2.5 text-right w-36 min-w-[140px]">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
@@ -570,7 +682,7 @@ export default function Accounting() {
                         <td className="px-3.5 py-2 text-[#9F6839] dark:text-[#DABA8C] font-normal text-xs">
                           {e.registerer_name || 'Personal'}
                         </td>
-                        <td className="px-4 py-2 text-right w-32 min-w-[120px]">
+                        <td className="px-4 py-2 text-right w-36 min-w-[140px]">
                           {isOwner && (
                             <div className="flex items-center justify-end gap-1.5">
                               <button type="button"
@@ -582,7 +694,7 @@ export default function Accounting() {
                               </button>
                               <button type="button"
                                 onClick={() => handleDeleteExpense(e)}
-                                className="p-1 text-[#9F6839] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-md transition-colors cursor-pointer"
+                                className="p-1 text-[#9F6839] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors cursor-pointer"
                                 title="Eliminar Gasto"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -641,78 +753,129 @@ export default function Accounting() {
             </div>
           ) : (
             <>
-              {/* MOBILE VIEW FOR INGRESOS */}
+              {/* MOBILE VIEW FOR INGRESOS (Images 3 & 4: Avatar bubble + Status dot + Expandable drawer) */}
               <div className="block md:hidden divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
                 {filteredIncomes.map((inc) => {
                   const isSale = inc.type === 'sale'
                   const isManual = !isSale
+                  const isExpanded = expandedIncomeId === `${inc.type || 'inc'}-${inc.id}`
+                  const avatarLabel = isSale ? 'POS' : 'EX'
 
                   return (
-                    <div key={`${inc.type || 'inc'}-${inc.id}`} className="p-4 space-y-2 hover:bg-[#FEE4D7]/10 transition-colors">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
-                            {inc.description || (isSale ? `Orden #${inc.order_number || inc.sale_id}` : 'Ingreso manual')}
+                    <div key={`${inc.type || 'inc'}-${inc.id}`} className="transition-colors">
+                      {/* Compact Tappable Summary Row */}
+                      <div
+                        onClick={() => setExpandedIncomeId(isExpanded ? null : `${inc.type || 'inc'}-${inc.id}`)}
+                        className="p-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#FEE4D7]/15 transition-colors select-none"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          {/* Avatar Bubble */}
+                          <div className={`w-9 h-9 rounded-full font-black text-xs flex items-center justify-center border shrink-0 ${
+                            isSale
+                              ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                              : 'bg-[#FEE4D7]/70 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] border-[#D4B28E]/40 dark:border-[#9F6839]/30'
+                          }`}>
+                            {avatarLabel}
                           </div>
-                          {isSale && inc.customer_name && (
-                            <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 block mt-0.5">
-                              Cliente: {inc.customer_name}
-                            </span>
-                          )}
-                          <div className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums mt-0.5">
-                            {new Date(inc.created_at).toLocaleDateString('es-CO')} · {new Date(inc.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0 font-bold text-emerald-600 dark:text-emerald-400 text-sm tabular-nums">
-                          +${Number(inc.amount).toLocaleString('es-CO')}
-                        </div>
-                      </div>
 
-                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#D4B28E]/15 dark:border-[#9F6839]/15">
-                        <div className="flex items-center gap-1.5">
-                          {isSale ? (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                              Venta POS
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-[#9F6839]/10 text-[#9F6839] dark:text-[#DABA8C] border border-[#9F6839]/20">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#9F6839]" />
-                              Ingreso Extra
-                            </span>
-                          )}
-                          <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 capitalize">
-                            {inc.payment_method || 'efectivo'}
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
+                              {inc.description || (isSale ? `Orden #${inc.order_number || inc.sale_id}` : 'Ingreso manual')}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {isSale ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                  Venta POS
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#9F6839] dark:text-[#DABA8C]">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#9F6839]" />
+                                  Ingreso Extra
+                                </span>
+                              )}
+                              <span className="text-[10px] text-[#9F6839]/60 dark:text-[#DABA8C]/50 tabular-nums">
+                                · {new Date(inc.created_at).toLocaleDateString('es-CO')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Amount & Chevron */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="font-bold text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 tabular-nums">
+                            +${Number(inc.amount).toLocaleString('es-CO')}
                           </span>
+                          <ChevronDown
+                            className={`w-4 h-4 text-[#9F6839] dark:text-[#DABA8C] transition-transform duration-200 ${
+                              isExpanded ? 'rotate-180' : ''
+                            }`}
+                          />
                         </div>
-
-                        {isManual && isOwner && (
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditIncome(inc)}
-                              className="p-1 text-[#9F6839] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] rounded-md transition-colors cursor-pointer"
-                              title="Editar"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteIncome(inc)}
-                              className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-md transition-colors cursor-pointer"
-                              title="Eliminar"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
                       </div>
+
+                      {/* Expandable Accordion Drawer ("Hidden isn't deleted") */}
+                      {isExpanded && (
+                        <div className="px-4 pb-4 pt-2 bg-[#FEE4D7]/10 dark:bg-[#201009]/50 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 space-y-3 animate-in fade-in duration-150">
+                          {/* Metadata Grid */}
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="p-2 rounded-xl bg-white/70 dark:bg-[#150904]/70 border border-[#D4B28E]/30 dark:border-[#9F6839]/20">
+                              <span className="text-[10px] uppercase font-semibold text-[#9F6839] dark:text-[#DABA8C] block">
+                                Método de Pago
+                              </span>
+                              <span className="font-medium text-[#432414] dark:text-[#FEE4D7] capitalize block mt-0.5">
+                                {inc.payment_method || 'efectivo'}
+                              </span>
+                            </div>
+                            <div className="p-2 rounded-xl bg-white/70 dark:bg-[#150904]/70 border border-[#D4B28E]/30 dark:border-[#9F6839]/20">
+                              <span className="text-[10px] uppercase font-semibold text-[#9F6839] dark:text-[#DABA8C] block">
+                                Cliente / Origen
+                              </span>
+                              <span className="font-medium text-[#432414] dark:text-[#FEE4D7] block mt-0.5 truncate">
+                                {inc.customer_name || (isSale ? 'Cliente POS' : 'Extraordinario')}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums">
+                            Fecha y hora exacta: {new Date(inc.created_at).toLocaleString('es-CO')}
+                          </div>
+
+                          {/* Action Buttons */}
+                          {isManual && isOwner && (
+                            <div className="flex items-center gap-2 pt-2 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20">
+                              <button
+                                type="button"
+                                onClick={(ev) => {
+                                  ev.stopPropagation()
+                                  handleOpenEditIncome(inc)
+                                }}
+                                className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#FEE4D7]/80 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] text-xs font-bold transition-all cursor-pointer shadow-xs"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                                <span>Editar Ingreso</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(ev) => {
+                                  ev.stopPropagation()
+                                  handleDeleteIncome(inc)
+                                }}
+                                className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition-all cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Eliminar</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
               </div>
 
-              {/* DESKTOP VIEW FOR INGRESOS */}
+              {/* DESKTOP VIEW FOR INGRESOS (Image 2: Linear Table) */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-semibold text-[11px] tracking-wider">
@@ -722,7 +885,7 @@ export default function Accounting() {
                       <th className="px-3.5 py-2.5">Descripción / Concepto</th>
                       <th className="px-3.5 py-2.5 whitespace-nowrap">Método de Pago</th>
                       <th className="px-3.5 py-2.5 text-right whitespace-nowrap">Monto Cobrado</th>
-                      <th className="px-4 py-2.5 text-right whitespace-nowrap w-32 min-w-[120px]">Acciones</th>
+                      <th className="px-4 py-2.5 text-right whitespace-nowrap w-36 min-w-[140px]">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
@@ -787,12 +950,12 @@ export default function Accounting() {
                           </td>
 
                           {/* Monto Cobrado */}
-                          <td className="px-3.5 py-2 text-right whitespace-nowrap font-bold text-[#432414] dark:text-[#FEE4D7] text-xs tabular-nums">
+                          <td className="px-3.5 py-2 text-right whitespace-nowrap font-bold text-emerald-600 dark:text-emerald-400 text-xs tabular-nums">
                             +${Number(inc.amount).toLocaleString('es-CO')}
                           </td>
 
                           {/* Acciones */}
-                          <td className="px-4 py-2 text-right whitespace-nowrap w-32 min-w-[120px]">
+                          <td className="px-4 py-2 text-right whitespace-nowrap w-36 min-w-[140px]">
                             {isManual && isOwner ? (
                               <div className="flex items-center justify-end gap-1.5">
                                 <button type="button"
@@ -804,7 +967,7 @@ export default function Accounting() {
                                 </button>
                                 <button type="button"
                                   onClick={() => handleDeleteIncome(inc)}
-                                  className="p-1 text-[#9F6839] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-md transition-colors cursor-pointer"
+                                  className="p-1 text-[#9F6839] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors cursor-pointer"
                                   title="Eliminar Ingreso"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />

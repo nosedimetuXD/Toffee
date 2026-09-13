@@ -145,50 +145,109 @@ export default function Stats() {
         </div>
       )}
 
-      {/* Unified Metrics Bar — Linear Style (Single container, hero hierarchy) */}
-      <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 overflow-hidden">
-        {/* Ganancia Neta — Hero Metric */}
-        <div className="p-4 sm:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-            <span>Ganancia Neta</span>
-            <DollarSign className="w-3.5 h-3.5 opacity-60" />
-          </div>
-          <div className={`mt-1 text-3xl sm:text-4xl font-black tracking-tight tabular-nums ${(mStats?.net_profit || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-            ${(mStats?.net_profit || 0).toLocaleString('es-CO')}
-          </div>
-          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
-            Utilidad operativa neta del período
-          </span>
-        </div>
+      {/* Unified Metrics Bar — Linear / De-AI Style (Hero 2:1 Asymmetric Layout) */}
+      {(() => {
+        const netProfit = mStats?.net_profit || 0
+        const income = mStats?.monthly_income || 0
+        const expenses = mStats?.monthly_expenses || 0
+        const margin = income > 0 ? Math.round((netProfit / income) * 100) : 0
 
-        {/* Ventas Totales */}
-        <div className="p-4 sm:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-            <span>Ventas Totales</span>
-            <TrendingUp className="w-3.5 h-3.5 opacity-60" />
-          </div>
-          <div className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-            ${(mStats?.monthly_income || 0).toLocaleString('es-CO')}
-          </div>
-          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
-            Ingreso bruto facturado en el período
-          </span>
-        </div>
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+            {/* Large Hero Box (2 cols) */}
+            <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-xs relative overflow-hidden">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+                    Ganancia Neta Consolidada
+                  </span>
+                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border ${netProfit >= 0 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${netProfit >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                    {netProfit >= 0 ? 'Utilidad Operativa' : 'Déficit'}
+                  </span>
+                </div>
 
-        {/* Gastos Totales */}
-        <div className="p-4 sm:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-            <span>Gastos Totales</span>
-            <TrendingDown className="w-3.5 h-3.5 opacity-60 text-rose-500" />
+                <div className={`mt-2 text-4xl sm:text-5xl font-black tracking-tight tabular-nums ${netProfit >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-rose-600 dark:text-rose-400'}`}>
+                  ${Number(netProfit).toLocaleString('es-CO')}
+                </div>
+                <p className="text-xs text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-1 font-normal">
+                  Rendimiento financiero neto del período ({displayLabel})
+                </p>
+              </div>
+
+              {/* Sub-breakdown 3 columns at bottom */}
+              <div className="mt-6 pt-4 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 grid grid-cols-3 gap-2 sm:gap-4">
+                <div>
+                  <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+                    Ingresos Brutos
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums block mt-0.5">
+                    ${Number(income).toLocaleString('es-CO')}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+                    Gastos & Egresos
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 tabular-nums block mt-0.5">
+                    -${Number(expenses).toLocaleString('es-CO')}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+                    Margen Operativo
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums block mt-0.5">
+                    {margin}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Stacked Side Cards (1 col) */}
+            <div className="lg:col-span-1 flex flex-col gap-2.5">
+              <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
+                <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+                  <span>Ventas Totales</span>
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
+                  ${Number(income).toLocaleString('es-CO')}
+                </div>
+                <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+                  Ingreso facturado en {displayLabel}
+                </span>
+              </div>
+
+              <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
+                <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+                  <span>Gastos Totales</span>
+                  <TrendingDown className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                </div>
+                <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 tabular-nums">
+                  -${Number(expenses).toLocaleString('es-CO')}
+                </div>
+                <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+                  Egresos e insumos del período
+                </span>
+              </div>
+
+              <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
+                <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+                  <span>Margen de Ganancia</span>
+                  <Award className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C]" />
+                </div>
+                <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+                  {margin}%
+                </div>
+                <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+                  Rentabilidad sobre ventas brutas
+                </span>
+              </div>
+            </div>
           </div>
-          <div className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-            ${(mStats?.monthly_expenses || 0).toLocaleString('es-CO')}
-          </div>
-          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
-            Egresos e insumos del período
-          </span>
-        </div>
-      </div>
+        )
+      })()}
 
       {/* Rankings Grid: Top 10 Productos Más Vendidos y Top 10 Clientes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

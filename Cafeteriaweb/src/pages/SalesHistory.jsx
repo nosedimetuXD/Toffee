@@ -58,6 +58,7 @@ export default function SalesHistory() {
   // Modal Recibo
   const [selectedSale, setSelectedSale] = useState(null)
   const [isReceiptOpen, setIsReceiptOpen] = useState(false)
+  const [expandedSaleId, setExpandedSaleId] = useState(null)
 
   // Modal Editar Venta (Exclusivo Dueño)
   const [editingSale, setEditingSale] = useState(null)
@@ -396,62 +397,104 @@ export default function SalesHistory() {
         </div>
       </div>
 
-      {/* Unified Metrics Bar — Linear / De-AI Style (Hero visual hierarchy) */}
-      <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 overflow-hidden">
-        {/* Total Facturado — Hero Metric */}
-        <div className="p-4 sm:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-            <span>Total Facturado</span>
-            <DollarSign className="w-3.5 h-3.5 opacity-60" />
+      {/* Unified Metrics Bar — Image 1 Reference Layout (Large Hero Card on Left + 3 Stacked Cards on Right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 sm:gap-4">
+        {/* Left: Large Hero Metric Card */}
+        <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-xs">
+          <div>
+            <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4 opacity-70" />
+                <span>Total Facturado</span>
+              </div>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                {displayLabel}
+              </span>
+            </div>
+            <div className="mt-2 text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+              ${Number(totalBilled).toLocaleString('es-CO')}
+            </div>
+            <p className="text-xs text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-1">
+              Ingreso bruto acumulado por ventas en el período seleccionado
+            </p>
           </div>
-          <div className="mt-1 text-3xl sm:text-4xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-            ${Number(totalBilled).toLocaleString('es-CO')}
+
+          {/* Sub-breakdown row at bottom (Image 1 reference pattern: Subscriptions / One-time) */}
+          <div className="mt-5 pt-4 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 grid grid-cols-3 gap-2 sm:gap-4">
+            <div>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
+                Efectivo
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+                ${Number(totalCollectedInCash).toLocaleString('es-CO')}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
+                Transferencias
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+                ${Number(totalCollectedInTransfer).toLocaleString('es-CO')}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
+                Ticket Promedio
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+                ${Number(averageTicket).toLocaleString('es-CO')}
+              </span>
+            </div>
           </div>
-          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
-            Total en ventas del período
-          </span>
         </div>
 
-        {/* Recaudado en Caja */}
-        <div className="p-4 sm:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-            <span>Recaudado en Caja</span>
-            <Wallet className="w-3.5 h-3.5 opacity-60" />
+        {/* Right: Stacked Secondary Metric Cards (Image 1 reference) */}
+        <div className="lg:col-span-1 flex flex-col gap-2.5 sm:gap-3">
+          {/* Card 1: Recaudado en Caja */}
+          <div className="flex-1 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex items-center justify-between shadow-xs">
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
+                Recaudado en Caja
+              </span>
+              <div className="text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums mt-0.5">
+                ${Number(totalCollectedInCash + totalCollectedInTransfer).toLocaleString('es-CO')}
+              </div>
+            </div>
+            <div className="p-2.5 rounded-xl bg-[#FEE4D7]/50 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/30">
+              <Wallet className="w-4 h-4" />
+            </div>
           </div>
-          <div className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-            ${Number(totalCollectedInCash + totalCollectedInTransfer).toLocaleString('es-CO')}
-          </div>
-          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
-            Efec: <span className="tabular-nums font-medium text-[#432414] dark:text-[#FEE4D7]">${Number(totalCollectedInCash).toLocaleString('es-CO')}</span> · Transf: <span className="tabular-nums font-medium text-[#432414] dark:text-[#FEE4D7]">${Number(totalCollectedInTransfer).toLocaleString('es-CO')}</span>
-          </span>
-        </div>
 
-        {/* Por Cobrar */}
-        <div className="p-4 sm:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-            <span>Por Cobrar (Deuda)</span>
-            <Coins className="w-3.5 h-3.5 opacity-60" />
+          {/* Card 2: Por Cobrar (Cartera) */}
+          <div className="flex-1 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex items-center justify-between shadow-xs">
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
+                Por Cobrar (Cartera)
+              </span>
+              <div className={`text-xl sm:text-2xl font-bold tracking-tight tabular-nums mt-0.5 ${totalPendingDebt > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
+                ${Number(totalPendingDebt).toLocaleString('es-CO')}
+              </div>
+            </div>
+            <div className="p-2.5 rounded-xl bg-[#FEE4D7]/50 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/30">
+              <Coins className="w-4 h-4" />
+            </div>
           </div>
-          <div className={`mt-1 text-xl sm:text-2xl font-bold tracking-tight tabular-nums ${totalPendingDebt > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
-            ${Number(totalPendingDebt).toLocaleString('es-CO')}
-          </div>
-          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
-            {totalPendingDebt > 0 ? 'Saldo pendiente por recaudar' : 'Cartera al día (sin deuda)'}
-          </span>
-        </div>
 
-        {/* Ventas Realizadas */}
-        <div className="p-4 sm:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-            <span>Transacciones</span>
-            <ShoppingBag className="w-3.5 h-3.5 opacity-60" />
+          {/* Card 3: Transacciones */}
+          <div className="flex-1 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex items-center justify-between shadow-xs">
+            <div>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
+                Transacciones
+              </span>
+              <div className="text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums mt-0.5">
+                {totalSalesCount} <span className="text-xs font-normal text-[#9F6839] dark:text-[#DABA8C]">ventas</span>
+              </div>
+            </div>
+            <div className="p-2.5 rounded-xl bg-[#FEE4D7]/50 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/30">
+              <ShoppingBag className="w-4 h-4" />
+            </div>
           </div>
-          <div className="mt-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-            {totalSalesCount}
-          </div>
-          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal mt-1">
-            Ticket prom: <span className="tabular-nums font-medium text-[#432414] dark:text-[#FEE4D7]">${Number(averageTicket).toLocaleString('es-CO')}</span>
-          </span>
         </div>
       </div>
 
@@ -523,7 +566,7 @@ export default function SalesHistory() {
         </div>
       </div>
 
-      {/* Tabla & Cards Responsive de Ventas (Guide 3: Mobile Cards + Desktop Table) */}
+      {/* Tabla & Cards Responsive de Ventas (Guide 3: Images 3, 4 & 2 Layout) */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 text-[#9F6839] dark:text-[#DABA8C] gap-3">
           <div className="w-6 h-6 border-2 border-[#9F6839] border-t-transparent rounded-full animate-spin" />
@@ -536,11 +579,20 @@ export default function SalesHistory() {
           <p className="text-xs text-[#9F6839] dark:text-[#DABA8C]">No se encontraron transacciones para los filtros seleccionados.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl overflow-hidden">
-          {/* MOBILE VIEW (Guide 3 Decision 03: Identity · State · Value stacked card list) */}
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl overflow-hidden shadow-xs">
+          {/* MOBILE VIEW (Images 3 & 4: Avatar bubble, customer name, status pill dot + date, big amount, tap to expand details & direct actions) */}
           <div className="block md:hidden divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
             {filteredSales.map((sale) => {
               const isCancelled = sale.status === 'cancelado' || sale.status === 'cancelada'
+              const isExpanded = expandedSaleId === sale.id
+              const customerName = sale.customer_name || 'Cliente General'
+              const initials = customerName
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .substring(0, 2)
+                .toUpperCase()
+
               const paid =
                 sale.paid_amount !== undefined && sale.paid_amount !== null
                   ? Number(sale.paid_amount)
@@ -560,119 +612,149 @@ export default function SalesHistory() {
               const itemsList = (sale.items || []).map((it) => `${it.quantity}x ${it.product_name}`).join(', ')
 
               return (
-                <div
-                  key={sale.id}
-                  className={`p-4 space-y-2.5 transition-colors ${
-                    isCancelled ? 'opacity-50 bg-[#FEE4D7]/10 dark:bg-[#150904]/40' : 'hover:bg-[#FEE4D7]/10'
-                  }`}
-                >
-                  {/* Top: Identity (Client + Date/Time) & Value (Total Amount) */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
-                        {sale.customer_name || 'Cliente General'}
+                <div key={sale.id} className="transition-colors">
+                  {/* Clickable Row Header (Image 3) */}
+                  <div
+                    onClick={() => setExpandedSaleId(isExpanded ? null : sale.id)}
+                    className={`p-3.5 flex items-center justify-between gap-3 cursor-pointer select-none transition-colors ${
+                      isExpanded ? 'bg-[#FEE4D7]/30 dark:bg-[#2A160D]/80' : 'hover:bg-[#FEE4D7]/10'
+                    } ${isCancelled ? 'opacity-50' : ''}`}
+                  >
+                    {/* Left: Avatar Initials + Customer Name & Status */}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-9 h-9 rounded-full bg-[#FEE4D7]/80 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] font-bold text-xs flex items-center justify-center shrink-0 border border-[#D4B28E]/40 dark:border-[#9F6839]/30">
+                        {initials}
                       </div>
-                      <div className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums mt-0.5">
-                        {new Date(sale.created_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })} · {new Date(sale.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="font-bold text-sm text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-                        ${Number(sale.total).toLocaleString('es-CO')}
-                      </div>
-                      {pending > 0 && (
-                        <div className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 tabular-nums">
-                          Debe: ${Number(pending).toLocaleString('es-CO')}
+                      <div className="min-w-0">
+                        <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
+                          {customerName}
                         </div>
-                      )}
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {/* Status Dot Badge (Image 3: ● Paid, ● Open, ● Overdue, etc.) */}
+                          {isCancelled ? (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-neutral-500/10 text-neutral-600 dark:text-neutral-400 border border-neutral-500/20">
+                              <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
+                              Cancelada
+                            </span>
+                          ) : isFullyPaid ? (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              Pagado
+                            </span>
+                          ) : isPartial ? (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                              Parcial
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                              Crédito
+                            </span>
+                          )}
+                          <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums">
+                            {new Date(sale.created_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })} · {new Date(sale.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Big Bold Tabular Amount & Chevron */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="text-right">
+                        <span className="font-bold text-sm sm:text-base text-[#432414] dark:text-[#FEE4D7] tabular-nums block">
+                          ${Number(sale.total).toLocaleString('es-CO')}
+                        </span>
+                        {pending > 0 && (
+                          <span className="text-[10px] font-semibold text-rose-600 dark:text-rose-400 tabular-nums block">
+                            Debe: ${Number(pending).toLocaleString('es-CO')}
+                          </span>
+                        )}
+                      </div>
+                      <ChevronDown className={`w-4 h-4 text-[#9F6839] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                     </div>
                   </div>
 
-                  {/* Middle: Products Summary & State Badges */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#D4B28E]/15 dark:border-[#9F6839]/15">
-                    <span className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] truncate max-w-[190px]">
-                      {itemsList || 'Sin detalle de productos'}
-                    </span>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[10px] font-medium uppercase text-[#9F6839] dark:text-[#DABA8C] px-1.5 py-0.5 rounded bg-[#FEE4D7]/50 dark:bg-[#2A150C]">
-                        {sale.payment_method}
-                      </span>
-                      {isCancelled ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-neutral-500/10 text-neutral-600 dark:text-neutral-400 border border-neutral-500/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-neutral-400" />
-                          Cancelada
-                        </span>
-                      ) : isFullyPaid ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          Pagado
-                        </span>
-                      ) : isPartial ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                          Parcial
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                          Crédito
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                  {/* Expanded Drawer (Image 4: Hidden isn't deleted - Key/Value Details + Action Buttons) */}
+                  {isExpanded && (
+                    <div className="p-4 bg-[#FEE4D7]/20 dark:bg-[#1A0A04] border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 space-y-3">
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between py-1 border-b border-[#D4B28E]/15 dark:border-[#9F6839]/15">
+                          <span className="text-[#9F6839] dark:text-[#DABA8C]">Comprobante / ID:</span>
+                          <span className="font-semibold text-[#432414] dark:text-[#FEE4D7] tabular-nums">#{sale.id.substring(0, 8)}</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-[#D4B28E]/15 dark:border-[#9F6839]/15">
+                          <span className="text-[#9F6839] dark:text-[#DABA8C]">Método de Pago:</span>
+                          <span className="font-semibold text-[#432414] dark:text-[#FEE4D7] uppercase">{sale.payment_method}</span>
+                        </div>
+                        <div className="flex justify-between py-1 border-b border-[#D4B28E]/15 dark:border-[#9F6839]/15">
+                          <span className="text-[#9F6839] dark:text-[#DABA8C]">Vendedor / Personal:</span>
+                          <span className="font-semibold text-[#432414] dark:text-[#FEE4D7]">{sale.sold_by_username || 'Sistema'}</span>
+                        </div>
+                        <div className="py-1">
+                          <span className="text-[#9F6839] dark:text-[#DABA8C] block mb-1">Detalle de Productos:</span>
+                          <p className="font-medium text-[#432414] dark:text-[#FEE4D7] bg-white dark:bg-[#201009] p-2.5 rounded-xl border border-[#D4B28E]/30">
+                            {itemsList || 'Sin detalle'}
+                          </p>
+                        </div>
+                      </div>
 
-                  {/* Bottom: Direct Actions */}
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#D4B28E]/15 dark:border-[#9F6839]/15">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenReceiptModal(sale)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#FEE4D7]/70 dark:bg-[#2A150C] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] transition-colors cursor-pointer"
-                    >
-                      <Printer className="w-3.5 h-3.5" />
-                      <span>Ticket</span>
-                    </button>
-                    {!isCancelled && (
-                      <button
-                        type="button"
-                        onClick={() => handleCancelSale(sale)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors cursor-pointer"
-                      >
-                        <Ban className="w-3.5 h-3.5" />
-                        <span>Cancelar</span>
-                      </button>
-                    )}
-                    {isOwner && (
-                      <>
+                      {/* Direct Touch Action Buttons (Image 4 Style: Send reminder / Mark paid) */}
+                      <div className="flex items-center gap-2 pt-2">
                         <button
                           type="button"
-                          onClick={() => handleOpenEditSale(sale)}
-                          className="p-1.5 rounded-lg text-[#9F6839] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] transition-colors cursor-pointer"
-                          title="Editar Venta"
+                          onClick={() => handleOpenReceiptModal(sale)}
+                          className="flex-1 py-2 rounded-xl bg-[#9F6839] hover:bg-[#835229] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Printer className="w-3.5 h-3.5" />
+                          <span>Ver Comprobante</span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteSale(sale)}
-                          className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                          title="Eliminar Venta"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </>
-                    )}
-                  </div>
+
+                        {!isCancelled && (
+                          <button
+                            type="button"
+                            onClick={() => handleCancelSale(sale)}
+                            className="px-3 py-2 rounded-xl border border-amber-600/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                          >
+                            <Ban className="w-3.5 h-3.5" />
+                            <span>Cancelar</span>
+                          </button>
+                        )}
+
+                        {isOwner && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditSale(sale)}
+                              className="p-2 rounded-xl border border-[#D4B28E]/40 text-[#9F6839] hover:bg-[#FEE4D7]/60 transition-colors cursor-pointer"
+                              title="Editar"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteSale(sale)}
+                              className="p-2 rounded-xl border border-rose-500/30 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                              title="Eliminar"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })}
           </div>
 
-          {/* DESKTOP TABLE VIEW (Full wide columns, ample action column with 0 clipping) */}
+          {/* DESKTOP TABLE VIEW (Image 2: Linear clean high-density table) */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] font-semibold uppercase text-[11px] tracking-wider">
                 <tr>
-                  <th className="px-3.5 py-2.5 whitespace-nowrap">Fecha & Hora</th>
+                  <th className="px-3.5 py-2.5 whitespace-nowrap">ID / Fecha</th>
                   <th className="px-3.5 py-2.5">Cliente</th>
                   <th className="px-3.5 py-2.5">Productos</th>
                   <th className="px-3.5 py-2.5 whitespace-nowrap">Estado</th>
@@ -702,6 +784,8 @@ export default function SalesHistory() {
                   const isFullyPaid = !isCancelled && pending === 0
                   const isPartial = !isCancelled && paid > 0 && pending > 0
                   const itemsList = (sale.items || []).map((it) => `${it.quantity}x ${it.product_name}`).join(', ')
+                  const customerName = sale.customer_name || 'Cliente General'
+                  const initials = customerName.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase()
 
                   return (
                     <tr
@@ -710,34 +794,29 @@ export default function SalesHistory() {
                         isCancelled ? 'opacity-50 bg-[#FEE4D7]/10 dark:bg-[#150904]/40' : ''
                       }`}
                     >
-                      {/* Fecha & Hora */}
+                      {/* ID / Fecha (Image 2 style identifier) */}
                       <td className="px-3.5 py-2 whitespace-nowrap font-medium text-[#432414] dark:text-[#FEE4D7] text-xs">
-                        <span className="tabular-nums">
-                          {new Date(sale.created_at).toLocaleDateString('es-CO', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric'
-                          })}
+                        <span className="font-mono text-[11px] text-[#9F6839] dark:text-[#DABA8C] block">
+                          #{sale.id.substring(0, 6)}
                         </span>
-                        <span className="text-[#9F6839]/70 dark:text-[#DABA8C]/60 text-[11px] ml-1.5 tabular-nums">
-                          {new Date(sale.created_at).toLocaleTimeString('es-CO', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                        <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums">
+                          {new Date(sale.created_at).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })} · {new Date(sale.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </td>
 
-                      {/* Cliente */}
-                      <td
-                        className="px-3.5 py-2 font-semibold text-[#432414] dark:text-[#FEE4D7] text-xs max-w-[140px]"
-                        title={sale.customer_name || 'Cliente General'}
-                      >
-                        <div className="truncate">{sale.customer_name || 'Cliente General'}</div>
+                      {/* Cliente (Avatar Bubble + Name) */}
+                      <td className="px-3.5 py-2 font-semibold text-[#432414] dark:text-[#FEE4D7] text-xs max-w-[150px]">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-6 h-6 rounded-full bg-[#FEE4D7]/80 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] font-bold text-[10px] flex items-center justify-center shrink-0 border border-[#D4B28E]/40">
+                            {initials}
+                          </span>
+                          <span className="truncate" title={customerName}>{customerName}</span>
+                        </div>
                       </td>
 
                       {/* Productos */}
                       <td
-                        className="px-3.5 py-2 max-w-[200px] truncate text-xs text-[#9F6839] dark:text-[#DABA8C] font-normal"
+                        className="px-3.5 py-2 max-w-[180px] truncate text-xs text-[#9F6839] dark:text-[#DABA8C] font-normal"
                         title={itemsList}
                       >
                         {itemsList || 'Sin detalle'}
@@ -746,7 +825,7 @@ export default function SalesHistory() {
                       {/* Pago / Estado Minimal Badge */}
                       <td className="px-3.5 py-2 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[11px] font-medium uppercase text-[#9F6839] dark:text-[#DABA8C]">
+                          <span className="text-[10px] font-medium uppercase text-[#9F6839] dark:text-[#DABA8C] px-1.5 py-0.5 rounded bg-[#FEE4D7]/40 dark:bg-[#2A160D]">
                             {sale.payment_method}
                           </span>
                           {isCancelled ? (

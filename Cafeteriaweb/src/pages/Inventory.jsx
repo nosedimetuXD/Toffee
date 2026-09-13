@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { api } from '../api/client'
 import Modal from '../components/Modal'
 import { useAuth } from '../context/AuthContext'
 import { AVAILABLE_UNITS, convertQuantity, formatConvertedHint } from '../utils/unitConverter'
-import { Package, Plus, Minus, AlertTriangle, Search, Edit2, ShieldAlert, History, DollarSign, ArrowRightLeft, Trash2, CreditCard, Banknote, Smartphone, Building2 } from 'lucide-react'
+import { Package, Plus, Minus, AlertTriangle, Search, Edit2, ShieldAlert, History, DollarSign, ArrowRightLeft, Trash2, CreditCard, Banknote, Smartphone, Building2, ChevronDown, TrendingUp } from 'lucide-react'
 
 export default function Inventory() {
   const { user } = useAuth()
@@ -16,6 +16,8 @@ export default function Inventory() {
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [pageError, setPageError] = useState('')
+  const [expandedIngId, setExpandedIngId] = useState(null)
+  const [expandedWasteId, setExpandedWasteId] = useState(null)
 
   // Modal Crear / Editar Insumo
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -235,8 +237,18 @@ export default function Inventory() {
     }
   }
 
-  const lowStockCount = ingredients.filter((i) => i.quantity <= i.min_quantity).length
-  const filteredIngredients = ingredients.filter((i) => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  const lowStockCount = useMemo(() => ingredients.filter((i) => (Number(i.quantity) || 0) <= (Number(i.min_quantity) || 0)).length, [ingredients])
+  const optimalStockCount = useMemo(() => ingredients.filter((i) => (Number(i.quantity) || 0) > (Number(i.min_quantity) || 0)).length, [ingredients])
+  const totalInventoryValue = useMemo(() => {
+    return ingredients.reduce((sum, i) => sum + ((Number(i.quantity) || 0) * (Number(i.unit_cost) || 0)), 0)
+  }, [ingredients])
+  const totalWasteLoss = useMemo(() => {
+    return wasteReports.reduce((sum, w) => sum + (Number(w.estimated_loss) || 0), 0)
+  }, [wasteReports])
+
+  const filteredIngredients = useMemo(() => {
+    return ingredients.filter((i) => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  }, [ingredients, searchQuery])
 
   if (loading) return <p className="p-4 text-sm font-semibold text-[#9F6839]">Cargando inventario...</p>
 
@@ -291,10 +303,105 @@ export default function Inventory() {
           <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
           <div>
             <span className="font-semibold text-xs">Alerta de Inventario:</span>{' '}
-            <span>Tienes {lowStockCount} insumo(s) por debajo de su stock mínimo.</span>
+            <span>Tienes {lowStockCount} insumo(s) por debajo de su stock mínimo de seguridad.</span>
           </div>
         </div>
       )}
+
+      {/* Unified Metrics Bar — Linear / De-AI Style (Hero 2:1 Asymmetric Layout) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+        {/* Large Hero Box (2 cols) */}
+        <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-xs relative overflow-hidden">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+                Valor Total del Inventario
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Inventario Activo
+              </span>
+            </div>
+
+            <div className="mt-2 text-4xl sm:text-5xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+              ${Number(totalInventoryValue).toLocaleString('es-CO')}
+            </div>
+            <p className="text-xs text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-1 font-normal">
+              Capital total valorizado en almacén y cocina
+            </p>
+          </div>
+
+          {/* Sub-breakdown 3 columns at bottom */}
+          <div className="mt-6 pt-4 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 grid grid-cols-3 gap-2 sm:gap-4">
+            <div>
+              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+                Insumos Totales
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums block mt-0.5">
+                {ingredients.length} items
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+                Stock Óptimo
+              </span>
+              <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums block mt-0.5">
+                {optimalStockCount} insumos
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+                Stock Bajo
+              </span>
+              <span className={`text-xs sm:text-sm font-bold tabular-nums block mt-0.5 ${lowStockCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
+                {lowStockCount} insumos
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stacked Side Cards (1 col) */}
+        <div className="lg:col-span-1 flex flex-col gap-2.5">
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+              <span>Insumos Críticos</span>
+              <AlertTriangle className={`w-3.5 h-3.5 ${lowStockCount > 0 ? 'text-amber-600' : 'opacity-60'}`} />
+            </div>
+            <div className={`my-1 text-xl sm:text-2xl font-bold tracking-tight tabular-nums ${lowStockCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
+              {lowStockCount}
+            </div>
+            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+              {lowStockCount > 0 ? 'Requieren reabastecimiento pronto' : 'Todos los insumos sobre el mínimo'}
+            </span>
+          </div>
+
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+              <span>Pérdidas por Mermas</span>
+              <ShieldAlert className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+            </div>
+            <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 tabular-nums">
+              -${Number(totalWasteLoss).toLocaleString('es-CO')}
+            </div>
+            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+              {wasteReports.length} reportes registrados
+            </span>
+          </div>
+
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+              <span>Total Referencias</span>
+              <Package className="w-3.5 h-3.5 opacity-60" />
+            </div>
+            <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+              {ingredients.length}
+            </div>
+            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+              Insumos activos en el catálogo
+            </span>
+          </div>
+        </div>
+      </div>
 
       {/* Buscador & Tabs */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -335,84 +442,146 @@ export default function Inventory() {
         </div>
       </div>
 
-      {/* Pestaña 1: Tabla de Insumos (Guide 3: Mobile Cards + Desktop Table) */}
+      {/* Pestaña 1: Tabla de Insumos (Images 3 & 4 Mobile Accordion + Desktop Linear Table) */}
       {activeTab === 'inventory' && (
         <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl overflow-hidden">
-          {/* Mobile Card List for Ingredients */}
+          {/* Mobile Card List with Accordion Drawers */}
           <div className="block md:hidden divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
             {filteredIngredients.map((ing) => {
-              const isLow = ing.quantity <= ing.min_quantity
+              const isLow = (Number(ing.quantity) || 0) <= (Number(ing.min_quantity) || 0)
+              const isExpanded = expandedIngId === ing.id
+              const ingInitials = (ing.name || 'IN').substring(0, 2).toUpperCase()
+              const totalVal = (Number(ing.quantity) || 0) * (Number(ing.unit_cost) || 0)
+
               return (
-                <div key={ing.id} className={`p-4 space-y-2.5 transition-colors ${isLow ? 'bg-amber-500/[0.03]' : 'hover:bg-[#FEE4D7]/10'}`}>
-                  {/* Top: Name & Current Stock */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
-                        {ing.name}
+                <div key={ing.id} className="transition-colors">
+                  {/* Compact Tappable Summary Row */}
+                  <div
+                    onClick={() => setExpandedIngId(isExpanded ? null : ing.id)}
+                    className="p-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#FEE4D7]/15 transition-colors select-none"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {/* Avatar Initials Bubble */}
+                      <div className={`w-9 h-9 rounded-full font-black text-xs flex items-center justify-center border shrink-0 ${
+                        isLow
+                          ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30'
+                          : 'bg-[#FEE4D7]/70 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] border-[#D4B28E]/40 dark:border-[#9F6839]/30'
+                      }`}>
+                        {ingInitials}
                       </div>
-                      <div className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums mt-0.5">
-                        Costo/u: ${(ing.unit_cost || 0).toLocaleString('es-CO')} · Mínimo: {ing.min_quantity} {ing.unit}
+
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
+                          {ing.name}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {isLow ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 dark:text-amber-400">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                              Stock Bajo
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              OK
+                            </span>
+                          )}
+                          <span className="text-[10px] text-[#9F6839]/60 dark:text-[#DABA8C]/50 tabular-nums">
+                            · Costo: ${(ing.unit_cost || 0).toLocaleString('es-CO')}/u
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <div className="font-bold text-sm text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-                        {ing.quantity} <span className="text-xs font-normal text-[#9F6839] dark:text-[#DABA8C]">{ing.unit}</span>
+
+                    {/* Quantity & Chevron */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="text-right">
+                        <span className="font-bold text-xs sm:text-sm text-[#432414] dark:text-[#FEE4D7] tabular-nums block">
+                          {ing.quantity} <span className="text-[11px] font-normal text-[#9F6839] dark:text-[#DABA8C]">{ing.unit}</span>
+                        </span>
                       </div>
-                      <div className="mt-1">
-                        {isLow ? (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                            Stock Bajo
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            OK
-                          </span>
-                        )}
-                      </div>
+                      <ChevronDown
+                        className={`w-4 h-4 text-[#9F6839] dark:text-[#DABA8C] transition-transform duration-200 ${
+                          isExpanded ? 'rotate-180' : ''
+                        }`}
+                      />
                     </div>
                   </div>
 
-                  {/* Bottom Controls (Ajuste rápido & Acciones) */}
-                  {!isEmployee && (
-                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#D4B28E]/15 dark:border-[#9F6839]/15">
-                      <div className="flex items-center gap-1">
-                        <span className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] mr-1">Ajuste rápido:</span>
-                        <button
-                          type="button"
-                          onClick={() => quickAdjustStock(ing, -1)}
-                          className="px-2 py-1 rounded-md bg-[#FEE4D7]/60 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] text-xs font-bold transition-colors cursor-pointer"
-                        >
-                          -1
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => quickAdjustStock(ing, 1)}
-                          className="px-2 py-1 rounded-md bg-[#FEE4D7]/60 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] text-xs font-bold transition-colors cursor-pointer"
-                        >
-                          +1
-                        </button>
+                  {/* Expandable Accordion Drawer ("Hidden isn't deleted") */}
+                  {isExpanded && (
+                    <div className="px-4 pb-4 pt-2 bg-[#FEE4D7]/10 dark:bg-[#201009]/50 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 space-y-3 animate-in fade-in duration-150">
+                      {/* Metadata Grid */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2 rounded-xl bg-white/70 dark:bg-[#150904]/70 border border-[#D4B28E]/30 dark:border-[#9F6839]/20">
+                          <span className="text-[10px] uppercase font-semibold text-[#9F6839] dark:text-[#DABA8C] block">
+                            Stock Mínimo Alerta
+                          </span>
+                          <span className="font-medium text-[#432414] dark:text-[#FEE4D7] block mt-0.5 tabular-nums">
+                            {ing.min_quantity} {ing.unit}
+                          </span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-white/70 dark:bg-[#150904]/70 border border-[#D4B28E]/30 dark:border-[#9F6839]/20">
+                          <span className="text-[10px] uppercase font-semibold text-[#9F6839] dark:text-[#DABA8C] block">
+                            Valor en Existencia
+                          </span>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400 block mt-0.5 tabular-nums">
+                            ${Number(totalVal).toLocaleString('es-CO')}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(ing)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#FEE4D7]/70 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] transition-colors cursor-pointer"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                          <span>Editar</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteIngredient(ing)}
-                          className="p-1 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                          title="Eliminar insumo"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      {/* Quick Adjust Buttons */}
+                      {!isEmployee && (
+                        <div className="pt-2 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20">
+                          <span className="text-[10px] uppercase font-semibold text-[#9F6839] dark:text-[#DABA8C] block mb-1.5">
+                            Ajuste Rápido de Stock
+                          </span>
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {[-5, -1, 1, 5].map((delta) => (
+                              <button
+                                key={delta}
+                                type="button"
+                                onClick={(ev) => {
+                                  ev.stopPropagation()
+                                  quickAdjustStock(ing, delta)
+                                }}
+                                className="py-1.5 rounded-lg bg-white dark:bg-[#2A160D] border border-[#D4B28E]/40 dark:border-[#9F6839]/30 hover:bg-[#FEE4D7]/50 text-xs font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums transition-colors cursor-pointer text-center"
+                              >
+                                {delta > 0 ? `+${delta}` : delta}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Action Buttons Full Width */}
+                      {!isEmployee && (
+                        <div className="flex items-center gap-2 pt-2 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20">
+                          <button
+                            type="button"
+                            onClick={(ev) => {
+                              ev.stopPropagation()
+                              openEditModal(ing)
+                            }}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-[#FEE4D7]/80 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] text-xs font-bold transition-all cursor-pointer shadow-xs"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                            <span>Editar Insumo</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(ev) => {
+                              ev.stopPropagation()
+                              handleDeleteIngredient(ing)
+                            }}
+                            className="inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition-all cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Eliminar</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -425,7 +594,7 @@ export default function Inventory() {
             )}
           </div>
 
-          {/* Desktop Table View */}
+          {/* Desktop Table View (Image 2: Linear Table) */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider text-[11px] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 font-semibold">
@@ -441,7 +610,7 @@ export default function Inventory() {
               </thead>
               <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 text-[#432414] dark:text-[#FEE4D7]">
                 {filteredIngredients.map((ing) => {
-                  const isLow = ing.quantity <= ing.min_quantity
+                  const isLow = (Number(ing.quantity) || 0) <= (Number(ing.min_quantity) || 0)
                   return (
                     <tr key={ing.id} className={`hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/70 transition-colors group ${isLow ? 'bg-amber-500/[0.03]' : ''}`}>
                       <td className="py-2 px-3.5 font-medium text-xs text-[#432414] dark:text-[#FEE4D7]">{ing.name}</td>
@@ -485,7 +654,7 @@ export default function Inventory() {
                             </button>
                             <button type="button"
                               onClick={() => handleDeleteIngredient(ing)}
-                              className="p-1 rounded-md text-[#9F6839] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                              className="p-1 rounded-md text-[#9F6839] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                               title="Eliminar insumo"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -512,35 +681,92 @@ export default function Inventory() {
       {/* Pestaña 2: Historial de Reportes de Mermas */}
       {activeTab === 'waste' && (
         <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl overflow-hidden">
-          {/* Mobile View for Waste */}
+          {/* Mobile View for Waste (Images 3 & 4 style) */}
           <div className="block md:hidden divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
-            {wasteReports.map((w) => (
-              <div key={w.id} className="p-4 space-y-1.5 hover:bg-[#FEE4D7]/10 transition-colors">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
-                      {w.ingredient_name || 'Insumo'}
+            {wasteReports.map((w) => {
+              const isExpanded = expandedWasteId === w.id
+              const wasteInitials = (w.ingredient_name || 'ME').substring(0, 2).toUpperCase()
+
+              return (
+                <div key={w.id} className="transition-colors">
+                  {/* Tappable Row */}
+                  <div
+                    onClick={() => setExpandedWasteId(isExpanded ? null : w.id)}
+                    className="p-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#FEE4D7]/15 transition-colors select-none"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-9 h-9 rounded-full bg-rose-500/10 text-rose-700 dark:text-rose-400 font-black text-xs flex items-center justify-center border border-rose-500/30 shrink-0">
+                        {wasteInitials}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
+                          {w.ingredient_name || 'Insumo'}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-rose-700 dark:text-rose-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            Merma: -{w.quantity_used} {w.ingredient_unit}
+                          </span>
+                          <span className="text-[10px] text-[#9F6839]/60 dark:text-[#DABA8C]/50 tabular-nums">
+                            · {new Date(w.created_at).toLocaleDateString('es-CO')}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums">
-                      {new Date(w.created_at).toLocaleString('es-CO')}
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-bold text-xs sm:text-sm text-rose-600 dark:text-rose-400 tabular-nums">
+                        -${(w.estimated_loss || 0).toLocaleString('es-CO')}
+                      </span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-[#9F6839] dark:text-[#DABA8C] transition-transform duration-200 ${
+                          isExpanded ? 'rotate-180' : ''
+                        }`}
+                      />
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="font-bold text-rose-600 dark:text-rose-400 text-xs tabular-nums">
-                      -${(w.estimated_loss || 0).toLocaleString('es-CO')}
+
+                  {/* Accordion Drawer */}
+                  {isExpanded && (
+                    <div className="px-4 pb-4 pt-2 bg-[#FEE4D7]/10 dark:bg-[#201009]/50 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 space-y-2.5 animate-in fade-in duration-150">
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2 rounded-xl bg-white/70 dark:bg-[#150904]/70 border border-[#D4B28E]/30 dark:border-[#9F6839]/20">
+                          <span className="text-[10px] uppercase font-semibold text-[#9F6839] dark:text-[#DABA8C] block">
+                            Cantidad Reportada
+                          </span>
+                          <span className="font-medium text-[#432414] dark:text-[#FEE4D7] block mt-0.5 tabular-nums">
+                            {w.user_quantity} {w.user_unit}
+                          </span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-white/70 dark:bg-[#150904]/70 border border-[#D4B28E]/30 dark:border-[#9F6839]/20">
+                          <span className="text-[10px] uppercase font-semibold text-[#9F6839] dark:text-[#DABA8C] block">
+                            Descontado de Stock
+                          </span>
+                          <span className="font-medium text-[#432414] dark:text-[#FEE4D7] block mt-0.5 tabular-nums">
+                            -{w.quantity_used} {w.ingredient_unit}
+                          </span>
+                        </div>
+                      </div>
+
+                      {w.reason && (
+                        <div className="p-2 rounded-xl bg-white/70 dark:bg-[#150904]/70 border border-[#D4B28E]/30 dark:border-[#9F6839]/20 text-xs">
+                          <span className="text-[10px] uppercase font-semibold text-[#9F6839] dark:text-[#DABA8C] block">
+                            Motivo / Justificación
+                          </span>
+                          <span className="font-normal text-[#432414] dark:text-[#FEE4D7] block mt-0.5 italic">
+                            "{w.reason}"
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums">
+                        Fecha y hora: {new Date(w.created_at).toLocaleString('es-CO')}
+                      </div>
                     </div>
-                    <div className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 tabular-nums">
-                      -{w.quantity_used} {w.ingredient_unit}
-                    </div>
-                  </div>
+                  )}
                 </div>
-                {w.reason && (
-                  <div className="text-[11px] text-[#432414]/80 dark:text-[#FEE4D7]/80 pt-1 border-t border-[#D4B28E]/15 dark:border-[#9F6839]/15">
-                    Motivo: <span className="italic">{w.reason}</span>
-                  </div>
-                )}
-              </div>
-            ))}
+              )
+            })}
             {wasteReports.length === 0 && (
               <div className="p-8 text-center text-[#9F6839]/70 text-xs">
                 No hay registros de mermas.
