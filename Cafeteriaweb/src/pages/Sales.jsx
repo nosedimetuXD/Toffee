@@ -26,6 +26,7 @@ import {
   X,
   Phone,
   UserCheck,
+  UserPlus,
   QrCode,
   BadgeDollarSign
 } from 'lucide-react'
@@ -55,6 +56,17 @@ export default function Sales() {
   const [customerQuery, setCustomerQuery] = useState('')
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false)
   const customerDropdownRef = useRef(null)
+
+  // Creacion rapida de cliente desde el POS
+  const [isQuickCustomerModalOpen, setIsQuickCustomerModalOpen] = useState(false)
+  const [quickCustomerForm, setQuickCustomerForm] = useState({
+    first_name: '',
+    last_name: '',
+    phone: '',
+    notes: ''
+  })
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false)
+  const [quickCustomerError, setQuickCustomerError] = useState('')
 
   const filteredCustomers = useMemo(() => {
     const q = customerQuery.trim().toLowerCase()
@@ -299,6 +311,70 @@ export default function Sales() {
     setIsCustomerDropdownOpen(false)
   }
 
+  function handleOpenQuickCustomerModal(query = customerQuery) {
+    const raw = (query || '').trim()
+    const parts = raw.split(/\s+/)
+    let first_name = ''
+    let last_name = ''
+    if (parts.length === 1) {
+      first_name = parts[0]
+    } else if (parts.length > 1) {
+      first_name = parts[0]
+      last_name = parts.slice(1).join(' ')
+    }
+    setQuickCustomerForm({
+      first_name,
+      last_name,
+      phone: '',
+      notes: ''
+    })
+    setQuickCustomerError('')
+    setIsQuickCustomerModalOpen(true)
+    setIsCustomerDropdownOpen(false)
+  }
+
+  async function handleQuickCreateCustomer(e) {
+    e.preventDefault()
+    const firstName = quickCustomerForm.first_name.trim()
+    if (!firstName) {
+      setQuickCustomerError('El nombre del cliente es obligatorio.')
+      return
+    }
+
+    try {
+      setIsCreatingCustomer(true)
+      setQuickCustomerError('')
+      const payload = {
+        first_name: firstName,
+        last_name: quickCustomerForm.last_name.trim(),
+        phone: quickCustomerForm.phone.trim(),
+        notes: quickCustomerForm.notes.trim()
+      }
+
+      const created = await api.post('/customers', payload)
+      const newCustomerObj = {
+        ...created,
+        total_debt: 0,
+        total_paid_eligible: 0
+      }
+
+      setCrmCustomers((prev) => [newCustomerObj, ...prev])
+      const fullName = `${newCustomerObj.first_name} ${newCustomerObj.last_name || ''}`.trim()
+      setSelectedCustomerId(newCustomerObj.id)
+      setSelectedCustomerObj(newCustomerObj)
+      setCustomerName(fullName)
+      setCustomerPhone(newCustomerObj.phone || '')
+      setCustomerQuery(fullName)
+      setIsQuickCustomerModalOpen(false)
+      setIsCustomerDropdownOpen(false)
+    } catch (err) {
+      console.error('Error creando cliente rapido:', err)
+      setQuickCustomerError(err.message || 'Error al registrar el cliente.')
+    } finally {
+      setIsCreatingCustomer(false)
+    }
+  }
+
   function openCheckout() {
     if (cartItems.length === 0) return
     setIsMobileCartOpen(false)
@@ -307,6 +383,10 @@ export default function Sales() {
     setCustomerName('')
     setCustomerQuery('')
     setIsCustomerDropdownOpen(false)
+    setIsQuickCustomerModalOpen(false)
+    setQuickCustomerError('')
+    setIsCreatingCustomer(false)
+    setQuickCustomerForm({ first_name: '', last_name: '', phone: '', notes: '' })
     setSaleType('total')
     setPartialPaidAmount('')
     setPaymentMethod('efectivo')
@@ -996,7 +1076,7 @@ export default function Sales() {
                     }
                     setIsCustomerDropdownOpen(true)
                   }}
-                  placeholder={effectivePendingAmount > 0 ? "Busca y selecciona un cliente registrado..." : "Escribe el nombre o iniciales del cliente..."}
+                  placeholder="Escribe el nombre o iniciales del cliente..."
                   className="w-full pl-10 pr-10 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839] focus:ring-2 focus:ring-[#9F6839]/20 transition-all placeholder:text-[#9F6839]/50 dark:placeholder:text-[#DABA8C]/50"
                 />
                 {(customerQuery || selectedCustomerId) && (
@@ -1074,14 +1154,41 @@ export default function Sales() {
                     </div>
                   )}
 
-                  {/* Opción de usar el texto escrito como cliente ocasional (solo si no hay deuda) */}
-                  {effectivePendingAmount === 0 && customerQuery.trim() && !crmCustomers.some(c => `${c.first_name} ${c.last_name || ''}`.trim().toLowerCase() === customerQuery.trim().toLowerCase()) && (
-                    <div
-                      onClick={() => handleUseCustomCustomerName(customerQuery)}
-                      className="p-2.5 bg-[#FEE4D7]/40 dark:bg-[#2A150C] hover:bg-[#FEE4D7] dark:hover:bg-[#351a0e] border-t border-[#D4B28E]/40 dark:border-[#9F6839]/30 flex items-center gap-2 text-xs font-black text-[#9F6839] dark:text-[#DABA8C] cursor-pointer"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span>Usar &quot;{customerQuery.trim()}&quot; como cliente para esta venta</span>
+                  {/* Opción de Crear Nuevo Cliente en Base de Datos */}
+                  {customerQuery.trim() && !crmCustomers.some(c => `${c.first_name} ${c.last_name || ''}`.trim().toLowerCase() === customerQuery.trim().toLowerCase()) && (
+                    <div className="border-t border-[#D4B28E]/60 dark:border-[#9F6839]/40 divide-y divide-[#FEE4D7]/60 dark:divide-[#2A150C]">
+                      <div
+                        onClick={() => handleOpenQuickCustomerModal(customerQuery)}
+                        className="p-3 bg-gradient-to-r from-[#FEE4D7]/50 to-[#FEE4D7]/20 dark:from-[#2A150C] dark:to-[#201009] hover:from-[#FEE4D7] hover:to-[#FEE4D7]/60 dark:hover:from-[#351a0e] dark:hover:to-[#2A150C] flex items-center justify-between gap-2 text-xs font-black text-[#7B4E26] dark:text-[#DABA8C] cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-6 h-6 rounded-full bg-[#9F6839] text-white flex items-center justify-center shrink-0 shadow-xs">
+                            <UserPlus className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="truncate">
+                            <span>Crear nuevo cliente <strong>&quot;{customerQuery.trim()}&quot;</strong></span>
+                            {effectivePendingAmount > 0 && (
+                              <span className="block text-[10px] text-red-600 dark:text-red-400 font-bold">
+                                Permite asignarle la deuda (${effectivePendingAmount.toLocaleString('es-CO')})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-[#9F6839] text-white font-extrabold uppercase shadow-xs">
+                          + Registrar
+                        </span>
+                      </div>
+
+                      {/* Si no hay saldo pendiente, permitir usar como cliente ocasional sin registrar */}
+                      {effectivePendingAmount === 0 && (
+                        <div
+                          onClick={() => handleUseCustomCustomerName(customerQuery)}
+                          className="p-2.5 bg-[#FEE4D7]/20 dark:bg-[#201009] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A150C] flex items-center gap-2 text-[11px] font-bold text-[#7B4E26]/80 dark:text-[#DABA8C]/80 cursor-pointer transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-[#9F6839]" />
+                          <span>Usar como cliente ocasional para esta venta (sin guardar en CRM)</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1466,6 +1573,140 @@ export default function Sales() {
             </button>
           </div>
         </Modal>
+      )}
+
+      {/* Modal de Creacion Rapida de Cliente */}
+      {isQuickCustomerModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 z-[60] animate-in fade-in duration-150"
+          onClick={() => !isCreatingCustomer && setIsQuickCustomerModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/60 rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 bg-[#FEE4D7]/30 dark:bg-[#2A150C]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-[#9F6839]/15 text-[#9F6839] dark:text-[#DABA8C] flex items-center justify-center">
+                  <UserPlus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-[#432414] dark:text-[#FEE4D7]">
+                    Registrar Nuevo Cliente
+                  </h3>
+                  <p className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] font-semibold">
+                    Crear y vincular a esta venta para registrar deuda
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={isCreatingCustomer}
+                onClick={() => setIsQuickCustomerModalOpen(false)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#34180D] transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleQuickCreateCustomer} className="p-6 space-y-3.5">
+              {quickCustomerError && (
+                <div className="p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 text-xs font-bold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
+                  <span>{quickCustomerError}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-[#432414] dark:text-[#FEE4D7] mb-1">
+                    Nombre <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    value={quickCustomerForm.first_name}
+                    onChange={(e) => setQuickCustomerForm((prev) => ({ ...prev, first_name: e.target.value }))}
+                    placeholder="Ej. Carlos"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FEE4D7]/20 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 text-xs font-bold text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:ring-2 focus:ring-[#9F6839]/20 focus:border-[#9F6839]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-black uppercase text-[#432414] dark:text-[#FEE4D7] mb-1">
+                    Apellido
+                  </label>
+                  <input
+                    type="text"
+                    value={quickCustomerForm.last_name}
+                    onChange={(e) => setQuickCustomerForm((prev) => ({ ...prev, last_name: e.target.value }))}
+                    placeholder="Ej. Mendoza"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#FEE4D7]/20 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 text-xs font-bold text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:ring-2 focus:ring-[#9F6839]/20 focus:border-[#9F6839]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase text-[#432414] dark:text-[#FEE4D7] mb-1">
+                  Telefono / WhatsApp <span className="text-[10px] lowercase text-[#9F6839]/70 dark:text-[#DABA8C]/70">(opcional)</span>
+                </label>
+                <div className="relative flex items-center">
+                  <div className="absolute left-3 text-[#9F6839] pointer-events-none">
+                    <Phone className="w-3.5 h-3.5" />
+                  </div>
+                  <input
+                    type="tel"
+                    value={quickCustomerForm.phone}
+                    onChange={(e) => setQuickCustomerForm((prev) => ({ ...prev, phone: e.target.value }))}
+                    placeholder="Ej. 300 123 4567"
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-[#FEE4D7]/20 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 text-xs font-bold text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:ring-2 focus:ring-[#9F6839]/20 focus:border-[#9F6839]"
+                  />
+                </div>
+                <p className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] mt-1 font-semibold">
+                  Recomendado para comprobantes por WhatsApp y recordatorios de saldo.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase text-[#432414] dark:text-[#FEE4D7] mb-1">
+                  Notas / Referencia <span className="text-[10px] lowercase text-[#9F6839]/70 dark:text-[#DABA8C]/70">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={quickCustomerForm.notes}
+                  onChange={(e) => setQuickCustomerForm((prev) => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Ej. Estudiante, salon 101, oficina..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#FEE4D7]/20 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 text-xs font-bold text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:ring-2 focus:ring-[#9F6839]/20 focus:border-[#9F6839]"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isCreatingCustomer}
+                  onClick={() => setIsQuickCustomerModalOpen(false)}
+                  className="flex-1 py-2.5 px-4 rounded-xl border border-[#D4B28E]/80 dark:border-[#9F6839]/40 text-xs font-bold text-[#432414]/70 dark:text-[#FEE4D7]/70 hover:bg-[#FEE4D7]/30 dark:hover:bg-[#2A150C] transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingCustomer || !quickCustomerForm.first_name.trim()}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#9F6839] to-[#7B4E26] hover:from-[#8B5A30] hover:to-[#6A421F] text-white text-xs font-black shadow-md shadow-[#9F6839]/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {isCreatingCustomer ? (
+                    <span>Guardando...</span>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4" />
+                      <span>Crear y Asignar</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   )
