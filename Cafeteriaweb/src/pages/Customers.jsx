@@ -31,6 +31,7 @@ import {
 } from 'lucide-react'
 import { exportCustomersToCSV, exportCustomersToExcel } from '../utils/csvExport'
 import { useAuth } from '../context/AuthContext'
+import MetricLineChart from '../components/MetricLineChart'
 
 const COMMON_BANKS = ['Bre-B/Llave', 'Nequi', 'Daviplata', 'Bancolombia', 'Nu', 'Davivienda', 'BBVA', 'Banco de Bogotá']
 
@@ -366,6 +367,17 @@ export default function Customers() {
     return customers
   }, [customers, debtFilter])
 
+  // Datos de clientes destacados por facturación y cartera para la gráfica de líneas
+  const customersTrendData = useMemo(() => {
+    if (!customers || customers.length === 0) return []
+    const sorted = [...customers].sort((a, b) => (Number(b.total_spent) || 0) - (Number(a.total_spent) || 0))
+    return sorted.slice(0, 8).map((c) => ({
+      label: c.name.length > 7 ? c.name.substring(0, 7) + '..' : c.name,
+      value: Number(c.total_spent) || 0,
+      secondaryValue: Number(c.total_debt) || 0
+    }))
+  }, [customers])
+
   return (
     <div className="space-y-6 text-[#432414] dark:text-[#FEE4D7]">
       {/* Encabezado Principal */}
@@ -424,23 +436,45 @@ export default function Customers() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Large Hero Box (2 cols) */}
         <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs relative overflow-hidden">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+          {/* Header Row: Title & Total + Badge */}
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
                 Facturación Acumulada Clientes
               </span>
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+              <div className="mt-0.5 text-2xl sm:text-3xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+                ${Number(totalSpentAll).toLocaleString('es-CO')}
+              </div>
+            </div>
+
+            <div className="text-right">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 CRM & Fidelización
               </span>
+              <div className="flex items-center justify-end gap-3 text-[10px] font-semibold mt-1">
+                <span className="inline-flex items-center gap-1 text-[#9F6839] dark:text-[#DABA8C]">
+                  <span className="w-2 h-2 rounded-full bg-[#9F6839]" /> Facturado
+                </span>
+                <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400">
+                  <span className="w-2 h-2 rounded-full bg-rose-500" /> Cartera
+                </span>
+              </div>
             </div>
+          </div>
 
-            <div className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-              ${Number(totalSpentAll).toLocaleString('es-CO')}
-            </div>
-            <p className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-0.5 font-normal">
-              Total histórico facturado a clientes registrados en el sistema
-            </p>
+          {/* Center Body: Full-Width MetricLineChart (Facturado vs Cartera) */}
+          <div className="my-2.5 py-1 w-full">
+            <MetricLineChart
+              data={customersTrendData}
+              line1Color="#9F6839"
+              line2Color="#f43f5e"
+              line1Label="Facturado"
+              line2Label="Cartera"
+              hasSecondary={true}
+              formatValue={(v) => `$${Number(v).toLocaleString('es-CO')}`}
+              height={125}
+            />
           </div>
 
           {/* Sub-breakdown 3 columns at bottom */}

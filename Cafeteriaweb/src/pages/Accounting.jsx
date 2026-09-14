@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import { exportAccountingToCSV, exportAccountingToExcel } from '../utils/csvExport'
 import { useAuth } from '../context/AuthContext'
+import MetricLineChart from '../components/MetricLineChart'
 
 const EXPENSE_CATEGORIES = [
   { value: 'insumos', label: 'Insumos / Café / Ingredientes', icon: Package },
@@ -292,6 +293,28 @@ export default function Accounting() {
   const balanceNetoCalc = totalIngresosCalc - totalGastosCalc
   const margenOperativo = totalIngresosCalc > 0 ? Math.round((balanceNetoCalc / totalIngresosCalc) * 100) : 0
 
+  // Datos comparativos de Ingresos vs Gastos para la gráfica de líneas
+  const accountingTrendData = useMemo(() => {
+    const dateMap = {}
+
+    incomes.forEach((inc) => {
+      const d = new Date(inc.created_at)
+      const label = d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })
+      if (!dateMap[label]) dateMap[label] = { label, value: 0, secondaryValue: 0, date: d }
+      dateMap[label].value += Number(inc.amount || 0)
+    })
+
+    expenses.forEach((exp) => {
+      const d = new Date(exp.created_at)
+      const label = d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })
+      if (!dateMap[label]) dateMap[label] = { label, value: 0, secondaryValue: 0, date: d }
+      dateMap[label].secondaryValue += Number(exp.amount || 0)
+    })
+
+    const sorted = Object.values(dateMap).sort((a, b) => a.date - b.date)
+    return sorted.map(({ label, value, secondaryValue }) => ({ label, value, secondaryValue }))
+  }, [incomes, expenses])
+
   const filteredIncomes = useMemo(() => {
     if (incomeFilter === 'all') return incomes
     return incomes.filter((inc) => (inc.type || 'manual') === incomeFilter)
@@ -363,56 +386,46 @@ export default function Accounting() {
       {/* Unified Metrics Bar — Compact 2:1 Hero Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Large Hero Box (2 cols) */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between sm:justify-start gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-                  Ganancia Neta
-                </span>
-                <span className={`sm:hidden inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border ${balanceNetoCalc >= 0 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${balanceNetoCalc >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                  {balanceNetoCalc >= 0 ? 'Balance Positivo' : 'Déficit'}
-                </span>
-              </div>
-
-              <div className={`mt-1 text-2xl sm:text-3xl font-black tracking-tight tabular-nums ${balanceNetoCalc >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-rose-600 dark:text-rose-400'}`}>
+        <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
+          {/* Header Row: Title & Balance + Badge */}
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
+                Ganancia Neta
+              </span>
+              <div className={`mt-0.5 text-2xl sm:text-3xl font-black tracking-tight tabular-nums ${balanceNetoCalc >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-rose-600 dark:text-rose-400'}`}>
                 ${Number(balanceNetoCalc).toLocaleString('es-CO')}
               </div>
-              <p className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-0.5 font-normal max-w-xs">
-                Balance neto consolidado del período seleccionado
-              </p>
             </div>
 
-            {/* Right: Cash Flow Distribution Bar & Badge */}
-            {(() => {
-              const totalFlow = (totalIngresosCalc + totalGastosCalc) || 1
-              const incomePct = Math.round((totalIngresosCalc / totalFlow) * 100)
-              const expensePct = 100 - incomePct
-              return (
-                <div className="hidden sm:flex flex-col items-end justify-between min-w-[210px] max-w-[270px]">
-                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border mb-1.5 self-end ${balanceNetoCalc >= 0 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${balanceNetoCalc >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                    {balanceNetoCalc >= 0 ? 'Balance Positivo' : 'Déficit'}
-                  </span>
+            <div className="text-right">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${balanceNetoCalc >= 0 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${balanceNetoCalc >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                {balanceNetoCalc >= 0 ? 'Balance Positivo' : 'Déficit'}
+              </span>
+              <div className="flex items-center justify-end gap-3 text-[10px] font-semibold mt-1">
+                <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" /> Ingresos
+                </span>
+                <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400">
+                  <span className="w-2 h-2 rounded-full bg-rose-500" /> Gastos
+                </span>
+              </div>
+            </div>
+          </div>
 
-                  <div className="w-full bg-[#FEE4D7]/20 dark:bg-[#140904]/40 rounded-xl p-2.5 border border-[#D4B28E]/30 dark:border-[#9F6839]/20 flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between text-[9px] font-semibold text-[#9F6839] dark:text-[#DABA8C]">
-                      <span className="text-emerald-700 dark:text-emerald-400">Ingresos: {incomePct}%</span>
-                      <span className="text-rose-600 dark:text-rose-400">Gastos: {expensePct}%</span>
-                    </div>
-                    <div className="w-full h-2.5 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden flex shadow-inner">
-                      <div style={{ width: `${incomePct}%` }} className="bg-emerald-500 h-full transition-all duration-300" title={`Ingresos: $${totalIngresosCalc.toLocaleString('es-CO')}`} />
-                      <div style={{ width: `${expensePct}%` }} className="bg-rose-500 h-full transition-all duration-300" title={`Gastos: $${totalGastosCalc.toLocaleString('es-CO')}`} />
-                    </div>
-                    <div className="flex items-center justify-between text-[8px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums font-mono">
-                      <span>+${(totalIngresosCalc / 1000).toFixed(0)}k</span>
-                      <span>-${(totalGastosCalc / 1000).toFixed(0)}k</span>
-                    </div>
-                  </div>
-                </div>
-              )
-            })()}
+          {/* Center Body: Full-Width MetricLineChart (Ingresos vs Gastos con 2 curvas Bézier) */}
+          <div className="my-2.5 py-1 w-full">
+            <MetricLineChart
+              data={accountingTrendData}
+              line1Color="#10b981"
+              line2Color="#f43f5e"
+              line1Label="Ingresos"
+              line2Label="Gastos"
+              hasSecondary={true}
+              formatValue={(v) => `$${Number(v).toLocaleString('es-CO')}`}
+              height={125}
+            />
           </div>
 
           {/* Sub-breakdown 3 columns at bottom */}

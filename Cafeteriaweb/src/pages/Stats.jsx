@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { api } from '../api/client'
 import Modal from '../components/Modal'
+import MetricLineChart from '../components/MetricLineChart'
 import {
   BarChart3,
   TrendingUp,
@@ -152,27 +153,50 @@ export default function Stats() {
         const expenses = mStats?.monthly_expenses || 0
         const margin = income > 0 ? Math.round((netProfit / income) * 100) : 0
 
+        const statsTrendData = (mStats?.top_products || []).slice(0, 8).map((prod) => ({
+          label: prod.product_name.length > 7 ? prod.product_name.substring(0, 7) + '..' : prod.product_name,
+          value: Number(prod.total_amount) || 0,
+          secondaryValue: (Number(prod.total_qty) || 0) * 15000
+        }))
+
         return (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             {/* Large Hero Box (2 cols) */}
             <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs relative overflow-hidden">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+              {/* Header Row: Title & Balance + Badge */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
                     Ganancia Neta Consolidada
                   </span>
-                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border ${netProfit >= 0 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20'}`}>
+                  <div className={`mt-0.5 text-2xl sm:text-3xl font-black tracking-tight tabular-nums ${netProfit >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-rose-600 dark:text-rose-400'}`}>
+                    ${Number(netProfit).toLocaleString('es-CO')}
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${netProfit >= 0 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20'}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${netProfit >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                     {netProfit >= 0 ? 'Utilidad Operativa' : 'Déficit'}
                   </span>
+                  <p className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-1">
+                    Curva de Facturación ({displayLabel})
+                  </p>
                 </div>
+              </div>
 
-                <div className={`mt-1 text-2xl sm:text-3xl font-black tracking-tight tabular-nums ${netProfit >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-rose-600 dark:text-rose-400'}`}>
-                  ${Number(netProfit).toLocaleString('es-CO')}
-                </div>
-                <p className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-0.5 font-normal">
-                  Rendimiento financiero neto del período ({displayLabel})
-                </p>
+              {/* Center Body: Full-Width MetricLineChart */}
+              <div className="my-2.5 py-1 w-full">
+                <MetricLineChart
+                  data={statsTrendData}
+                  line1Color="#10b981"
+                  line2Color="#9F6839"
+                  line1Label="Facturación"
+                  line2Label="Unidades Val."
+                  hasSecondary={statsTrendData.length > 0}
+                  formatValue={(v) => `$${Number(v).toLocaleString('es-CO')}`}
+                  height={125}
+                />
               </div>
 
               {/* Sub-breakdown 3 columns at bottom */}

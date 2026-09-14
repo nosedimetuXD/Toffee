@@ -27,6 +27,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { exportSalesToCSV, exportSalesToExcel } from '../utils/csvExport'
 import { downloadReceiptPDF, printReceiptPDF, shareReceiptPDFToWhatsApp } from '../utils/pdfReceipt'
+import MetricLineChart from '../components/MetricLineChart'
 
 const MONTH_NAMES = [
   { num: 1, short: 'ene.', full: 'Enero' },
@@ -236,7 +237,7 @@ export default function SalesHistory() {
     return totalSalesCount > 0 ? Math.round(totalBilled / totalSalesCount) : 0
   }, [totalBilled, totalSalesCount])
 
-  // Agrupación y datos de tendencia para la mini gráfica del Hero Card
+  // Agrupación y datos de tendencia para la gráfica de líneas en el Hero Card
   const salesTrendData = useMemo(() => {
     if (!activeSales || activeSales.length === 0) return []
     const dateMap = {}
@@ -248,14 +249,8 @@ export default function SalesHistory() {
       dateMap[label] = (dateMap[label] || 0) + Number(sale.total || 0)
     })
 
-    const entries = Object.entries(dateMap).map(([date, total]) => ({ date, total }))
-    return entries.slice(-8)
+    return Object.entries(dateMap).map(([label, value]) => ({ label, value }))
   }, [activeSales])
-
-  const maxTrendTotal = useMemo(() => {
-    if (salesTrendData.length === 0) return 1
-    return Math.max(...salesTrendData.map((d) => d.total), 1)
-  }, [salesTrendData])
 
   // Manejo de Cancelación (Abierto a cualquier usuario)
   async function handleCancelSale(sale) {
@@ -436,69 +431,38 @@ export default function SalesHistory() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Left: Compact Hero Metric Card with Dynamic Trend Chart */}
         <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            {/* Left: Total Facturado Info */}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between sm:justify-start gap-2 text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-                <div className="flex items-center gap-1.5">
-                  <DollarSign className="w-3.5 h-3.5 opacity-70" />
-                  <span>Total Facturado</span>
-                </div>
-                <span className="sm:hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  {displayLabel}
-                </span>
+          {/* Header Row: Title & Total + Badge */}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+                <DollarSign className="w-3.5 h-3.5 opacity-70" />
+                <span>Total Facturado</span>
               </div>
-              <div className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+              <div className="mt-0.5 text-2xl sm:text-3xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
                 ${Number(totalBilled).toLocaleString('es-CO')}
               </div>
-              <p className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-0.5 max-w-xs">
-                Ingreso bruto acumulado por ventas en el período seleccionado
-              </p>
             </div>
 
-            {/* Right: Mini Gráfica de Tendencia y Badge */}
-            <div className="hidden sm:flex flex-col items-end justify-between min-w-[210px] max-w-[270px]">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 mb-1.5 self-end">
+            <div className="text-right">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 {displayLabel}
               </span>
-
-              {salesTrendData.length > 0 ? (
-                <div className="w-full bg-[#FEE4D7]/20 dark:bg-[#140904]/40 rounded-xl p-2 border border-[#D4B28E]/30 dark:border-[#9F6839]/20 flex flex-col justify-end">
-                  <div className="flex items-center justify-between text-[9px] text-[#9F6839] dark:text-[#DABA8C] font-semibold mb-1 px-0.5">
-                    <span>Actividad / Día</span>
-                    <span className="tabular-nums font-mono">Pico: ${Math.round(maxTrendTotal).toLocaleString('es-CO')}</span>
-                  </div>
-                  <div className="flex items-end gap-1.5 h-11 pt-1 w-full justify-between">
-                    {salesTrendData.map((item, idx) => {
-                      const heightPercent = Math.max((item.total / maxTrendTotal) * 100, 12)
-                      return (
-                        <div
-                          key={idx}
-                          className="flex-1 flex flex-col items-center gap-0.5 group relative cursor-pointer h-full justify-end"
-                        >
-                          {/* Tooltip flotante al hacer hover */}
-                          <div className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#432414] text-[#FEE4D7] text-[9px] font-bold px-1.5 py-0.5 rounded shadow pointer-events-none whitespace-nowrap z-30">
-                            {item.date}: ${item.total.toLocaleString('es-CO')}
-                          </div>
-                          {/* Barra dinámica */}
-                          <div
-                            style={{ height: `${heightPercent}%` }}
-                            className="w-full min-w-[6px] max-w-[16px] rounded-t-sm bg-gradient-to-t from-[#9F6839] to-[#D4B28E] group-hover:from-[#835229] group-hover:to-[#DABA8C] transition-all duration-200 shadow-2xs"
-                          />
-                          <span className="text-[8px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 truncate max-w-[26px] text-center font-mono">
-                            {item.date.split(' ')[0]}
-                          </span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-[10px] text-[#9F6839]/60 italic py-2 self-end">Sin datos para graficar</div>
-              )}
+              <p className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-1">
+                Evolución de Facturación ({salesTrendData.length} registros)
+              </p>
             </div>
+          </div>
+
+          {/* Center Body: Full-Width MetricLineChart (Image 4 reference) */}
+          <div className="my-2.5 py-1 w-full">
+            <MetricLineChart
+              data={salesTrendData}
+              line1Color="#9F6839"
+              line1Label="Facturado"
+              formatValue={(v) => `$${Number(v).toLocaleString('es-CO')}`}
+              height={125}
+            />
           </div>
 
           {/* Sub-breakdown row at bottom */}

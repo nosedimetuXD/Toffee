@@ -4,6 +4,7 @@ import Modal from '../components/Modal'
 import { useAuth } from '../context/AuthContext'
 import { AVAILABLE_UNITS, convertQuantity, formatConvertedHint } from '../utils/unitConverter'
 import { Package, Plus, Minus, AlertTriangle, Search, Edit2, ShieldAlert, History, DollarSign, ArrowRightLeft, Trash2, CreditCard, Banknote, Smartphone, Building2, ChevronDown, TrendingUp } from 'lucide-react'
+import MetricLineChart from '../components/MetricLineChart'
 
 export default function Inventory() {
   const { user } = useAuth()
@@ -246,6 +247,22 @@ export default function Inventory() {
     return wasteReports.reduce((sum, w) => sum + (Number(w.estimated_loss) || 0), 0)
   }, [wasteReports])
 
+  // Datos de valorización y stock por insumo para la gráfica de líneas
+  const inventoryTrendData = useMemo(() => {
+    if (!ingredients || ingredients.length === 0) return []
+    const sorted = [...ingredients].sort((a, b) => {
+      const valA = (Number(a.quantity) || 0) * (Number(a.unit_cost) || 0)
+      const valB = (Number(b.quantity) || 0) * (Number(b.unit_cost) || 0)
+      return valB - valA
+    })
+
+    return sorted.slice(0, 8).map((ing) => ({
+      label: ing.name.length > 7 ? ing.name.substring(0, 7) + '..' : ing.name,
+      value: (Number(ing.quantity) || 0) * (Number(ing.unit_cost) || 0),
+      secondaryValue: (Number(ing.min_quantity) || 0) * (Number(ing.unit_cost) || 0)
+    }))
+  }, [ingredients])
+
   const filteredIngredients = useMemo(() => {
     return ingredients.filter((i) => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
   }, [ingredients, searchQuery])
@@ -312,23 +329,40 @@ export default function Inventory() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Large Hero Box (2 cols) */}
         <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs relative overflow-hidden">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+          {/* Header Row: Title & Total + Badge */}
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
                 Valor Total del Inventario
               </span>
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+              <div className="mt-0.5 text-2xl sm:text-3xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+                ${Number(totalInventoryValue).toLocaleString('es-CO')}
+              </div>
+            </div>
+
+            <div className="text-right">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 Inventario Activo
               </span>
+              <p className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-1">
+                Curva de Valorización por Insumo
+              </p>
             </div>
+          </div>
 
-            <div className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-              ${Number(totalInventoryValue).toLocaleString('es-CO')}
-            </div>
-            <p className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-0.5 font-normal">
-              Capital total valorizado en almacén y cocina
-            </p>
+          {/* Center Body: Full-Width MetricLineChart (Valor Actual vs Stock Mínimo) */}
+          <div className="my-2.5 py-1 w-full">
+            <MetricLineChart
+              data={inventoryTrendData}
+              line1Color="#9F6839"
+              line2Color="#d97706"
+              line1Label="Valor Actual"
+              line2Label="Mínimo Alerta"
+              hasSecondary={true}
+              formatValue={(v) => `$${Number(v).toLocaleString('es-CO')}`}
+              height={125}
+            />
           </div>
 
           {/* Sub-breakdown 3 columns at bottom */}
