@@ -790,11 +790,14 @@ export default function Sales() {
 
           <div className="flex items-center gap-2">
             {cartItems.length > 0 && (
-              <button type="button"
+              <button
+                type="button"
                 onClick={clearCart}
-                className="text-xs text-red-600 dark:text-red-400 hover:underline font-bold transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 border border-rose-200/80 dark:border-rose-800/40 transition-all duration-150 cursor-pointer shadow-2xs active:scale-95"
+                title="Vaciar orden actual"
               >
-                Vaciar
+                <Trash2 className="w-3 h-3 text-rose-500" />
+                <span>Vaciar</span>
               </button>
             )}
 
