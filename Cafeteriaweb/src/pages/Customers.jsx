@@ -167,7 +167,11 @@ export default function Customers() {
 
   async function handleDeleteCustomer(customer, e) {
     e?.stopPropagation()
-    const fullName = `${customer.first_name} ${customer.last_name}`.trim()
+    if (!isOwner) {
+      alert('Solo el Dueño (Owner) tiene permisos para eliminar clientes.')
+      return
+    }
+    const fullName = `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || 'Cliente'
     if (!confirm(`¿Eliminar al cliente "${fullName}"? Esta acción no se puede deshacer.`)) return
 
     try {
@@ -697,10 +701,10 @@ export default function Customers() {
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
-                      {(isOwner || isAdmin) && (
+                      {isOwner && (
                         <button type="button"
                           onClick={(e) => handleDeleteCustomer(c, e)}
-                          title="Eliminar Cliente"
+                          title="Eliminar Cliente (Solo Dueño)"
                           className="p-1 text-[#9F6839] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -970,19 +974,31 @@ export default function Customers() {
             </div>
 
             <div className="flex items-center justify-between pt-3 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30">
-              {canSendMessages && selectedCustomer.phone ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsDetailModalOpen(false)
-                    handleOpenWhatsApp(selectedCustomer)
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                >
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  <span>Enviar WhatsApp</span>
-                </button>
-              ) : <div />}
+              <div className="flex items-center gap-2">
+                {canSendMessages && selectedCustomer.phone && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDetailModalOpen(false)
+                      handleOpenWhatsApp(selectedCustomer)
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>Enviar WhatsApp</span>
+                  </button>
+                )}
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteCustomer(selectedCustomer, e)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/40 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Eliminar</span>
+                  </button>
+                )}
+              </div>
 
               <button
                 type="button"

@@ -103,7 +103,6 @@ func main() {
 		r.Post("/customers/{id}/payments", customerHandler.CreatePayment)
 		r.Post("/customers", customerHandler.Create)
 		r.Put("/customers/{id}", customerHandler.Update)
-		r.Delete("/customers/{id}", customerHandler.Delete)
 
 		// Cancelación de ventas y comandas: accesible para cualquier rol
 		r.Post("/sales/{id}/cancel", comandaHandler.CancelComanda)
@@ -121,13 +120,14 @@ func main() {
 		r.Put("/products/{id}/recipe", recipeHandler.Set)
 	})
 
-	// Gestión de usuarios: solo el Dueño (Owner)
+	// Gestión de usuarios y operaciones críticas de cliente: solo el Dueño (Owner)
 	r.Group(func(r chi.Router) {
 		r.Use(custommw.RequireAuth)
 		r.Use(custommw.RequireRole(models.RoleOwner))
 		r.Post("/users", userHandler.Create)
 		r.Put("/users/{id}", userHandler.Update)
 		r.Delete("/users/{id}", userHandler.Delete)
+		r.Delete("/customers/{id}", customerHandler.Delete)
 	})
 
 	// Modificar inventario directamente: solo dueño y admin
