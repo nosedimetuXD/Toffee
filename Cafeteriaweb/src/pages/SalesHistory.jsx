@@ -236,6 +236,27 @@ export default function SalesHistory() {
     return totalSalesCount > 0 ? Math.round(totalBilled / totalSalesCount) : 0
   }, [totalBilled, totalSalesCount])
 
+  // Agrupación y datos de tendencia para la mini gráfica del Hero Card
+  const salesTrendData = useMemo(() => {
+    if (!activeSales || activeSales.length === 0) return []
+    const dateMap = {}
+    const sorted = [...activeSales].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+
+    sorted.forEach((sale) => {
+      const d = new Date(sale.created_at)
+      const label = d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })
+      dateMap[label] = (dateMap[label] || 0) + Number(sale.total || 0)
+    })
+
+    const entries = Object.entries(dateMap).map(([date, total]) => ({ date, total }))
+    return entries.slice(-8)
+  }, [activeSales])
+
+  const maxTrendTotal = useMemo(() => {
+    if (salesTrendData.length === 0) return 1
+    return Math.max(...salesTrendData.map((d) => d.total), 1)
+  }, [salesTrendData])
+
   // Manejo de Cancelación (Abierto a cualquier usuario)
   async function handleCancelSale(sale) {
     const customerLabel = sale.customer_name || 'Cliente General'
@@ -411,27 +432,73 @@ export default function SalesHistory() {
         </div>
       </div>
 
-      {/* Unified Metrics Bar — Compact 2:1 Hero Layout */}
+      {/* Unified Metrics Bar — Compact 2:1 Hero Layout with Dynamic Trend Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {/* Left: Compact Hero Metric Card */}
+        {/* Left: Compact Hero Metric Card with Dynamic Trend Chart */}
         <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
-          <div>
-            <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-              <div className="flex items-center gap-1.5">
-                <DollarSign className="w-3.5 h-3.5 opacity-70" />
-                <span>Total Facturado</span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* Left: Total Facturado Info */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between sm:justify-start gap-2 text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+                <div className="flex items-center gap-1.5">
+                  <DollarSign className="w-3.5 h-3.5 opacity-70" />
+                  <span>Total Facturado</span>
+                </div>
+                <span className="sm:hidden inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  {displayLabel}
+                </span>
               </div>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+              <div className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+                ${Number(totalBilled).toLocaleString('es-CO')}
+              </div>
+              <p className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-0.5 max-w-xs">
+                Ingreso bruto acumulado por ventas en el período seleccionado
+              </p>
+            </div>
+
+            {/* Right: Mini Gráfica de Tendencia y Badge */}
+            <div className="hidden sm:flex flex-col items-end justify-between min-w-[210px] max-w-[270px]">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 mb-1.5 self-end">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 {displayLabel}
               </span>
+
+              {salesTrendData.length > 0 ? (
+                <div className="w-full bg-[#FEE4D7]/20 dark:bg-[#140904]/40 rounded-xl p-2 border border-[#D4B28E]/30 dark:border-[#9F6839]/20 flex flex-col justify-end">
+                  <div className="flex items-center justify-between text-[9px] text-[#9F6839] dark:text-[#DABA8C] font-semibold mb-1 px-0.5">
+                    <span>Actividad / Día</span>
+                    <span className="tabular-nums font-mono">Pico: ${Math.round(maxTrendTotal).toLocaleString('es-CO')}</span>
+                  </div>
+                  <div className="flex items-end gap-1.5 h-11 pt-1 w-full justify-between">
+                    {salesTrendData.map((item, idx) => {
+                      const heightPercent = Math.max((item.total / maxTrendTotal) * 100, 12)
+                      return (
+                        <div
+                          key={idx}
+                          className="flex-1 flex flex-col items-center gap-0.5 group relative cursor-pointer h-full justify-end"
+                        >
+                          {/* Tooltip flotante al hacer hover */}
+                          <div className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#432414] text-[#FEE4D7] text-[9px] font-bold px-1.5 py-0.5 rounded shadow pointer-events-none whitespace-nowrap z-30">
+                            {item.date}: ${item.total.toLocaleString('es-CO')}
+                          </div>
+                          {/* Barra dinámica */}
+                          <div
+                            style={{ height: `${heightPercent}%` }}
+                            className="w-full min-w-[6px] max-w-[16px] rounded-t-sm bg-gradient-to-t from-[#9F6839] to-[#D4B28E] group-hover:from-[#835229] group-hover:to-[#DABA8C] transition-all duration-200 shadow-2xs"
+                          />
+                          <span className="text-[8px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 truncate max-w-[26px] text-center font-mono">
+                            {item.date.split(' ')[0]}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-[10px] text-[#9F6839]/60 italic py-2 self-end">Sin datos para graficar</div>
+              )}
             </div>
-            <div className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-              ${Number(totalBilled).toLocaleString('es-CO')}
-            </div>
-            <p className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-0.5">
-              Ingreso bruto acumulado por ventas en el período seleccionado
-            </p>
           </div>
 
           {/* Sub-breakdown row at bottom */}
@@ -718,7 +785,7 @@ export default function SalesHistory() {
                         <button
                           type="button"
                           onClick={() => handleOpenReceiptModal(sale)}
-                          className="flex-1 py-2 rounded-xl bg-[#9F6839] hover:bg-[#835229] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                          className="flex-1 py-2 rounded-xl bg-[#9F6839] hover:bg-[#835229] text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs"
                         >
                           <Printer className="w-3.5 h-3.5" />
                           <span>Ver Comprobante</span>
@@ -918,9 +985,9 @@ export default function SalesHistory() {
                                     setActiveActionMenuId(null)
                                     handleOpenReceiptModal(sale)
                                   }}
-                                  className="w-full px-3 py-1.5 text-xs text-[#432414] dark:text-[#FEE4D7] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A160D] flex items-center gap-2 cursor-pointer transition-colors"
+                                  className="w-full px-3 py-2 text-xs font-medium text-[#432414] dark:text-[#FEE4D7] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A160D] flex items-center gap-2.5 cursor-pointer transition-colors"
                                 >
-                                  <Printer className="w-3.5 h-3.5 text-[#9F6839]" />
+                                  <Printer className="w-3.5 h-3.5 text-[#9F6839] shrink-0" />
                                   <span>Ver Comprobante</span>
                                 </button>
 
@@ -931,9 +998,9 @@ export default function SalesHistory() {
                                       setActiveActionMenuId(null)
                                       handleCancelSale(sale)
                                     }}
-                                    className="w-full px-3 py-1.5 text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+                                    className="w-full px-3 py-2 text-xs font-medium text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 flex items-center gap-2.5 cursor-pointer transition-colors"
                                   >
-                                    <Ban className="w-3.5 h-3.5 text-amber-600" />
+                                    <Ban className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                                     <span>Cancelar Venta</span>
                                   </button>
                                 )}
@@ -946,9 +1013,9 @@ export default function SalesHistory() {
                                         setActiveActionMenuId(null)
                                         handleOpenEditSale(sale)
                                       }}
-                                      className="w-full px-3 py-1.5 text-xs text-[#432414] dark:text-[#FEE4D7] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A160D] flex items-center gap-2 cursor-pointer transition-colors"
+                                      className="w-full px-3 py-2 text-xs font-medium text-[#432414] dark:text-[#FEE4D7] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A160D] flex items-center gap-2.5 cursor-pointer transition-colors"
                                     >
-                                      <Edit2 className="w-3.5 h-3.5 text-[#9F6839]" />
+                                      <Edit2 className="w-3.5 h-3.5 text-[#9F6839] shrink-0" />
                                       <span>Editar Venta</span>
                                     </button>
 
@@ -958,9 +1025,9 @@ export default function SalesHistory() {
                                         setActiveActionMenuId(null)
                                         handleDeleteSale(sale)
                                       }}
-                                      className="w-full px-3 py-1.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer transition-colors"
+                                      className="w-full px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2.5 cursor-pointer transition-colors"
                                     >
-                                      <Trash2 className="w-3.5 h-3.5" />
+                                      <Trash2 className="w-3.5 h-3.5 shrink-0" />
                                       <span>Eliminar Venta</span>
                                     </button>
                                   </>

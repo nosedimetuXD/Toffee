@@ -24,7 +24,8 @@
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     background-color: #FEE4D7;
     color: #432414;
-    letter-spacing: -0.01em;
+    letter-spacing: normal;
+    word-spacing: 0.02em;
     transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
   }
 
