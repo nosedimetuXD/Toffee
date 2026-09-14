@@ -369,13 +369,16 @@ export default function Customers() {
 
   // Datos de clientes destacados por facturación y cartera para la gráfica de líneas
   const customersTrendData = useMemo(() => {
-    if (!customers || customers.length === 0) return []
-    const sorted = [...customers].sort((a, b) => (Number(b.total_spent) || 0) - (Number(a.total_spent) || 0))
-    return sorted.slice(0, 8).map((c) => ({
-      label: c.name.length > 7 ? c.name.substring(0, 7) + '..' : c.name,
-      value: Number(c.total_spent) || 0,
-      secondaryValue: Number(c.total_debt) || 0
-    }))
+    if (!customers || !Array.isArray(customers) || customers.length === 0) return []
+    const sorted = [...customers].sort((a, b) => (Number(b?.total_spent) || 0) - (Number(a?.total_spent) || 0))
+    return sorted.slice(0, 8).map((c) => {
+      const cName = String(c?.name || `${c?.first_name || ''} ${c?.last_name || ''}`.trim() || 'Cliente')
+      return {
+        label: cName.length > 7 ? cName.substring(0, 7) + '..' : cName,
+        value: Number(c?.total_spent) || 0,
+        secondaryValue: Number(c?.total_debt) || 0
+      }
+    })
   }, [customers])
 
   return (
