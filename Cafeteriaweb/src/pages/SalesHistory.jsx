@@ -775,7 +775,7 @@ export default function SalesHistory() {
                   <th className="px-2.5 py-2 text-right whitespace-nowrap">Total</th>
                   <th className="px-2.5 py-2 text-right whitespace-nowrap">Cobrado</th>
                   <th className="px-2.5 py-2 text-right whitespace-nowrap">Pendiente</th>
-                  <th className="px-2.5 py-2 text-right whitespace-nowrap w-20 min-w-[80px]">Acciones</th>
+                  <th className="px-2.5 py-2 text-right whitespace-nowrap w-12 min-w-[48px]">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
@@ -887,19 +887,9 @@ export default function SalesHistory() {
                         )}
                       </td>
 
-                      {/* Acciones — Compact w-20 with 3-dots Menu Popover (No horizontal cutoff!) */}
-                      <td className="px-2.5 py-1.5 text-right whitespace-nowrap w-20 min-w-[80px]">
-                        <div className="flex items-center justify-end gap-1">
-                          {/* Direct Action: Print Receipt */}
-                          <button
-                            type="button"
-                            onClick={() => handleOpenReceiptModal(sale)}
-                            title="Ver Comprobante"
-                            className="p-1 rounded-md text-[#9F6839] hover:text-[#432414] dark:hover:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] transition-colors cursor-pointer"
-                          >
-                            <Printer className="w-3.5 h-3.5" />
-                          </button>
-
+                      {/* Acciones — Single 3-dots Menu Button (no duplicate receipt button) */}
+                      <td className="px-2.5 py-1.5 text-right whitespace-nowrap w-12 min-w-[48px]">
+                        <div className="flex items-center justify-end">
                           {/* 3-dots Menu Button */}
                           <div className="relative inline-block text-left">
                             <button
