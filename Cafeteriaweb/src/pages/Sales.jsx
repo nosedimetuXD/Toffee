@@ -363,7 +363,6 @@ export default function Sales() {
       setSelectedCustomerId(newCustomerObj.id)
       setSelectedCustomerObj(newCustomerObj)
       setCustomerName(fullName)
-      setCustomerPhone(newCustomerObj.phone || '')
       setCustomerQuery(fullName)
       setIsQuickCustomerModalOpen(false)
       setIsCustomerDropdownOpen(false)
