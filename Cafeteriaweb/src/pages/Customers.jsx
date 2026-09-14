@@ -420,10 +420,10 @@ export default function Customers() {
         </div>
       </div>
 
-      {/* Unified Metrics Bar — Linear / De-AI Style (Hero 2:1 Asymmetric Layout) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+      {/* Unified Metrics Bar — Compact 2:1 Hero Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Large Hero Box (2 cols) */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-xs relative overflow-hidden">
+        <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs relative overflow-hidden">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
@@ -435,18 +435,18 @@ export default function Customers() {
               </span>
             </div>
 
-            <div className="mt-2 text-4xl sm:text-5xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+            <div className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
               ${Number(totalSpentAll).toLocaleString('es-CO')}
             </div>
-            <p className="text-xs text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-1 font-normal">
+            <p className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-0.5 font-normal">
               Total histórico facturado a clientes registrados en el sistema
             </p>
           </div>
 
           {/* Sub-breakdown 3 columns at bottom */}
-          <div className="mt-6 pt-4 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="mt-3 pt-2.5 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 grid grid-cols-3 gap-2">
             <div>
-              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+              <span className="text-[10px] font-semibold text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
                 Total Clientes
               </span>
               <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums block mt-0.5">
@@ -454,7 +454,7 @@ export default function Customers() {
               </span>
             </div>
             <div>
-              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+              <span className="text-[10px] font-semibold text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
                 Clientes Al Día
               </span>
               <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums block mt-0.5">
@@ -462,7 +462,7 @@ export default function Customers() {
               </span>
             </div>
             <div>
-              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+              <span className="text-[10px] font-semibold text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
                 Cartera Pendiente
               </span>
               <span className={`text-xs sm:text-sm font-bold tabular-nums block mt-0.5 ${totalDebtAll > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
@@ -473,42 +473,42 @@ export default function Customers() {
         </div>
 
         {/* Stacked Side Cards (1 col) */}
-        <div className="lg:col-span-1 flex flex-col gap-2.5">
-          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+        <div className="lg:col-span-1 flex flex-col gap-2">
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
               <span>Clientes Registrados</span>
               <Users className="w-3.5 h-3.5 opacity-60" />
             </div>
-            <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+            <div className="my-0.5 text-base sm:text-lg font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
               {totalCustomersCount}
             </div>
-            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+            <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
               Base de datos activa en cafetería
             </span>
           </div>
 
-          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
               <span>Cartera Pendiente</span>
               <AlertTriangle className={`w-3.5 h-3.5 ${totalDebtAll > 0 ? 'text-rose-500' : 'opacity-60'}`} />
             </div>
-            <div className={`my-1 text-xl sm:text-2xl font-bold tracking-tight tabular-nums ${totalDebtAll > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
+            <div className={`my-0.5 text-base sm:text-lg font-black tracking-tight tabular-nums ${totalDebtAll > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
               ${Number(totalDebtAll).toLocaleString('es-CO')}
             </div>
-            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
-              {withDebtCount > 0 ? `${withDebtCount} cliente(s) con saldo por pagar` : 'Cartera al día (sin deudas)'}
+            <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+              {withDebtCount > 0 ? `${withDebtCount} cliente(s) con deuda` : 'Cartera al día'}
             </span>
           </div>
 
-          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
               <span>Clientes Al Día</span>
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
+            <div className="my-0.5 text-base sm:text-lg font-black tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
               {totalCustomersCount - withDebtCount}
             </div>
-            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+            <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
               Sin saldo pendiente
             </span>
           </div>

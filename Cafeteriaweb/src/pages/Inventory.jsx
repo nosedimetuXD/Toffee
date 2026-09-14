@@ -308,10 +308,10 @@ export default function Inventory() {
         </div>
       )}
 
-      {/* Unified Metrics Bar — Linear / De-AI Style (Hero 2:1 Asymmetric Layout) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+      {/* Unified Metrics Bar — Compact 2:1 Hero Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Large Hero Box (2 cols) */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-xs relative overflow-hidden">
+        <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs relative overflow-hidden">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
@@ -323,18 +323,18 @@ export default function Inventory() {
               </span>
             </div>
 
-            <div className="mt-2 text-4xl sm:text-5xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+            <div className="mt-1 text-2xl sm:text-3xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
               ${Number(totalInventoryValue).toLocaleString('es-CO')}
             </div>
-            <p className="text-xs text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-1 font-normal">
+            <p className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-0.5 font-normal">
               Capital total valorizado en almacén y cocina
             </p>
           </div>
 
           {/* Sub-breakdown 3 columns at bottom */}
-          <div className="mt-6 pt-4 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="mt-3 pt-2.5 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 grid grid-cols-3 gap-2">
             <div>
-              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+              <span className="text-[10px] font-semibold text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
                 Insumos Totales
               </span>
               <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums block mt-0.5">
@@ -342,7 +342,7 @@ export default function Inventory() {
               </span>
             </div>
             <div>
-              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+              <span className="text-[10px] font-semibold text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
                 Stock Óptimo
               </span>
               <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums block mt-0.5">
@@ -350,7 +350,7 @@ export default function Inventory() {
               </span>
             </div>
             <div>
-              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+              <span className="text-[10px] font-semibold text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
                 Stock Bajo
               </span>
               <span className={`text-xs sm:text-sm font-bold tabular-nums block mt-0.5 ${lowStockCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
@@ -361,42 +361,42 @@ export default function Inventory() {
         </div>
 
         {/* Stacked Side Cards (1 col) */}
-        <div className="lg:col-span-1 flex flex-col gap-2.5">
-          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+        <div className="lg:col-span-1 flex flex-col gap-2">
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
               <span>Insumos Críticos</span>
               <AlertTriangle className={`w-3.5 h-3.5 ${lowStockCount > 0 ? 'text-amber-600' : 'opacity-60'}`} />
             </div>
-            <div className={`my-1 text-xl sm:text-2xl font-bold tracking-tight tabular-nums ${lowStockCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
+            <div className={`my-0.5 text-base sm:text-lg font-black tracking-tight tabular-nums ${lowStockCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
               {lowStockCount}
             </div>
-            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+            <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
               {lowStockCount > 0 ? 'Requieren reabastecimiento pronto' : 'Todos los insumos sobre el mínimo'}
             </span>
           </div>
 
-          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
               <span>Pérdidas por Mermas</span>
               <ShieldAlert className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
             </div>
-            <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 tabular-nums">
+            <div className="my-0.5 text-base sm:text-lg font-black tracking-tight text-rose-600 dark:text-rose-400 tabular-nums">
               -${Number(totalWasteLoss).toLocaleString('es-CO')}
             </div>
-            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+            <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
               {wasteReports.length} reportes registrados
             </span>
           </div>
 
-          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
               <span>Total Referencias</span>
               <Package className="w-3.5 h-3.5 opacity-60" />
             </div>
-            <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+            <div className="my-0.5 text-base sm:text-lg font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
               {ingredients.length}
             </div>
-            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+            <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
               Insumos activos en el catálogo
             </span>
           </div>
@@ -599,13 +599,13 @@ export default function Inventory() {
             <table className="w-full text-left text-xs">
               <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider text-[11px] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 font-semibold">
                 <tr>
-                  <th className="py-2.5 px-3.5">Insumo</th>
-                  <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Stock</th>
-                  <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Costo/u</th>
-                  <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Min</th>
-                  <th className="py-2.5 px-3.5 text-center whitespace-nowrap">Estado</th>
-                  {!isEmployee && <th className="py-2.5 px-3.5 text-center whitespace-nowrap">Ajuste</th>}
-                  {!isEmployee && <th className="py-2.5 px-4 text-right whitespace-nowrap w-36 min-w-[140px]">Acciones</th>}
+                  <th className="py-2 px-2.5">Insumo</th>
+                  <th className="py-2 px-2.5 text-right whitespace-nowrap">Stock</th>
+                  <th className="py-2 px-2.5 text-right whitespace-nowrap">Costo/u</th>
+                  <th className="py-2 px-2.5 text-right whitespace-nowrap">Min</th>
+                  <th className="py-2 px-2.5 text-center whitespace-nowrap">Estado</th>
+                  {!isEmployee && <th className="py-2 px-2.5 text-center whitespace-nowrap">Ajuste</th>}
+                  {!isEmployee && <th className="py-2 px-2.5 text-right whitespace-nowrap w-20 min-w-[70px]">Acciones</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 text-[#432414] dark:text-[#FEE4D7]">
@@ -613,29 +613,29 @@ export default function Inventory() {
                   const isLow = (Number(ing.quantity) || 0) <= (Number(ing.min_quantity) || 0)
                   return (
                     <tr key={ing.id} className={`hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/70 transition-colors group ${isLow ? 'bg-amber-500/[0.03]' : ''}`}>
-                      <td className="py-2 px-3.5 font-medium text-xs text-[#432414] dark:text-[#FEE4D7]">{ing.name}</td>
-                      <td className="py-2 px-3.5 font-bold text-xs text-right tabular-nums whitespace-nowrap">
-                        {ing.quantity} <span className="text-[11px] font-normal text-[#9F6839] dark:text-[#DABA8C]">{ing.unit}</span>
+                      <td className="py-1.5 px-2.5 font-medium text-xs text-[#432414] dark:text-[#FEE4D7]">{ing.name}</td>
+                      <td className="py-1.5 px-2.5 font-bold text-xs text-right tabular-nums whitespace-nowrap">
+                        {ing.quantity} <span className="text-[10px] font-normal text-[#9F6839] dark:text-[#DABA8C]">{ing.unit}</span>
                       </td>
-                      <td className="py-2 px-3.5 font-normal text-right tabular-nums whitespace-nowrap text-xs">
+                      <td className="py-1.5 px-2.5 font-normal text-right tabular-nums whitespace-nowrap text-xs">
                         ${(ing.unit_cost || 0).toLocaleString('es-CO')}
                       </td>
-                      <td className="py-2 px-3.5 text-[#9F6839] dark:text-[#DABA8C] text-right tabular-nums text-xs whitespace-nowrap">{ing.min_quantity}</td>
-                      <td className="py-2 px-3.5 text-center whitespace-nowrap">
+                      <td className="py-1.5 px-2.5 text-[#9F6839] dark:text-[#DABA8C] text-right tabular-nums text-xs whitespace-nowrap">{ing.min_quantity}</td>
+                      <td className="py-1.5 px-2.5 text-center whitespace-nowrap">
                         {isLow ? (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                             Bajo
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                             OK
                           </span>
                         )}
                       </td>
                       {!isEmployee && (
-                        <td className="py-2 px-3.5 text-center whitespace-nowrap">
+                        <td className="py-1.5 px-2.5 text-center whitespace-nowrap">
                           <div className="flex justify-center items-center gap-1">
                             <button type="button" onClick={() => quickAdjustStock(ing, -1)} className="p-1 rounded-md text-[#9F6839] hover:text-[#432414] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] transition-colors"><Minus className="w-3 h-3" /></button>
                             <button type="button" onClick={() => quickAdjustStock(ing, 1)} className="p-1 rounded-md text-[#9F6839] hover:text-[#432414] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] transition-colors"><Plus className="w-3 h-3" /></button>
@@ -643,8 +643,8 @@ export default function Inventory() {
                         </td>
                       )}
                       {!isEmployee && (
-                        <td className="py-2 px-4 text-right whitespace-nowrap w-36 min-w-[140px]">
-                          <div className="flex items-center justify-end gap-1.5">
+                        <td className="py-1.5 px-2.5 text-right whitespace-nowrap w-20 min-w-[70px]">
+                          <div className="flex items-center justify-end gap-1">
                             <button type="button"
                               onClick={() => openEditModal(ing)}
                               className="p-1 rounded-md text-[#9F6839] hover:text-[#432414] dark:hover:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] transition-colors cursor-pointer"
@@ -779,31 +779,31 @@ export default function Inventory() {
             <table className="w-full text-left text-xs">
               <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider text-[11px] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 font-semibold">
                 <tr>
-                  <th className="py-2.5 px-3.5 whitespace-nowrap">Fecha / Hora</th>
-                  <th className="py-2.5 px-3.5">Insumo</th>
-                  <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Cantidad</th>
-                  <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Descontado</th>
-                  <th className="py-2.5 px-3.5 text-right whitespace-nowrap">Pérdida ($)</th>
-                  <th className="py-2.5 px-3.5">Motivo</th>
+                  <th className="py-2 px-2.5 whitespace-nowrap">Fecha / Hora</th>
+                  <th className="py-2 px-2.5">Insumo</th>
+                  <th className="py-2 px-2.5 text-right whitespace-nowrap">Cantidad</th>
+                  <th className="py-2 px-2.5 text-right whitespace-nowrap">Descontado</th>
+                  <th className="py-2 px-2.5 text-right whitespace-nowrap">Pérdida ($)</th>
+                  <th className="py-2 px-2.5">Motivo</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20 text-[#432414] dark:text-[#FEE4D7]">
                 {wasteReports.map((w) => (
                   <tr key={w.id} className="hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/70 transition-colors">
-                    <td className="py-2 px-3.5 font-medium text-[#9F6839] dark:text-[#DABA8C] tabular-nums whitespace-nowrap text-xs">
+                    <td className="py-1.5 px-2.5 font-medium text-[#9F6839] dark:text-[#DABA8C] tabular-nums whitespace-nowrap text-xs">
                       {new Date(w.created_at).toLocaleString('es-CO')}
                     </td>
-                    <td className="py-2 px-3.5 font-semibold text-xs">{w.ingredient_name || 'Insumo'}</td>
-                    <td className="py-2 px-3.5 text-right tabular-nums whitespace-nowrap text-xs">
+                    <td className="py-1.5 px-2.5 font-semibold text-xs">{w.ingredient_name || 'Insumo'}</td>
+                    <td className="py-1.5 px-2.5 text-right tabular-nums whitespace-nowrap text-xs">
                       {w.user_quantity} {w.user_unit}
                     </td>
-                    <td className="py-2 px-3.5 text-rose-600 dark:text-rose-400 text-right tabular-nums whitespace-nowrap text-xs">
+                    <td className="py-1.5 px-2.5 text-rose-600 dark:text-rose-400 text-right tabular-nums whitespace-nowrap text-xs">
                       -{w.quantity_used} {w.ingredient_unit}
                     </td>
-                    <td className="py-2 px-3.5 font-bold text-rose-600 dark:text-rose-400 text-right tabular-nums whitespace-nowrap text-xs">
+                    <td className="py-1.5 px-2.5 font-bold text-rose-600 dark:text-rose-400 text-right tabular-nums whitespace-nowrap text-xs">
                       -${(w.estimated_loss || 0).toLocaleString('es-CO')}
                     </td>
-                    <td className="py-2 px-3.5 text-xs text-[#9F6839] dark:text-[#DABA8C]">
+                    <td className="py-1.5 px-2.5 text-xs text-[#9F6839] dark:text-[#DABA8C]">
                       {w.reason || '-'}
                     </td>
                   </tr>

@@ -360,10 +360,10 @@ export default function Accounting() {
         </div>
       </div>
 
-      {/* Unified Metrics Bar — Linear / De-AI Style (Hero 2:1 Asymmetric Layout) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
+      {/* Unified Metrics Bar — Compact 2:1 Hero Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Large Hero Box (2 cols) */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-xs relative overflow-hidden">
+        <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs relative overflow-hidden">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
@@ -375,18 +375,18 @@ export default function Accounting() {
               </span>
             </div>
 
-            <div className={`mt-2 text-4xl sm:text-5xl font-black tracking-tight tabular-nums ${balanceNetoCalc >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-rose-600 dark:text-rose-400'}`}>
+            <div className={`mt-1 text-2xl sm:text-3xl font-black tracking-tight tabular-nums ${balanceNetoCalc >= 0 ? 'text-[#432414] dark:text-[#FEE4D7]' : 'text-rose-600 dark:text-rose-400'}`}>
               ${Number(balanceNetoCalc).toLocaleString('es-CO')}
             </div>
-            <p className="text-xs text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-1 font-normal">
+            <p className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-0.5 font-normal">
               Balance neto consolidado del período seleccionado
             </p>
           </div>
 
           {/* Sub-breakdown 3 columns at bottom */}
-          <div className="mt-6 pt-4 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="mt-3 pt-2.5 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 grid grid-cols-3 gap-2">
             <div>
-              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+              <span className="text-[10px] font-semibold text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
                 Ventas POS
               </span>
               <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums block mt-0.5">
@@ -394,7 +394,7 @@ export default function Accounting() {
               </span>
             </div>
             <div>
-              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+              <span className="text-[10px] font-semibold text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
                 Ingresos Extras
               </span>
               <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums block mt-0.5">
@@ -402,7 +402,7 @@ export default function Accounting() {
               </span>
             </div>
             <div>
-              <span className="text-[10px] sm:text-[11px] font-medium text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
+              <span className="text-[10px] font-semibold text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
                 Egresos / Gastos
               </span>
               <span className="text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 tabular-nums block mt-0.5">
@@ -413,42 +413,42 @@ export default function Accounting() {
         </div>
 
         {/* Stacked Side Cards (1 col) */}
-        <div className="lg:col-span-1 flex flex-col gap-2.5">
-          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+        <div className="lg:col-span-1 flex flex-col gap-2">
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
               <span>Ingresos Totales</span>
               <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
+            <div className="my-0.5 text-base sm:text-lg font-black tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
               +${Number(totalIngresosCalc).toLocaleString('es-CO')}
             </div>
-            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+            <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
               {incomes.length} ingresos registrados
             </span>
           </div>
 
-          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
               <span>Gastos Totales</span>
               <TrendingDown className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
             </div>
-            <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-rose-600 dark:text-rose-400 tabular-nums">
+            <div className="my-0.5 text-base sm:text-lg font-black tracking-tight text-rose-600 dark:text-rose-400 tabular-nums">
               -${Number(totalGastosCalc).toLocaleString('es-CO')}
             </div>
-            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+            <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
               {expenses.length} egresos clasificados
             </span>
           </div>
 
-          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex-1 flex flex-col justify-between shadow-xs">
+            <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
               <span>Margen Operativo</span>
               <Wallet className="w-3.5 h-3.5 opacity-60" />
             </div>
-            <div className="my-1 text-xl sm:text-2xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+            <div className="my-0.5 text-base sm:text-lg font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
               {margenOperativo}%
             </div>
-            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
+            <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
               Rentabilidad estimada del período
             </span>
           </div>
@@ -639,52 +639,52 @@ export default function Accounting() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-semibold text-[11px] tracking-wider">
                     <tr>
-                      <th className="px-3.5 py-2.5">Fecha</th>
-                      <th className="px-3.5 py-2.5">Descripción & Categoría</th>
-                      <th className="px-3.5 py-2.5">Método de Pago</th>
-                      <th className="px-3.5 py-2.5">Insumo Reabastecido</th>
-                      <th className="px-3.5 py-2.5 text-right">Monto</th>
-                      <th className="px-3.5 py-2.5">Registrado Por</th>
-                      <th className="px-4 py-2.5 text-right w-36 min-w-[140px]">Acciones</th>
+                      <th className="px-2.5 py-2 whitespace-nowrap">Fecha</th>
+                      <th className="px-2.5 py-2">Descripción & Categoría</th>
+                      <th className="px-2.5 py-2 whitespace-nowrap">Método de Pago</th>
+                      <th className="px-2.5 py-2">Insumo Reabastecido</th>
+                      <th className="px-2.5 py-2 text-right whitespace-nowrap">Monto</th>
+                      <th className="px-2.5 py-2 whitespace-nowrap">Registrado Por</th>
+                      <th className="px-2.5 py-2 text-right whitespace-nowrap w-20 min-w-[70px]">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
                     {expenses.map((e) => (
                       <tr key={e.id} className="hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/70 transition-colors duration-100 group">
-                        <td className="px-3.5 py-2 font-medium text-[#432414] dark:text-[#FEE4D7] whitespace-nowrap text-xs">
+                        <td className="px-2.5 py-1.5 font-medium text-[#432414] dark:text-[#FEE4D7] whitespace-nowrap text-xs">
                           <span className="tabular-nums">{new Date(e.created_at).toLocaleDateString('es-CO')}</span>
-                          <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 font-normal tabular-nums ml-1.5">
+                          <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 font-normal tabular-nums ml-1">
                             {new Date(e.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </td>
-                        <td className="px-3.5 py-2">
+                        <td className="px-2.5 py-1.5">
                           <div className="font-semibold text-[#432414] dark:text-[#FEE4D7] text-xs">{e.description}</div>
                           <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded-md bg-[#FEE4D7]/60 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] text-[10px] font-medium uppercase border border-[#D4B28E]/40 dark:border-[#9F6839]/30">
                             {e.category}
                           </span>
                         </td>
-                        <td className="px-3.5 py-2 capitalize text-[#432414] dark:text-[#FEE4D7] font-normal text-xs">
+                        <td className="px-2.5 py-1.5 capitalize text-[#432414] dark:text-[#FEE4D7] font-normal text-xs">
                           {e.payment_method}
                         </td>
-                        <td className="px-3.5 py-2">
+                        <td className="px-2.5 py-1.5">
                           {e.ingredient_name ? (
                             <div className="text-[#432414] dark:text-[#FEE4D7] font-medium text-xs">
                               {e.ingredient_name}
-                              <span className="text-emerald-600 dark:text-emerald-400 text-[11px] block tabular-nums">+{e.quantity_added} agregados</span>
+                              <span className="text-emerald-600 dark:text-emerald-400 text-[10px] block tabular-nums">+{e.quantity_added} agregados</span>
                             </div>
                           ) : (
                             <span className="text-[#9F6839]/40">-</span>
                           )}
                         </td>
-                        <td className="px-3.5 py-2 font-bold text-rose-600 dark:text-rose-400 text-xs text-right tabular-nums whitespace-nowrap">
+                        <td className="px-2.5 py-1.5 font-bold text-rose-600 dark:text-rose-400 text-xs text-right tabular-nums whitespace-nowrap">
                           -${Number(e.amount).toLocaleString('es-CO')}
                         </td>
-                        <td className="px-3.5 py-2 text-[#9F6839] dark:text-[#DABA8C] font-normal text-xs">
+                        <td className="px-2.5 py-1.5 text-[#9F6839] dark:text-[#DABA8C] font-normal text-xs">
                           {e.registerer_name || 'Personal'}
                         </td>
-                        <td className="px-4 py-2 text-right w-36 min-w-[140px]">
+                        <td className="px-2.5 py-1.5 text-right whitespace-nowrap w-20 min-w-[70px]">
                           {isOwner && (
-                            <div className="flex items-center justify-end gap-1.5">
+                            <div className="flex items-center justify-end gap-1">
                               <button type="button"
                                 onClick={() => handleOpenEditExpense(e)}
                                 className="p-1 text-[#9F6839] hover:text-[#432414] dark:hover:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] rounded-md transition-colors cursor-pointer"
@@ -748,18 +748,18 @@ export default function Accounting() {
 
           {filteredIncomes.length === 0 ? (
             <div className="p-12 text-center text-[#9F6839] dark:text-[#DABA8C]">
-              <TrendingUp className="w-10 h-10 mx-auto mb-2 opacity-40" />
-              <p className="font-semibold text-xs">No hay ingresos registrados para este filtro o periodo</p>
+              <DollarSign className="w-10 h-10 mx-auto mb-2 opacity-40" />
+              <p className="font-semibold text-xs">No hay ingresos registrados</p>
             </div>
           ) : (
             <>
-              {/* MOBILE VIEW FOR INGRESOS (Images 3 & 4: Avatar bubble + Status dot + Expandable drawer) */}
+              {/* MOBILE VIEW FOR INGRESOS */}
               <div className="block md:hidden divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
                 {filteredIncomes.map((inc) => {
                   const isSale = inc.type === 'sale'
                   const isManual = !isSale
                   const isExpanded = expandedIncomeId === `${inc.type || 'inc'}-${inc.id}`
-                  const avatarLabel = isSale ? 'POS' : 'EX'
+                  const initials = (isSale ? 'POS' : inc.description ? inc.description.substring(0, 2) : 'EX').toUpperCase()
 
                   return (
                     <div key={`${inc.type || 'inc'}-${inc.id}`} className="transition-colors">
@@ -769,29 +769,25 @@ export default function Accounting() {
                         className="p-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#FEE4D7]/15 transition-colors select-none"
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          {/* Avatar Bubble */}
-                          <div className={`w-9 h-9 rounded-full font-black text-xs flex items-center justify-center border shrink-0 ${
-                            isSale
-                              ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
-                              : 'bg-[#FEE4D7]/70 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] border-[#D4B28E]/40 dark:border-[#9F6839]/30'
-                          }`}>
-                            {avatarLabel}
+                          {/* Avatar Initials Bubble */}
+                          <div className={`w-9 h-9 rounded-full ${isSale ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-500/30' : 'bg-[#FEE4D7]/70 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] border-[#D4B28E]/40 dark:border-[#9F6839]/30'} font-black text-xs flex items-center justify-center border shrink-0`}>
+                            {initials}
                           </div>
 
                           <div className="min-w-0 flex-1">
                             <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
-                              {inc.description || (isSale ? `Orden #${inc.order_number || inc.sale_id}` : 'Ingreso manual')}
+                              {inc.description || (isSale ? `Venta #${inc.order_number || inc.sale_id}` : 'Ingreso manual')}
                             </div>
                             <div className="flex items-center gap-2 mt-0.5">
                               {isSale ? (
                                 <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
                                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                  Venta POS
+                                  POS {inc.customer_name ? `· ${inc.customer_name}` : ''}
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#9F6839] dark:text-[#DABA8C]">
                                   <span className="w-1.5 h-1.5 rounded-full bg-[#9F6839]" />
-                                  Ingreso Extra
+                                  Extra
                                 </span>
                               )}
                               <span className="text-[10px] text-[#9F6839]/60 dark:text-[#DABA8C]/50 tabular-nums">
@@ -880,12 +876,12 @@ export default function Accounting() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-[#FEE4D7]/30 dark:bg-[#201009] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C] uppercase font-semibold text-[11px] tracking-wider">
                     <tr>
-                      <th className="px-3.5 py-2.5 whitespace-nowrap">Fecha & Hora</th>
-                      <th className="px-3.5 py-2.5 whitespace-nowrap">Tipo / Origen</th>
-                      <th className="px-3.5 py-2.5">Descripción / Concepto</th>
-                      <th className="px-3.5 py-2.5 whitespace-nowrap">Método de Pago</th>
-                      <th className="px-3.5 py-2.5 text-right whitespace-nowrap">Monto Cobrado</th>
-                      <th className="px-4 py-2.5 text-right whitespace-nowrap w-36 min-w-[140px]">Acciones</th>
+                      <th className="px-2.5 py-2 whitespace-nowrap">Fecha & Hora</th>
+                      <th className="px-2.5 py-2 whitespace-nowrap">Tipo / Origen</th>
+                      <th className="px-2.5 py-2">Descripción / Concepto</th>
+                      <th className="px-2.5 py-2 whitespace-nowrap">Método de Pago</th>
+                      <th className="px-2.5 py-2 text-right whitespace-nowrap">Monto Cobrado</th>
+                      <th className="px-2.5 py-2 text-right whitespace-nowrap w-20 min-w-[70px]">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
@@ -899,7 +895,7 @@ export default function Accounting() {
                           className="hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/70 transition-colors duration-100 group"
                         >
                           {/* Fecha y Hora */}
-                          <td className="px-3.5 py-2 whitespace-nowrap font-medium text-[#432414] dark:text-[#FEE4D7] text-xs">
+                          <td className="px-2.5 py-1.5 whitespace-nowrap font-medium text-[#432414] dark:text-[#FEE4D7] text-xs">
                             <span className="tabular-nums">
                               {new Date(inc.created_at).toLocaleDateString('es-CO', {
                                 day: '2-digit',
@@ -907,7 +903,7 @@ export default function Accounting() {
                                 year: 'numeric'
                               })}
                             </span>
-                            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 font-normal tabular-nums ml-1.5">
+                            <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 font-normal tabular-nums ml-1">
                               {new Date(inc.created_at).toLocaleTimeString('es-CO', {
                                 hour: '2-digit',
                                 minute: '2-digit'
@@ -916,7 +912,7 @@ export default function Accounting() {
                           </td>
 
                           {/* Tipo / Origen Badge */}
-                          <td className="px-3.5 py-2 whitespace-nowrap">
+                          <td className="px-2.5 py-1.5 whitespace-nowrap">
                             {isSale ? (
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -931,33 +927,33 @@ export default function Accounting() {
                           </td>
 
                           {/* Concepto */}
-                          <td className="px-3.5 py-2">
+                          <td className="px-2.5 py-1.5">
                             <div className="font-semibold text-[#432414] dark:text-[#FEE4D7] text-xs">
                               {inc.description || (isSale ? `Orden #${inc.order_number || inc.sale_id}` : 'Ingreso manual')}
                             </div>
                             {isSale && inc.customer_name && (
-                              <span className="text-[11px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-normal block">
+                              <span className="text-[10px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-normal block">
                                 Cliente: {inc.customer_name}
                               </span>
                             )}
                           </td>
 
                           {/* Método de Pago */}
-                          <td className="px-3.5 py-2 whitespace-nowrap">
+                          <td className="px-2.5 py-1.5 whitespace-nowrap">
                             <span className="text-xs font-normal capitalize text-[#432414] dark:text-[#FEE4D7]">
                               {inc.payment_method || 'efectivo'}
                             </span>
                           </td>
 
                           {/* Monto Cobrado */}
-                          <td className="px-3.5 py-2 text-right whitespace-nowrap font-bold text-emerald-600 dark:text-emerald-400 text-xs tabular-nums">
+                          <td className="px-2.5 py-1.5 text-right whitespace-nowrap font-bold text-emerald-600 dark:text-emerald-400 text-xs tabular-nums">
                             +${Number(inc.amount).toLocaleString('es-CO')}
                           </td>
 
                           {/* Acciones */}
-                          <td className="px-4 py-2 text-right whitespace-nowrap w-36 min-w-[140px]">
+                          <td className="px-2.5 py-1.5 text-right whitespace-nowrap w-20 min-w-[70px]">
                             {isManual && isOwner ? (
-                              <div className="flex items-center justify-end gap-1.5">
+                              <div className="flex items-center justify-end gap-1">
                                 <button type="button"
                                   onClick={() => handleOpenEditIncome(inc)}
                                   className="p-1 text-[#9F6839] hover:text-[#432414] dark:hover:text-[#FEE4D7] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] rounded-md transition-colors cursor-pointer"
