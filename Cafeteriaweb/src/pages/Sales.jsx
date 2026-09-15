@@ -1305,8 +1305,28 @@ export default function Sales() {
                         type="number"
                         value={cashAmount}
                         onChange={(e) => setCashAmount(e.target.value)}
+                        placeholder={String(effectivePaidAmount)}
                         className="w-full px-3 py-2 bg-white dark:bg-[#201009] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-sm font-bold text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
                       />
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setCashAmount(String(effectivePaidAmount))}
+                        className="px-2.5 py-1 text-xs font-bold rounded-lg border border-[#D4B28E] dark:border-[#9F6839]/60 bg-white dark:bg-[#201009] text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#34180D] transition-colors shadow-xs cursor-pointer"
+                      >
+                        Monto Exacto
+                      </button>
+                      {[10000, 20000, 50000, 100000].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setCashAmount(String(val))}
+                          className="px-2.5 py-1 text-xs font-bold rounded-lg border border-[#D4B28E]/70 dark:border-[#9F6839]/50 bg-white dark:bg-[#201009] text-[#432414] dark:text-[#FEE4D7] hover:bg-[#FEE4D7] dark:hover:bg-[#34180D] transition-colors shadow-xs cursor-pointer"
+                        >
+                          ${val.toLocaleString('es-CO')}
+                        </button>
+                      ))}
                     </div>
                     <div className="flex items-center justify-between text-xs font-bold pt-1">
                       <span className="text-[#9F6839] dark:text-[#DABA8C]">Cambio / Vueltos:</span>

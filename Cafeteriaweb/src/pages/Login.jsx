@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { Coffee, Lock, User, Sparkles } from 'lucide-react'
+import { Coffee, Lock, User, Sparkles, Eye, EyeOff } from 'lucide-react'
 import { ToffeeMarblePattern } from '../components/ToffeeMarblePattern'
 
 export default function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -36,7 +37,7 @@ export default function Login() {
         style={{ backgroundImage: "url('/toffe-pattern-dark.png')" }}
       />
 
-      <div className="relative w-full max-w-md bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-8 shadow-2xl z-10 backdrop-blur-md">
+      <div className="relative w-full max-w-md bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl p-6 sm:p-8 shadow-2xl z-10 backdrop-blur-md">
         {/* Brand Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#432414] dark:bg-[#34180D] border-2 border-[#9F6839] shadow-md mb-4 overflow-hidden p-1">
@@ -57,7 +58,11 @@ export default function Login() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 p-3 rounded-2xl text-xs font-bold text-center">
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 p-3 rounded-xl text-xs font-bold text-center"
+            >
               {error}
             </div>
           )}
@@ -75,8 +80,10 @@ export default function Login() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Ingresa tu usuario"
+                autoComplete="username"
+                aria-invalid={!!error}
                 required
-                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FEE4D7]/20 dark:bg-[#150904] border border-[#D4B28E] dark:border-[#9F6839]/60 text-sm font-semibold text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:ring-2 focus:ring-[#9F6839]"
+                className="w-full pl-10 pr-4 py-2.5 sm:py-3 rounded-xl bg-[#FEE4D7]/20 dark:bg-[#150904] border border-[#D4B28E] dark:border-[#9F6839]/60 text-sm font-semibold text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:ring-2 focus:ring-[#9F6839]"
               />
             </div>
           </div>
@@ -90,20 +97,31 @@ export default function Login() {
                 <Lock className="w-4 h-4 text-[#9F6839]" />
               </div>
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                autoComplete="current-password"
+                aria-invalid={!!error}
                 required
-                className="w-full pl-10 pr-4 py-3 rounded-2xl bg-[#FEE4D7]/20 dark:bg-[#150904] border border-[#D4B28E] dark:border-[#9F6839]/60 text-sm font-semibold text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:ring-2 focus:ring-[#9F6839]"
+                className="w-full pl-10 pr-10 py-2.5 sm:py-3 rounded-xl bg-[#FEE4D7]/20 dark:bg-[#150904] border border-[#D4B28E] dark:border-[#9F6839]/60 text-sm font-semibold text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:ring-2 focus:ring-[#9F6839]"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#9F6839] hover:text-[#835229] dark:text-[#DABA8C] transition-colors cursor-pointer"
+                title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-6 py-3.5 px-4 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white font-extrabold text-sm shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 cursor-pointer"
+            className="w-full mt-6 py-3 px-4 rounded-xl bg-[#9F6839] hover:bg-[#835229] active:scale-[0.99] text-white font-extrabold text-sm shadow-md hover:shadow-lg transition-all duration-150 disabled:opacity-50 cursor-pointer"
           >
             {loading ? 'Iniciando sesión...' : 'Ingresar a Caja / Sistema'}
           </button>

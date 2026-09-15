@@ -27,6 +27,15 @@ func main() {
 		log.Println("no se encontró .env, usando variables de entorno del sistema")
 	}
 
+	jwtSecret := strings.TrimSpace(os.Getenv("JWT_SECRET"))
+	if len(jwtSecret) < 32 {
+		if os.Getenv("ENV") == "production" || os.Getenv("ENVIRONMENT") == "production" {
+			log.Fatalf("error fatal: JWT_SECRET es obligatoria y debe tener al menos 32 caracteres")
+		} else {
+			log.Println("ADVERTENCIA: JWT_SECRET no está configurada o tiene menos de 32 caracteres")
+		}
+	}
+
 	ctx := context.Background()
 
 	pool, err := db.Connect(ctx)
@@ -48,6 +57,7 @@ func main() {
 			w.Header().Set("X-Frame-Options", "DENY")
 			w.Header().Set("X-XSS-Protection", "1; mode=block")
 			w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 			next.ServeHTTP(w, r)
 		})
 	})
