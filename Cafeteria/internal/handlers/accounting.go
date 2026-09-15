@@ -563,7 +563,7 @@ func (h *AccountingHandler) ListIncomes(w http.ResponseWriter, r *http.Request) 
 	rows, err := h.DB.Query(r.Context(), query)
 	if err != nil {
 		log.Printf("error consultando ingresos consolidados: %v", err)
-		http.Error(w, fmt.Sprintf("error consultando ingresos: %v", err), http.StatusInternalServerError)
+		http.Error(w, "error consultando ingresos", http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
@@ -574,7 +574,7 @@ func (h *AccountingHandler) ListIncomes(w http.ResponseWriter, r *http.Request) 
 		if err := rows.Scan(&inc.ID, &inc.Type, &inc.Description, &inc.Amount, &inc.Category, &inc.PaymentMethod,
 			&inc.BankDetails, &inc.CustomerName, &inc.RegisteredBy, &inc.RegistererName, &inc.CreatedAt); err != nil {
 			log.Printf("error leyendo ingresos consolidados: %v", err)
-			http.Error(w, fmt.Sprintf("error leyendo ingresos: %v", err), http.StatusInternalServerError)
+			http.Error(w, "error leyendo ingresos", http.StatusInternalServerError)
 			return
 		}
 		incomes = append(incomes, inc)

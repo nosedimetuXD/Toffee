@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/go-chi/cors"
@@ -50,8 +52,28 @@ func main() {
 		})
 	})
 
+	allowedOriginsEnv := os.Getenv("ALLOWED_ORIGINS")
+	var allowedOrigins []string
+	if allowedOriginsEnv != "" {
+		for _, o := range strings.Split(allowedOriginsEnv, ",") {
+			if trimmed := strings.TrimSpace(o); trimmed != "" {
+				allowedOrigins = append(allowedOrigins, trimmed)
+			}
+		}
+	}
+	if len(allowedOrigins) == 0 {
+		allowedOrigins = []string{
+			"https://toffee-udc.vercel.app",
+			"https://toffee-test-eight.vercel.app",
+			"http://localhost:5173",
+			"http://localhost:3000",
+			"http://localhost:8080",
+			"http://127.0.0.1:5173",
+		}
+	}
+
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
+		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Content-Type", "Authorization", "X-Requested-With"},
 		AllowCredentials: false,

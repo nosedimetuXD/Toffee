@@ -552,7 +552,7 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 		if err != nil {
 			log.Printf("error final creando venta: %v", err)
-			http.Error(w, fmt.Sprintf("error creando venta: %v", err), http.StatusInternalServerError)
+			http.Error(w, "error creando venta", http.StatusInternalServerError)
 			return
 		}
 	}
@@ -874,7 +874,8 @@ func (h *SaleHandler) Update(w http.ResponseWriter, r *http.Request) {
 			`, req.CustomerID, customerName, paymentMethod, cashAmount, transferAmount, strings.TrimSpace(req.BankDetails), subtotal, discountPercent, discountAmount, strings.TrimSpace(req.DiscountReason), total, paidAmount, pendingAmount, paymentStatus, saleID)
 		}
 		if err != nil {
-			http.Error(w, fmt.Sprintf("error actualizando venta: %v", err), http.StatusInternalServerError)
+			log.Printf("error actualizando venta %s: %v", saleID, err)
+			http.Error(w, "error actualizando venta", http.StatusInternalServerError)
 			return
 		}
 	}

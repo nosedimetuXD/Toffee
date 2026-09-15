@@ -1,10 +1,14 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -19,12 +23,26 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+var (
+	jwtSecretOnce sync.Once
+	cachedSecret  []byte
+)
+
 func getJWTSecret() []byte {
-	secret := strings.TrimSpace(os.Getenv("JWT_SECRET"))
-	if secret == "" {
-		secret = "toffee_coffee_super_secret_jwt_key_2026_udc_secure_token"
-	}
-	return []byte(secret)
+	jwtSecretOnce.Do(func() {
+		secret := strings.TrimSpace(os.Getenv("JWT_SECRET"))
+		if secret != "" {
+			cachedSecret = []byte(secret)
+			return
+		}
+		log.Println("ADVERTENCIA DE SEGURIDAD: JWT_SECRET no está configurado. Se generó una clave criptográfica aleatoria para esta instancia.")
+		randomBytes := make([]byte, 32)
+		if _, err := rand.Read(randomBytes); err != nil {
+			log.Fatalf("error generando clave JWT aleatoria: %v", err)
+		}
+		cachedSecret = []byte(hex.EncodeToString(randomBytes))
+	})
+	return cachedSecret
 }
 
 func GenerateToken(userID uuid.UUID, role models.UserRole) (string, error) {
