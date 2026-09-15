@@ -52,24 +52,34 @@ func main() {
 		})
 	})
 
+	defaultOrigins := []string{
+		"https://toffee-udc.vercel.app",
+		"https://toffee-test-eight.vercel.app",
+		"https://toffee.vercel.app",
+		"https://toffe-test.vercel.app",
+		"http://localhost:5173",
+		"http://localhost:3000",
+		"http://localhost:8080",
+		"http://127.0.0.1:5173",
+	}
+
+	allowedOriginsMap := make(map[string]bool)
+	for _, o := range defaultOrigins {
+		allowedOriginsMap[o] = true
+	}
+
 	allowedOriginsEnv := os.Getenv("ALLOWED_ORIGINS")
-	var allowedOrigins []string
 	if allowedOriginsEnv != "" {
 		for _, o := range strings.Split(allowedOriginsEnv, ",") {
 			if trimmed := strings.TrimSpace(o); trimmed != "" {
-				allowedOrigins = append(allowedOrigins, trimmed)
+				allowedOriginsMap[trimmed] = true
 			}
 		}
 	}
-	if len(allowedOrigins) == 0 {
-		allowedOrigins = []string{
-			"https://toffee-udc.vercel.app",
-			"https://toffee-test-eight.vercel.app",
-			"http://localhost:5173",
-			"http://localhost:3000",
-			"http://localhost:8080",
-			"http://127.0.0.1:5173",
-		}
+
+	var allowedOrigins []string
+	for o := range allowedOriginsMap {
+		allowedOrigins = append(allowedOrigins, o)
 	}
 
 	r.Use(cors.Handler(cors.Options{
