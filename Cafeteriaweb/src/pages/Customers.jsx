@@ -27,7 +27,9 @@ import {
   CreditCard,
   Banknote,
   Calendar,
-  Smartphone
+  Smartphone,
+  ChevronDown,
+  Coins
 } from 'lucide-react'
 import { exportCustomersToCSV, exportCustomersToExcel } from '../utils/csvExport'
 import { useAuth } from '../context/AuthContext'

@@ -167,12 +167,15 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 			"SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (COALESCE(c.ready_at, c.updated_at) - c.created_at))/60), 0) FROM comandas c WHERE c.status IN ('listo', 'entregado') AND "+timeCondComandas).Scan(&mStats.AvgPrepTimeMinutes)
 
 		sellerRows, errSellers := h.DB.Query(r.Context(),
-			`SELECT u.username, u.role, COALESCE(SUM(s.total), 0) as total_amount, COUNT(s.id) as sales_count
+			`SELECT COALESCE(u.username, NULLIF(s.sold_by_name, ''), 'Personal') as seller_name,
+			        COALESCE(u.role, 'employee') as seller_role,
+			        COALESCE(SUM(s.total), 0) as total_amount,
+			        COUNT(s.id) as sales_count
 			 FROM sales s
-			 JOIN users u ON s.sold_by = u.id
+			 LEFT JOIN users u ON s.sold_by = u.id
 			 LEFT JOIN comandas c ON c.sale_id = s.id
 			 WHERE (c.status IS NULL OR c.status != 'cancelado') AND `+timeCondSales+`
-			 GROUP BY u.id, u.username, u.role
+			 GROUP BY COALESCE(u.username, NULLIF(s.sold_by_name, ''), 'Personal'), COALESCE(u.role, 'employee')
 			 ORDER BY total_amount DESC
 			 LIMIT 10`)
 		if errSellers == nil {
