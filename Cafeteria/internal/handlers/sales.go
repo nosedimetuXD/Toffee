@@ -372,11 +372,12 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var subtotal float64
 	type resolvedItem struct {
-		ProductID   uuid.UUID
-		ProductName string
-		Quantity    int
-		UnitPrice   float64
-		Notes       string
+		ProductID           uuid.UUID
+		ProductName         string
+		Quantity            int
+		UnitPrice           float64
+		Notes               string
+		RequiresPreparation bool
 	}
 	var resolved []resolvedItem
 
@@ -384,9 +385,10 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		var name string
 		var price float64
 		var active bool
+		var requiresPrep bool
 		err := tx.QueryRow(ctx,
-			`SELECT name, price, active FROM products WHERE id = $1`, item.ProductID,
-		).Scan(&name, &price, &active)
+			`SELECT name, price, active, COALESCE(requires_preparation, true) FROM products WHERE id = $1`, item.ProductID,
+		).Scan(&name, &price, &active, &requiresPrep)
 		if errors.Is(err, pgx.ErrNoRows) {
 			http.Error(w, fmt.Sprintf("producto %s no existe", item.ProductID), http.StatusBadRequest)
 			return
@@ -403,11 +405,12 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 		subtotal += price * float64(item.Quantity)
 		resolved = append(resolved, resolvedItem{
-			ProductID:   item.ProductID,
-			ProductName: name,
-			Quantity:    item.Quantity,
-			UnitPrice:   price,
-			Notes:       item.Notes,
+			ProductID:           item.ProductID,
+			ProductName:         name,
+			Quantity:            item.Quantity,
+			UnitPrice:           price,
+			Notes:               item.Notes,
+			RequiresPreparation: requiresPrep,
 		})
 	}
 
@@ -569,52 +572,58 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, _ = tx.Exec(ctx, `
-		DO $$
-		DECLARE
-			seq_name text;
-		BEGIN
-			IF (SELECT COUNT(*) FROM comandas) = 0 THEN
-				seq_name := pg_get_serial_sequence('comandas', 'order_number');
-				IF seq_name IS NOT NULL AND seq_name != '' THEN
-					EXECUTE 'SELECT setval(' || quote_literal(seq_name) || ', 1, false)';
-				ELSIF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'comandas_order_number_seq') THEN
-					PERFORM setval('comandas_order_number_seq', 1, false);
-				END IF;
-			END IF;
-		END $$;
-	`)
+	// Filtrar solo los ítems que requieren preparación en barra/cocina
+	var prepItems []resolvedItem
+	for _, item := range resolved {
+		if item.RequiresPreparation {
+			prepItems = append(prepItems, item)
+		}
+	}
 
 	var comandaID uuid.UUID
 	var orderNumber int
-	err = tx.QueryRow(ctx,
-		`INSERT INTO comandas (sale_id, customer_name, status, notes) 
-		 VALUES ($1, $2, 'pendiente', '') RETURNING id, order_number`,
-		saleID, customerName,
-	).Scan(&comandaID, &orderNumber)
-	if err != nil {
-		log.Printf("error generando comanda: %v", err)
-		http.Error(w, "error interno generando comanda", http.StatusInternalServerError)
-		return
-	}
-
 	var comandaItems []models.ComandaItem
-	for _, item := range resolved {
-		_, err = tx.Exec(ctx,
-			`INSERT INTO comanda_items (comanda_id, product_id, product_name, quantity, notes)
-			 VALUES ($1, $2, $3, $4, $5)`,
-			comandaID, item.ProductID, item.ProductName, item.Quantity, item.Notes)
+
+	// Solo se genera comanda KDS si hay al menos un producto que requiera preparación (ej. cafés, platos)
+	if len(prepItems) > 0 {
+		// Calcular número diario de comanda (reinicia a 1 cada nuevo día a las 00:00 hora local)
+		err = tx.QueryRow(ctx, `
+			SELECT COALESCE(MAX(order_number), 0) + 1 
+			FROM comandas 
+			WHERE (created_at AT TIME ZONE 'America/Bogota')::date = (now() AT TIME ZONE 'America/Bogota')::date
+		`).Scan(&orderNumber)
+		if err != nil || orderNumber <= 0 {
+			orderNumber = 1
+		}
+
+		err = tx.QueryRow(ctx,
+			`INSERT INTO comandas (order_number, sale_id, customer_name, status, notes) 
+			 VALUES ($1, $2, $3, 'pendiente', '') RETURNING id, order_number`,
+			orderNumber, saleID, customerName,
+		).Scan(&comandaID, &orderNumber)
 		if err != nil {
-			log.Printf("error registrando item de comanda: %v", err)
-			http.Error(w, "error interno registrando comanda", http.StatusInternalServerError)
+			log.Printf("error generando comanda: %v", err)
+			http.Error(w, "error interno generando comanda", http.StatusInternalServerError)
 			return
 		}
-		comandaItems = append(comandaItems, models.ComandaItem{
-			ProductID:   item.ProductID,
-			ProductName: item.ProductName,
-			Quantity:    item.Quantity,
-			Notes:       item.Notes,
-		})
+
+		for _, item := range prepItems {
+			_, err = tx.Exec(ctx,
+				`INSERT INTO comanda_items (comanda_id, product_id, product_name, quantity, notes)
+				 VALUES ($1, $2, $3, $4, $5)`,
+				comandaID, item.ProductID, item.ProductName, item.Quantity, item.Notes)
+			if err != nil {
+				log.Printf("error registrando item de comanda: %v", err)
+				http.Error(w, "error interno registrando comanda", http.StatusInternalServerError)
+				return
+			}
+			comandaItems = append(comandaItems, models.ComandaItem{
+				ProductID:   item.ProductID,
+				ProductName: item.ProductName,
+				Quantity:    item.Quantity,
+				Notes:       item.Notes,
+			})
+		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -645,14 +654,16 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	h.Hub.Publish("comanda_created", map[string]interface{}{
-		"id":            comandaID,
-		"order_number":  orderNumber,
-		"sale_id":       saleID,
-		"customer_name": customerName,
-		"status":        "pendiente",
-		"items":         comandaItems,
-	})
+	if len(prepItems) > 0 {
+		h.Hub.Publish("comanda_created", map[string]interface{}{
+			"id":            comandaID,
+			"order_number":  orderNumber,
+			"sale_id":       saleID,
+			"customer_name": customerName,
+			"status":        "pendiente",
+			"items":         comandaItems,
+		})
+	}
 
 	h.Hub.Publish("inventory_updated", map[string]interface{}{"action": "sale_deduction"})
 

@@ -350,6 +350,8 @@ export default function Customers() {
     window.open(url, '_blank')
   }
 
+  const [expandedCustomerId, setExpandedCustomerId] = useState(null)
+
   const totalCustomersCount = customers.length
   const totalSpentAll = useMemo(() => {
     return customers.reduce((sum, c) => sum + (Number(c.total_spent) || 0), 0)
@@ -360,6 +362,22 @@ export default function Customers() {
   const withDebtCount = useMemo(() => {
     return customers.filter((c) => Number(c.total_debt) > 0).length
   }, [customers])
+  const cleanCount = totalCustomersCount - withDebtCount
+
+  const topCustomer = useMemo(() => {
+    if (!customers || customers.length === 0) return null
+    return [...customers].sort((a, b) => (Number(b.total_spent) || 0) - (Number(a.total_spent) || 0))[0]
+  }, [customers])
+
+  const topCustomerName = topCustomer
+    ? `${topCustomer.first_name || ''} ${topCustomer.last_name || ''}`.trim() || 'Cliente'
+    : 'Ninguno registrado'
+  const topCustomerSpent = topCustomer
+    ? `$${Number(topCustomer.total_spent || 0).toLocaleString('es-CO')}`
+    : '$0'
+
+  const avgSpent = totalCustomersCount > 0 ? totalSpentAll / totalCustomersCount : 0
+  const avgSpentFormatted = `$${Math.round(avgSpent).toLocaleString('es-CO')}`
 
   const filteredCustomers = useMemo(() => {
     if (debtFilter === 'with_debt') {
@@ -371,57 +389,56 @@ export default function Customers() {
     return customers
   }, [customers, debtFilter])
 
-  // Datos de clientes destacados por facturación y cartera para la gráfica de líneas
-  const customersTrendData = useMemo(() => {
-    if (!customers || !Array.isArray(customers) || customers.length === 0) return []
-    const sorted = [...customers].sort((a, b) => (Number(b?.total_spent) || 0) - (Number(a?.total_spent) || 0))
-    return sorted.slice(0, 8).map((c) => {
-      const cName = String(c?.name || `${c?.first_name || ''} ${c?.last_name || ''}`.trim() || 'Cliente')
-      return {
-        label: cName.length > 7 ? cName.substring(0, 7) + '..' : cName,
-        value: Number(c?.total_spent) || 0,
-        secondaryValue: Number(c?.total_debt) || 0
-      }
-    })
-  }, [customers])
+  function toggleExpand(id, e) {
+    e?.stopPropagation()
+    setExpandedCustomerId((prev) => (prev === id ? null : id))
+  }
+
+  function getInitials(first, last) {
+    const f = (first || '').trim()
+    const l = (last || '').trim()
+    if (f && l) return (f[0] + l[0]).toUpperCase()
+    if (f && f.length >= 2) return f.substring(0, 2).toUpperCase()
+    if (f) return f[0].toUpperCase()
+    return 'CL'
+  }
 
   return (
-    <div className="space-y-6 text-[#432414] dark:text-[#FEE4D7]">
+    <div className="space-y-4 sm:space-y-6 text-[#432414] dark:text-[#FEE4D7] max-w-7xl mx-auto">
       {/* Encabezado Principal */}
-      <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-[#FEE4D7] dark:bg-[#2A150C] rounded-xl text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7]">
-                Clientes & CRM
-              </h1>
-              <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
-                Gestión de clientes habituales, preferencias y fidelización
-              </p>
-            </div>
+      <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-[#FEE4D7] dark:bg-[#2A150C] rounded-xl text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 shrink-0">
+            <Users className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#432414] dark:text-[#FEE4D7]">
+              Clientes & Cartera
+            </h1>
+            <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
+              Gestión de clientes, historial de pedidos y control de saldos
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
-          {/* Grupo Exportacion (Solo Dueño y Administrador) */}
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           {canExport && (
             <div className="inline-flex items-center p-0.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-xl shadow-xs">
-              <button type="button"
+              <button
+                type="button"
                 onClick={() => exportCustomersToExcel(customers)}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-all cursor-pointer whitespace-nowrap"
-                title="Descargar listado de clientes en formato Excel (.xls)"
+                title="Descargar listado en Excel"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>Excel</span>
               </button>
               <div className="h-3.5 w-px bg-[#D4B28E]/40 dark:bg-[#9F6839]/40 mx-0.5" />
-              <button type="button"
+              <button
+                type="button"
                 onClick={() => exportCustomersToCSV(customers)}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] rounded-lg transition-all cursor-pointer whitespace-nowrap"
-                title="Descargar en formato CSV"
+                title="Descargar listado en CSV"
               >
                 <Download className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C]" />
                 <span>CSV</span>
@@ -429,9 +446,10 @@ export default function Customers() {
             </div>
           )}
 
-          <button type="button"
+          <button
+            type="button"
             onClick={handleOpenCreate}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#9F6839] hover:bg-[#835229] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#9F6839] hover:bg-[#835229] text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer whitespace-nowrap"
           >
             <UserPlus className="w-4 h-4" />
             <span>Nuevo Cliente</span>
@@ -439,153 +457,116 @@ export default function Customers() {
         </div>
       </div>
 
-      {/* Unified Metrics Bar — Compact 2:1 Hero Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {/* Large Hero Box (2 cols) */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs relative overflow-hidden">
-          {/* Header Row: Title & Total + Badge */}
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
-                Facturación Acumulada Clientes
-              </span>
-              <div className="mt-0.5 text-2xl sm:text-3xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-                ${Number(totalSpentAll).toLocaleString('es-CO')}
-              </div>
-            </div>
-
-            <div className="text-right">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                CRM & Fidelización
-              </span>
-              <div className="flex items-center justify-end gap-3 text-[10px] font-semibold mt-1">
-                <span className="inline-flex items-center gap-1 text-[#9F6839] dark:text-[#DABA8C]">
-                  <span className="w-2 h-2 rounded-full bg-[#9F6839]" /> Facturado
-                </span>
-                <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400">
-                  <span className="w-2 h-2 rounded-full bg-rose-500" /> Cartera
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Center Body: Full-Width MetricLineChart (Facturado vs Cartera) */}
-          <div className="my-2.5 py-1 w-full">
-            <MetricLineChart
-              data={customersTrendData}
-              line1Color="#9F6839"
-              line2Color="#f43f5e"
-              line1Label="Facturado"
-              line2Label="Cartera"
-              hasSecondary={true}
-              formatValue={(v) => `$${Number(v).toLocaleString('es-CO')}`}
-              height={125}
-            />
-          </div>
-
-          {/* Sub-breakdown 3 columns at bottom */}
-          <div className="mt-3 pt-2.5 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 grid grid-cols-3 gap-2">
-            <div>
-              <span className="text-[10px] font-semibold text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
-                Total Clientes
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums block mt-0.5">
-                {totalCustomersCount} registrados
-              </span>
-            </div>
-            <div>
-              <span className="text-[10px] font-semibold text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
-                Clientes Al Día
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums block mt-0.5">
-                {totalCustomersCount - withDebtCount} clientes
-              </span>
-            </div>
-            <div>
-              <span className="text-[10px] font-semibold text-[#9F6839] dark:text-[#DABA8C] block uppercase tracking-wider">
-                Cartera Pendiente
-              </span>
-              <span className={`text-xs sm:text-sm font-bold tabular-nums block mt-0.5 ${totalDebtAll > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
-                ${Number(totalDebtAll).toLocaleString('es-CO')}
-              </span>
-            </div>
-          </div>
+      {/* 1. Barra de 3 mini-métricas superiores */}
+      <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3 grid grid-cols-3 gap-2 text-center shadow-xs">
+        <div className="border-r border-[#D4B28E]/20 dark:border-[#9F6839]/20 pr-1">
+          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
+            Total Clientes
+          </span>
+          <span className="text-xs sm:text-sm font-black text-[#432414] dark:text-[#FEE4D7] tabular-nums block mt-0.5">
+            {totalCustomersCount} registrados
+          </span>
         </div>
-
-        {/* Stacked Side Cards (1 col) */}
-        <div className="lg:col-span-1 flex flex-col gap-2">
-          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex-1 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-              <span>Clientes Registrados</span>
-              <Users className="w-3.5 h-3.5 opacity-60" />
-            </div>
-            <div className="my-0.5 text-base sm:text-lg font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-              {totalCustomersCount}
-            </div>
-            <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
-              Base de datos activa en cafetería
-            </span>
-          </div>
-
-          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex-1 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-              <span>Cartera Pendiente</span>
-              <AlertTriangle className={`w-3.5 h-3.5 ${totalDebtAll > 0 ? 'text-rose-500' : 'opacity-60'}`} />
-            </div>
-            <div className={`my-0.5 text-base sm:text-lg font-black tracking-tight tabular-nums ${totalDebtAll > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
-              ${Number(totalDebtAll).toLocaleString('es-CO')}
-            </div>
-            <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
-              {withDebtCount > 0 ? `${withDebtCount} cliente(s) con deuda` : 'Cartera al día'}
-            </span>
-          </div>
-
-          <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex-1 flex flex-col justify-between shadow-xs">
-            <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-              <span>Clientes Al Día</span>
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div className="my-0.5 text-base sm:text-lg font-black tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
-              {totalCustomersCount - withDebtCount}
-            </div>
-            <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 font-normal">
-              Sin saldo pendiente
-            </span>
-          </div>
+        <div className="border-r border-[#D4B28E]/20 dark:border-[#9F6839]/20 px-1">
+          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block">
+            Clientes al Día
+          </span>
+          <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 tabular-nums block mt-0.5">
+            {cleanCount} sin deuda
+          </span>
+        </div>
+        <div className="pl-1">
+          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 block">
+            Cartera Activa
+          </span>
+          <span className="text-xs sm:text-sm font-black text-rose-600 dark:text-rose-400 tabular-nums block mt-0.5">
+            {withDebtCount} pendientes
+          </span>
         </div>
       </div>
 
-      {/* Buscador y Filtro por Deuda */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#9F6839] dark:text-[#DABA8C]" />
+      {/* 2. Tarjetas Ejecutivas de Cartera y KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* Cartera Pendiente */}
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-400">
+              Cartera Pendiente
+            </span>
+            <Coins className="w-4 h-4 text-rose-500 opacity-80" />
+          </div>
+          <div className="my-1 text-xl sm:text-2xl font-black tracking-tight text-rose-600 dark:text-rose-400 tabular-nums">
+            ${Number(totalDebtAll).toLocaleString('es-CO')}
+          </div>
+          <span className="text-[10px] text-[#9F6839]/80 dark:text-[#DABA8C]/70">
+            Saldo total por cobrar
+          </span>
+        </div>
+
+        {/* Top Comprador */}
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+              Top Comprador
+            </span>
+            <BadgeDollarSign className="w-4 h-4 text-amber-500 opacity-80" />
+          </div>
+          <div className="my-1 text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] truncate">
+            {topCustomerName}
+          </div>
+          <span className="text-[10px] text-[#9F6839]/80 dark:text-[#DABA8C]/70 font-semibold tabular-nums">
+            {topCustomerSpent} facturados
+          </span>
+        </div>
+
+        {/* Promedio de Gasto */}
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 shadow-xs flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+              Promedio de Gasto
+            </span>
+            <Wallet className="w-4 h-4 text-[#9F6839] opacity-80" />
+          </div>
+          <div className="my-1 text-xl sm:text-2xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+            {avgSpentFormatted}
+          </div>
+          <span className="text-[10px] text-[#9F6839]/80 dark:text-[#DABA8C]/70">
+            Gasto medio por cliente
+          </span>
+        </div>
+      </div>
+
+      {/* Buscador y Píldoras de Filtro */}
+      <div className="space-y-2.5">
+        <div className="relative">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9F6839] dark:text-[#DABA8C]" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por nombre, teléfono, email o preferencias (ej. leche de avena)..."
-            className="w-full pl-11 pr-4 py-3 bg-white dark:bg-[#201009] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl text-xs text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:border-[#9F6839] shadow-xs"
+            placeholder="Buscar por nombre, teléfono o correo..."
+            className="w-full pl-10 pr-9 py-2.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] placeholder-[#9F6839]/60 dark:placeholder-[#DABA8C]/50 focus:outline-none focus:border-[#9F6839] shadow-xs"
           />
           {searchQuery && (
-            <button type="button"
+            <button
+              type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#9F6839] dark:text-[#DABA8C]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9F6839] dark:text-[#DABA8C] p-1"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
-        {/* Filtro por estado de deuda */}
-        <div className="inline-flex p-1 bg-white dark:bg-[#201009] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-2xl shadow-xs shrink-0">
+        {/* Píldoras de Filtro de Deuda */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
           <button
             type="button"
             onClick={() => setDebtFilter('all')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
               debtFilter === 'all'
                 ? 'bg-[#9F6839] text-white shadow-xs'
-                : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50'
+                : 'bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 text-[#9F6839] dark:text-[#DABA8C]'
             }`}
           >
             Todos ({customers.length})
@@ -593,201 +574,205 @@ export default function Customers() {
           <button
             type="button"
             onClick={() => setDebtFilter('with_debt')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
               debtFilter === 'with_debt'
-                ? 'bg-red-600 text-white shadow-xs'
-                : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30'
+                ? 'bg-rose-600 text-white shadow-xs'
+                : 'bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 text-rose-600 dark:text-rose-400'
             }`}
           >
-            <span>Con Deuda</span>
-            {withDebtCount > 0 && (
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
-                debtFilter === 'with_debt' ? 'bg-white text-red-600' : 'bg-red-100 text-red-700 dark:bg-red-950'
-              }`}>
-                {withDebtCount}
-              </span>
-            )}
+            <span>Con Deuda ({withDebtCount})</span>
           </button>
           <button
             type="button"
             onClick={() => setDebtFilter('clean')}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
               debtFilter === 'clean'
                 ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'
+                : 'bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 text-emerald-700 dark:text-emerald-400'
             }`}
           >
-            Al Día
+            Al Día ({cleanCount})
           </button>
         </div>
       </div>
 
-      {/* Error state */}
+      {/* Mensaje de error si falla */}
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-2xl flex items-center gap-3 text-xs text-red-600 dark:text-red-400 font-bold">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+        <div className="p-3.5 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-xl flex items-center gap-2.5 text-xs text-red-600 dark:text-red-400 font-bold">
+          <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Lista de Clientes */}
+      {/* Lista de Clientes en Acordeón Touch-Friendly */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 text-[#9F6839] dark:text-[#DABA8C] gap-3">
-          <div className="w-8 h-8 border-3 border-[#9F6839] border-t-transparent rounded-full animate-spin" />
+          <div className="w-7 h-7 border-3 border-[#9F6839] border-t-transparent rounded-full animate-spin" />
           <span className="text-xs font-bold">Cargando clientes...</span>
         </div>
       ) : filteredCustomers.length === 0 ? (
-        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-3xl p-12 text-center shadow-sm">
-          <Users className="w-12 h-12 text-[#9F6839]/40 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-[#432414] dark:text-[#FEE4D7] mb-1">
+        <div className="bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl p-10 text-center shadow-xs">
+          <Users className="w-10 h-10 text-[#9F6839]/40 mx-auto mb-2.5" />
+          <h3 className="text-sm font-bold text-[#432414] dark:text-[#FEE4D7] mb-1">
             {searchQuery || debtFilter !== 'all' ? 'No se encontraron clientes con este filtro' : 'Aún no hay clientes registrados'}
           </h3>
-          <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] mb-5 max-w-md mx-auto">
+          <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] mb-4 max-w-sm mx-auto">
             {searchQuery || debtFilter !== 'all'
-              ? 'Prueba modificando la búsqueda o el filtro de deuda.'
-              : 'Registra los clientes habituales de la cafetería para una atención personalizada.'}
+              ? 'Prueba modificando la búsqueda o el filtro de cartera.'
+              : 'Registra a tus clientes habituales para un control personalizado de pedidos y saldos.'}
           </p>
-          <button type="button"
+          <button
+            type="button"
             onClick={handleOpenCreate}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-2xl text-xs font-bold shadow-md cursor-pointer transition-all"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#9F6839] hover:bg-[#835229] text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-all"
           >
             <UserPlus className="w-4 h-4" />
             <span>Registrar Primer Cliente</span>
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-2">
           {filteredCustomers.map((c) => {
-            const fullName = `${c.first_name} ${c.last_name}`.trim()
+            const fullName = `${c.first_name} ${c.last_name || ''}`.trim()
             const hasDebt = Number(c.total_debt) > 0
+            const isExpanded = expandedCustomerId === c.id
+            const initials = getInitials(c.first_name, c.last_name)
 
             return (
               <div
                 key={c.id}
-                onClick={() => handleOpenDetails(c)}
-                className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 hover:border-[#9F6839] rounded-2xl p-4 shadow-xs hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between group"
+                className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl overflow-hidden shadow-xs transition-all"
               >
-                <div>
-                  {/* Cabecera Tarjeta */}
-                  <div className="flex items-start justify-between gap-3 mb-2.5">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-[#FEE4D7]/60 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] font-bold text-xs flex items-center justify-center border border-[#D4B28E]/40 dark:border-[#9F6839]/30 shrink-0">
-                        {c.first_name?.[0]?.toUpperCase() || 'C'}
+                {/* Cabecera Colapsada (Touch friendly) */}
+                <div
+                  onClick={(e) => toggleExpand(c.id, e)}
+                  className="p-3 sm:p-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/40 select-none transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {/* Avatar Circular */}
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-300 font-extrabold text-xs flex items-center justify-center shrink-0 border border-rose-200 dark:border-rose-900/40">
+                      {initials}
+                    </div>
+
+                    {/* Nombre y Teléfono / Pedidos */}
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-xs sm:text-sm text-[#432414] dark:text-[#FEE4D7] leading-tight truncate">
+                        {fullName}
+                      </h3>
+                      <div className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] truncate mt-0.5">
+                        <span>{c.phone || 'Sin teléfono'}</span>
+                        <span className="mx-1.5 opacity-40">·</span>
+                        <span>{c.total_orders || 0} pedido(s)</span>
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-[#432414] dark:text-[#FEE4D7] text-xs leading-tight truncate group-hover:text-[#9F6839] dark:group-hover:text-[#DABA8C] transition-colors">
-                          {fullName}
-                        </h3>
-                        <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 truncate block mt-0.5">
-                          {c.created_by_username ? `Registrado por ${c.created_by_username}` : 'Cliente Registrado'}
+                    </div>
+                  </div>
+
+                  {/* Estado de Deuda y Flecha Desplegable */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {hasDebt ? (
+                      <span className="text-xs font-black text-rose-600 dark:text-rose-400 tabular-nums">
+                        Debe: ${Number(c.total_debt).toLocaleString('es-CO')}
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                        Al Día
+                      </span>
+                    )}
+                    <span className="text-[#9F6839] dark:text-[#DABA8C]">
+                      {isExpanded ? <ChevronDown className="w-4 h-4 rotate-180 transition-transform" /> : <ChevronDown className="w-4 h-4 transition-transform" />}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Contenido Desplegado */}
+                {isExpanded && (
+                  <div className="px-3 pb-3 sm:px-4 sm:pb-4 pt-1 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 bg-[#FEE4D7]/10 dark:bg-[#180C06]/50 space-y-3">
+                    {/* Cuadros de Facturación y Pedidos */}
+                    <div className="grid grid-cols-2 gap-2 pt-2">
+                      <div className="p-2.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/40 dark:border-[#9F6839]/30 rounded-xl">
+                        <span className="text-[10px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">
+                          Total Facturado
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-[#432414] dark:text-[#FEE4D7] tabular-nums block mt-0.5">
+                          ${Number(c.total_spent || 0).toLocaleString('es-CO')}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/40 dark:border-[#9F6839]/30 rounded-xl">
+                        <span className="text-[10px] font-bold text-[#9F6839] dark:text-[#DABA8C] uppercase tracking-wider block">
+                          Historial Compras
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-[#432414] dark:text-[#FEE4D7] tabular-nums block mt-0.5">
+                          {c.total_orders || 0} compras
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0">
-                      {canSendMessages && c.phone && (
-                        <button type="button"
-                          onClick={(e) => handleOpenWhatsApp(c, e)}
-                          title="Enviar WhatsApp"
-                          className="p-1 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-md transition-colors cursor-pointer"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      <button type="button"
-                        onClick={(e) => handleOpenEdit(c, e)}
-                        title="Editar Cliente"
-                        className="p-1 text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/60 dark:hover:bg-[#34180D] rounded-md transition-colors cursor-pointer"
+                    {/* Notas / Preferencias si existen */}
+                    {c.notes && (
+                      <div className="p-2.5 bg-white dark:bg-[#201009] border border-[#D4B28E]/40 dark:border-[#9F6839]/30 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] flex items-start gap-2">
+                        <Coffee className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C] shrink-0 mt-0.5" />
+                        <span className="text-[11px] italic text-[#9F6839] dark:text-[#DABA8C]">
+                          &ldquo;{c.notes}&rdquo;
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Botonera de Acciones Táctiles Directas */}
+                    <div className="flex items-center gap-2 pt-1 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={(e) => openAccountStatement(c, e)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 hover:bg-[#9F6839] hover:text-white text-[#9F6839] dark:text-[#DABA8C] font-bold text-xs shadow-xs transition-colors cursor-pointer"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
+                        <FileText className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C]" />
+                        <span>Ficha 360</span>
                       </button>
-                      {isOwner && (
-                        <button type="button"
-                          onClick={(e) => handleDeleteCustomer(c, e)}
-                          title="Eliminar Cliente (Solo Dueño)"
-                          className="p-1 text-[#9F6839] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Badges de Estado (Deuda / Al Día) */}
-                  <div className="mb-2.5 flex items-center gap-1.5">
-                    {hasDebt ? (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 tabular-nums">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                        Debe ${Number(c.total_debt).toLocaleString('es-CO')}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        Al día
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Datos de contacto */}
-                  <div className="space-y-1 mb-2.5 text-xs text-[#432414]/80 dark:text-[#FEE4D7]/80">
-                    {c.phone && (
-                      <div className="flex items-center gap-1.5 text-[11px]">
-                        <Phone className="w-3 h-3 text-[#9F6839] dark:text-[#DABA8C] shrink-0" />
-                        <span className="tabular-nums">{c.phone}</span>
-                      </div>
-                    )}
-                    {c.email && (
-                      <div className="flex items-center gap-1.5 text-[11px]">
-                        <Mail className="w-3 h-3 text-[#9F6839] dark:text-[#DABA8C] shrink-0" />
-                        <span className="truncate">{c.email}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Preferencias / Gustos destacados */}
-                  {c.notes && (
-                    <div className="p-2 bg-[#FEE4D7]/30 dark:bg-[#2A160D] border border-[#D4B28E]/30 dark:border-[#9F6839]/20 rounded-lg text-xs text-[#432414] dark:text-[#FEE4D7] mb-2.5 flex items-start gap-1.5">
-                      <Coffee className="w-3.5 h-3.5 shrink-0 text-[#9F6839] dark:text-[#DABA8C] mt-0.5" />
-                      <div className="line-clamp-2 text-[11px] italic text-[#9F6839] dark:text-[#DABA8C]">
-                        &ldquo;{c.notes}&rdquo;
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Botones de Acción de Cuenta y Abonos */}
-                  <div className="pt-2 mb-2 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 flex items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      onClick={(e) => openAccountStatement(c, e)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#FEE4D7]/40 dark:bg-[#2A160D] hover:bg-[#9F6839] hover:text-white text-[#9F6839] dark:text-[#DABA8C] font-semibold text-[11px] transition-colors cursor-pointer"
-                    >
-                      <Wallet className="w-3 h-3" />
-                      <span>Estado de Cuenta</span>
-                    </button>
-
-                    {hasDebt && (
                       <button
                         type="button"
                         onClick={(e) => handleOpenAbono(c, e)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-semibold text-[11px] shadow-xs transition-all cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
                       >
-                        <BadgeDollarSign className="w-3 h-3" />
+                        <BadgeDollarSign className="w-3.5 h-3.5" />
                         <span>Abonar</span>
                       </button>
-                    )}
-                  </div>
-                </div>
 
-                {/* Footer Tarjeta */}
-                <div className="pt-2 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 flex items-center justify-between text-xs text-[#9F6839] dark:text-[#DABA8C]">
-                  <div className="flex items-center gap-1 text-[11px]">
-                    <ShoppingBag className="w-3 h-3" />
-                    <span className="tabular-nums">{c.total_orders || 0} pedidos</span>
+                      {c.phone && canSendMessages && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleOpenWhatsApp(c, e)}
+                          title="Enviar WhatsApp"
+                          className="p-2 rounded-xl bg-white dark:bg-[#201009] border border-emerald-300 dark:border-emerald-800 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors cursor-pointer shadow-xs"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      {/* Botón Editar Directo (Accesible siempre en móviles y escritorio) */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleOpenEdit(c, e)}
+                        title="Editar Cliente"
+                        className="p-2 rounded-xl bg-white dark:bg-[#201009] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] dark:hover:bg-[#34180D] transition-colors cursor-pointer shadow-xs"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+
+                      {/* Botón Eliminar (Solo Dueño) */}
+                      {isOwner && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteCustomer(c, e)}
+                          title="Eliminar Cliente"
+                          className="p-2 rounded-xl bg-white dark:bg-[#201009] border border-red-200 dark:border-red-900/50 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer shadow-xs"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums text-xs">
-                    ${Number(c.total_spent || 0).toLocaleString('es-CO')}
-                  </div>
-                </div>
+                )}
               </div>
             )
           })}

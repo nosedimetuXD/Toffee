@@ -148,6 +148,7 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 			TopCustomers: []models.CustomerStat{},
 			TopProducts:  []models.TopProductStat{},
 			TopBanks:     []models.TopBankStat{},
+			TopSellers:   []models.TopSellerStat{},
 		}
 
 		var monthlySales, monthlyIncomes float64
@@ -165,8 +166,7 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 		_ = h.DB.QueryRow(r.Context(),
 			"SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (COALESCE(c.ready_at, c.updated_at) - c.created_at))/60), 0) FROM comandas c WHERE c.status IN ('listo', 'entregado') AND "+timeCondComandas).Scan(&mStats.AvgPrepTimeMinutes)
 
-		var topSeller models.TopSellerStat
-		errSeller := h.DB.QueryRow(r.Context(),
+		sellerRows, errSellers := h.DB.Query(r.Context(),
 			`SELECT u.username, u.role, COALESCE(SUM(s.total), 0) as total_amount, COUNT(s.id) as sales_count
 			 FROM sales s
 			 JOIN users u ON s.sold_by = u.id
@@ -174,9 +174,18 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 			 WHERE (c.status IS NULL OR c.status != 'cancelado') AND `+timeCondSales+`
 			 GROUP BY u.id, u.username, u.role
 			 ORDER BY total_amount DESC
-			 LIMIT 1`).Scan(&topSeller.Username, &topSeller.Role, &topSeller.TotalAmount, &topSeller.SalesCount)
-		if errSeller == nil {
-			mStats.TopSeller = &topSeller
+			 LIMIT 10`)
+		if errSellers == nil {
+			for sellerRows.Next() {
+				var ts models.TopSellerStat
+				if err := sellerRows.Scan(&ts.Username, &ts.Role, &ts.TotalAmount, &ts.SalesCount); err == nil {
+					mStats.TopSellers = append(mStats.TopSellers, ts)
+				}
+			}
+			sellerRows.Close()
+		}
+		if len(mStats.TopSellers) > 0 {
+			mStats.TopSeller = &mStats.TopSellers[0]
 		}
 
 		prodRows, errProdList := h.DB.Query(r.Context(),

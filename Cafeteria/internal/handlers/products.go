@@ -26,6 +26,7 @@ func NewProductHandler(db *pgxpool.Pool) *ProductHandler {
 
 	_, _ = db.Exec(ctx, `ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT ''`)
 	_, _ = db.Exec(ctx, `ALTER TABLE products ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'Bebidas'`)
+	_, _ = db.Exec(ctx, `ALTER TABLE products ADD COLUMN IF NOT EXISTS requires_preparation BOOLEAN DEFAULT true`)
 
 	_, _ = db.Exec(ctx, `ALTER TABLE sale_items ALTER COLUMN product_id DROP NOT NULL`)
 	_, _ = db.Exec(ctx, `ALTER TABLE comanda_items ALTER COLUMN product_id DROP NOT NULL`)
@@ -59,9 +60,9 @@ func (h *ProductHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	var p models.Product
 	err = h.DB.QueryRow(r.Context(),
-		`SELECT id, name, description, price, COALESCE(category, 'Bebidas'), COALESCE(image_url, ''), active, created_at, updated_at
+		`SELECT id, name, description, price, COALESCE(category, 'Bebidas'), COALESCE(image_url, ''), COALESCE(requires_preparation, true), active, created_at, updated_at
 		 FROM products WHERE id = $1`, id,
-	).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.Category, &p.ImageURL, &p.Active, &p.CreatedAt, &p.UpdatedAt)
+	).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.Category, &p.ImageURL, &p.RequiresPreparation, &p.Active, &p.CreatedAt, &p.UpdatedAt)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		http.Error(w, "producto no encontrado", http.StatusNotFound)
@@ -79,12 +80,13 @@ func (h *ProductHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 // PUT /products/{id}
 type updateProductRequest struct {
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	Price       float64 `json:"price"`
-	Category    string  `json:"category"`
-	ImageURL    string  `json:"image_url"`
-	Active      bool    `json:"active"`
+	Name                string  `json:"name"`
+	Description         string  `json:"description"`
+	Price               float64 `json:"price"`
+	Category            string  `json:"category"`
+	ImageURL            string  `json:"image_url"`
+	RequiresPreparation *bool   `json:"requires_preparation"`
+	Active              bool    `json:"active"`
 }
 
 func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -109,14 +111,19 @@ func (h *ProductHandler) Update(w http.ResponseWriter, r *http.Request) {
 		req.Category = "Bebidas"
 	}
 
+	reqPrep := true
+	if req.RequiresPreparation != nil {
+		reqPrep = *req.RequiresPreparation
+	}
+
 	var p models.Product
 	err = h.DB.QueryRow(r.Context(),
 		`UPDATE products
-		 SET name = $1, description = $2, price = $3, category = $4, image_url = $5, active = $6, updated_at = now()
-		 WHERE id = $7
-		 RETURNING id, name, description, price, COALESCE(category, 'Bebidas'), COALESCE(image_url, ''), active, created_at, updated_at`,
-		req.Name, req.Description, req.Price, req.Category, req.ImageURL, req.Active, id,
-	).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.Category, &p.ImageURL, &p.Active, &p.CreatedAt, &p.UpdatedAt)
+		 SET name = $1, description = $2, price = $3, category = $4, image_url = $5, requires_preparation = $6, active = $7, updated_at = now()
+		 WHERE id = $8
+		 RETURNING id, name, description, price, COALESCE(category, 'Bebidas'), COALESCE(image_url, ''), COALESCE(requires_preparation, true), active, created_at, updated_at`,
+		req.Name, req.Description, req.Price, req.Category, req.ImageURL, reqPrep, req.Active, id,
+	).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.Category, &p.ImageURL, &p.RequiresPreparation, &p.Active, &p.CreatedAt, &p.UpdatedAt)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		http.Error(w, "producto no encontrado", http.StatusNotFound)
@@ -165,7 +172,7 @@ func (h *ProductHandler) Delete(w http.ResponseWriter, r *http.Request) {
 // GET /products
 func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
 	rows, err := h.DB.Query(r.Context(),
-		`SELECT id, name, description, price, COALESCE(category, 'Bebidas'), COALESCE(image_url, ''), active, created_at, updated_at
+		`SELECT id, name, description, price, COALESCE(category, 'Bebidas'), COALESCE(image_url, ''), COALESCE(requires_preparation, true), active, created_at, updated_at
 		 FROM products
 		 ORDER BY name`)
 	if err != nil {
@@ -178,7 +185,7 @@ func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
 	var products []models.Product
 	for rows.Next() {
 		var p models.Product
-		if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.Category, &p.ImageURL, &p.Active, &p.CreatedAt, &p.UpdatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.Category, &p.ImageURL, &p.RequiresPreparation, &p.Active, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			http.Error(w, "error leyendo productos", http.StatusInternalServerError)
 			return
 		}
@@ -191,11 +198,12 @@ func (h *ProductHandler) List(w http.ResponseWriter, r *http.Request) {
 
 // POST /products
 type createProductRequest struct {
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	Price       float64 `json:"price"`
-	Category    string  `json:"category"`
-	ImageURL    string  `json:"image_url"`
+	Name                string  `json:"name"`
+	Description         string  `json:"description"`
+	Price               float64 `json:"price"`
+	Category            string  `json:"category"`
+	ImageURL            string  `json:"image_url"`
+	RequiresPreparation *bool   `json:"requires_preparation"`
 }
 
 func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -213,13 +221,18 @@ func (h *ProductHandler) Create(w http.ResponseWriter, r *http.Request) {
 		req.Category = "Bebidas"
 	}
 
+	reqPrep := true
+	if req.RequiresPreparation != nil {
+		reqPrep = *req.RequiresPreparation
+	}
+
 	var p models.Product
 	err := h.DB.QueryRow(r.Context(),
-		`INSERT INTO products (name, description, price, category, image_url)
-		 VALUES ($1, $2, $3, $4, $5)
-		 RETURNING id, name, description, price, COALESCE(category, 'Bebidas'), COALESCE(image_url, ''), active, created_at, updated_at`,
-		req.Name, req.Description, req.Price, req.Category, req.ImageURL,
-	).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.Category, &p.ImageURL, &p.Active, &p.CreatedAt, &p.UpdatedAt)
+		`INSERT INTO products (name, description, price, category, image_url, requires_preparation)
+		 VALUES ($1, $2, $3, $4, $5, $6)
+		 RETURNING id, name, description, price, COALESCE(category, 'Bebidas'), COALESCE(image_url, ''), COALESCE(requires_preparation, true), active, created_at, updated_at`,
+		req.Name, req.Description, req.Price, req.Category, req.ImageURL, reqPrep,
+	).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.Category, &p.ImageURL, &p.RequiresPreparation, &p.Active, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		log.Printf("error insertando producto: %v", err)
 		http.Error(w, "error creando producto", http.StatusInternalServerError)

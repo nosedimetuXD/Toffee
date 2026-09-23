@@ -14,6 +14,8 @@ import {
   Building2,
   AlertTriangle,
   Trophy,
+  Crown,
+  Medal,
   Clock,
   ChevronDown,
   ChevronLeft,
@@ -273,14 +275,68 @@ export default function Stats() {
         )
       })()}
 
-      {/* Rankings Grid: Top 10 Productos Más Vendidos y Top 10 Clientes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      {/* Rankings Grid: Top Vendedores, Top Productos y Top Clientes */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {/* Top Vendedores del Período */}
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 sm:p-5 space-y-3">
+          <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/20 dark:border-[#9F6839]/20">
+            <h3 className="text-xs font-semibold text-[#432414] dark:text-[#FEE4D7] flex items-center gap-2 uppercase tracking-wider">
+              <Trophy className="w-4 h-4 text-amber-500" />
+              <span>Top Vendedores</span>
+            </h3>
+            <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70">Por facturación</span>
+          </div>
+
+          {!mStats?.top_sellers || mStats.top_sellers.length === 0 ? (
+            <p className="text-xs text-[#9F6839]/70 dark:text-[#DABA8C]/70 py-6 text-center">No hay ventas registradas por personal en este período.</p>
+          ) : (
+            <div className="divide-y divide-[#D4B28E]/15 dark:divide-[#9F6839]/15 max-h-[380px] overflow-y-auto pr-1">
+              {mStats.top_sellers.map((seller, idx) => (
+                <div key={seller.username || idx} className="py-2.5 px-2 flex items-center justify-between gap-3 hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A160D]/50 transition-colors rounded-lg">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className={`w-5 h-5 rounded text-[11px] font-bold flex items-center justify-center shrink-0 tabular-nums ${
+                      idx === 0 ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30' :
+                      idx === 1 ? 'bg-slate-300/40 text-slate-700 dark:text-slate-300 border border-slate-400/30' :
+                      idx === 2 ? 'bg-amber-700/20 text-amber-800 dark:text-amber-300 border border-amber-700/30' :
+                      'bg-[#FEE4D7]/50 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/40 dark:border-[#9F6839]/30'
+                    }`}>
+                      {idx === 0 ? (
+                        <Crown className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                      ) : idx === 1 ? (
+                        <Medal className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+                      ) : idx === 2 ? (
+                        <Medal className="w-3.5 h-3.5 text-amber-800 dark:text-amber-400" />
+                      ) : (
+                        <span>{idx + 1}</span>
+                      )}
+                    </span>
+                    <div className="min-w-0">
+                      <span className="text-xs font-bold text-[#432414] dark:text-[#FEE4D7] truncate block">{seller.username}</span>
+                      <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 capitalize block">
+                        {seller.role === 'owner' ? 'Dueño' : seller.role === 'admin' ? 'Admin' : 'Empleado'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-xs font-bold text-[#432414] dark:text-[#FEE4D7] block tabular-nums">
+                      ${Number(seller.total_amount).toLocaleString('es-CO')}
+                    </span>
+                    <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 tabular-nums">
+                      {seller.sales_count} venta(s)
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Top 10 Productos Más Vendidos */}
         <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 sm:p-5 space-y-3">
           <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/20 dark:border-[#9F6839]/20">
             <h3 className="text-xs font-semibold text-[#432414] dark:text-[#FEE4D7] flex items-center gap-2 uppercase tracking-wider">
               <Award className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
-              <span>Top 10 Productos Más Vendidos</span>
+              <span>Top Productos</span>
             </h3>
             <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70">Por unidades</span>
           </div>
@@ -308,11 +364,11 @@ export default function Stats() {
         </div>
 
         {/* Top 10 Clientes del Periodo */}
-        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 sm:p-5 space-y-3">
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 sm:p-5 space-y-3 md:col-span-2 lg:col-span-1">
           <div className="flex items-center justify-between pb-3 border-b border-[#D4B28E]/20 dark:border-[#9F6839]/20">
             <h3 className="text-xs font-semibold text-[#432414] dark:text-[#FEE4D7] flex items-center gap-2 uppercase tracking-wider">
               <Users className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
-              <span>Top 10 Clientes del Periodo</span>
+              <span>Top Clientes</span>
             </h3>
             <span className="text-[11px] text-[#9F6839]/70 dark:text-[#DABA8C]/70">Por facturación</span>
           </div>

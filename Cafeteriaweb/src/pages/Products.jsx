@@ -4,7 +4,7 @@ import { api } from '../api/client'
 import Modal from '../components/Modal'
 import { useAuth } from '../context/AuthContext'
 import { compressAndReadFile } from '../utils/imageUtils'
-import { Coffee, Plus, Edit2, Trash2, Search, BookOpen, Image as ImageIcon, Upload, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react'
+import { Coffee, Plus, Edit2, Trash2, Search, BookOpen, Image as ImageIcon, Upload, CheckCircle2, XCircle, AlertTriangle, Zap } from 'lucide-react'
 
 const DEFAULT_PRODUCT_IMAGE = 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80'
 
@@ -28,6 +28,7 @@ export default function Products() {
   const [price, setPrice] = useState('')
   const [category, setCategory] = useState('Café')
   const [imageUrl, setImageUrl] = useState('')
+  const [requiresPreparation, setRequiresPreparation] = useState(true)
   const [isActive, setIsActive] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
@@ -57,6 +58,7 @@ export default function Products() {
     setPrice('')
     setCategory('Café')
     setImageUrl('')
+    setRequiresPreparation(true)
     setIsActive(true)
     setFormError('')
     setIsModalOpen(true)
@@ -69,6 +71,7 @@ export default function Products() {
     setPrice(String(prod.price))
     setCategory(prod.category || 'Café')
     setImageUrl(prod.image_url || '')
+    setRequiresPreparation(prod.requires_preparation ?? true)
     const currentActive = typeof prod.active !== 'undefined' ? prod.active : (prod.is_active ?? true)
     setIsActive(currentActive)
     setFormError('')
@@ -95,6 +98,7 @@ export default function Products() {
         price: Number(price),
         category: category.trim() || 'Café',
         image_url: imageUrl.trim(),
+        requires_preparation: requiresPreparation,
         active: isActive,
         is_active: isActive
       }
@@ -124,6 +128,7 @@ export default function Products() {
         price: prod.price,
         category: prod.category || 'Café',
         image_url: prod.image_url || '',
+        requires_preparation: prod.requires_preparation ?? true,
         active: !currentActive,
         is_active: !currentActive
       })
@@ -240,10 +245,16 @@ export default function Products() {
                       e.target.src = DEFAULT_PRODUCT_IMAGE
                     }}
                   />
-                  <div className="absolute top-2 left-2">
+                  <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
                     <span className="px-2 py-0.5 rounded-md bg-[#201009]/85 text-[#FEE4D7] font-semibold text-[10px] backdrop-blur-xs shadow-xs">
                       {prod.category || 'General'}
                     </span>
+                    {(prod.requires_preparation === false) && (
+                      <span className="px-1.5 py-0.5 rounded-md bg-amber-600/90 text-white font-bold text-[9px] backdrop-blur-xs shadow-xs flex items-center gap-1">
+                        <Zap className="w-2.5 h-2.5" />
+                        <span>Listo / Directo</span>
+                      </span>
+                    )}
                   </div>
                   <div className="absolute top-2 right-2">
                     <button
@@ -432,6 +443,25 @@ export default function Products() {
               placeholder="Notas de sabor, preparación o presentación..."
               className="w-full px-3.5 py-2.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] text-sm font-semibold text-[#432414] dark:text-[#FEE4D7]"
             />
+          </div>
+
+          {/* Toggle Requiere Preparación en Cocina */}
+          <div className="p-3 bg-[#FEE4D7]/40 dark:bg-[#2A160D] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-xl space-y-1">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="requires-prep-check"
+                checked={requiresPreparation}
+                onChange={(e) => setRequiresPreparation(e.target.checked)}
+                className="w-4 h-4 rounded text-[#9F6839] cursor-pointer"
+              />
+              <label htmlFor="requires-prep-check" className="text-xs font-bold text-[#432414] dark:text-[#FEE4D7] cursor-pointer">
+                ¿Requiere preparación en barra/cocina? (Aparece en Comandas KDS)
+              </label>
+            </div>
+            <p className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] pl-6 leading-tight">
+              Desmarca esta opción si el producto ya está listo (ej. buñuelos, gaseosas o empaquetados) para que se venda normalmente sin generar comanda en la pantalla de cocina.
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
