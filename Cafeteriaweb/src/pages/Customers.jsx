@@ -725,7 +725,7 @@ export default function Customers() {
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
                           <Coffee className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                          <span>Fidelización (1 Café Gratis c/10 compras)</span>
+                          <span>Fidelización</span>
                         </span>
                         {(c.available_free_coffees || 0) > 0 ? (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white shadow-xs">

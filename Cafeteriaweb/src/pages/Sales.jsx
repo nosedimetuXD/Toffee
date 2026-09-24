@@ -1284,7 +1284,7 @@ export default function Sales() {
                       <div className="flex items-center gap-1.5">
                         <Coffee className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                         <span className="font-extrabold text-amber-900 dark:text-amber-200 text-xs">
-                          Fidelización (1 Café Gratis c/10 compras)
+                          Fidelización
                         </span>
                       </div>
                       {(selectedCustomerObj.available_free_coffees || 0) > 0 ? (
