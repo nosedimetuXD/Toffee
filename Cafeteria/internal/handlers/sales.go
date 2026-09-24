@@ -663,7 +663,7 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 			           JOIN sales s2 ON si.sale_id = s2.id
 			           LEFT JOIN products p ON si.product_id = p.id
 			           WHERE s2.customer_id = $1 AND s2.status != 'cancelada'
-			             AND (p.category ILIKE '%caf%' OR si.product_name ILIKE '%caf%')
+			             AND p.category ILIKE '%caf%'
 			       ), 0),
 			       COALESCE((
 			           SELECT SUM(COALESCE(s3.redeemed_coffees, 0))
@@ -967,7 +967,7 @@ func (h *SaleHandler) Update(w http.ResponseWriter, r *http.Request) {
 			           JOIN sales s2 ON si.sale_id = s2.id
 			           LEFT JOIN products p ON si.product_id = p.id
 			           WHERE s2.customer_id = $1 AND s2.status != 'cancelada'
-			             AND (p.category ILIKE '%caf%' OR si.product_name ILIKE '%caf%')
+			             AND p.category ILIKE '%caf%'
 			       ), 0),
 			       COALESCE((
 			           SELECT SUM(COALESCE(s3.redeemed_coffees, 0))
@@ -1091,7 +1091,7 @@ func (h *SaleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 			           JOIN sales s2 ON si.sale_id = s2.id
 			           LEFT JOIN products p ON si.product_id = p.id
 			           WHERE s2.customer_id = $1 AND s2.status != 'cancelada'
-			             AND (p.category ILIKE '%caf%' OR si.product_name ILIKE '%caf%')
+			             AND p.category ILIKE '%caf%'
 			       ), 0),
 			       COALESCE((
 			           SELECT SUM(COALESCE(s3.redeemed_coffees, 0))

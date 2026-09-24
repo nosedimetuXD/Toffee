@@ -234,7 +234,7 @@ export default function Sales() {
 
   const coffeeItemsInCart = useMemo(() => {
     return cartItems.filter(
-      (it) => (it.product.category || '').toLowerCase().includes('caf') || it.product.name.toLowerCase().includes('caf')
+      (it) => (it.product.category || '').toLowerCase().includes('caf')
     )
   }, [cartItems])
 

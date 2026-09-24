@@ -81,7 +81,7 @@ func (h *CustomerHandler) List(w http.ResponseWriter, r *http.Request) {
 		           LEFT JOIN products p ON si.product_id = p.id
 		           WHERE s.customer_id = c.id 
 		             AND s.status != 'cancelada'
-		             AND (p.category ILIKE '%caf%' OR si.product_name ILIKE '%caf%')
+		             AND p.category ILIKE '%caf%'
 		       ), 0) AS total_coffees,
 		       COALESCE((
 		           SELECT SUM(COALESCE(s.redeemed_coffees, 0))
@@ -159,7 +159,7 @@ func (h *CustomerHandler) Get(w http.ResponseWriter, r *http.Request) {
 		           LEFT JOIN products p ON si.product_id = p.id
 		           WHERE s.customer_id = c.id 
 		             AND s.status != 'cancelada'
-		             AND (p.category ILIKE '%caf%' OR si.product_name ILIKE '%caf%')
+		             AND p.category ILIKE '%caf%'
 		       ), 0) AS total_coffees,
 		       COALESCE((
 		           SELECT SUM(COALESCE(s.redeemed_coffees, 0))
@@ -330,7 +330,7 @@ func (h *CustomerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		           LEFT JOIN products p ON si.product_id = p.id
 		           WHERE s.customer_id = c.id 
 		             AND s.status != 'cancelada'
-		             AND (p.category ILIKE '%caf%' OR si.product_name ILIKE '%caf%')
+		             AND p.category ILIKE '%caf%'
 		       ), 0) AS total_coffees,
 		       COALESCE((
 		           SELECT SUM(COALESCE(s.redeemed_coffees, 0))
@@ -417,7 +417,7 @@ func (h *CustomerHandler) GetAccount(w http.ResponseWriter, r *http.Request) {
 		           LEFT JOIN products p ON si.product_id = p.id
 		           WHERE s.customer_id = c.id 
 		             AND s.status != 'cancelada'
-		             AND (p.category ILIKE '%caf%' OR si.product_name ILIKE '%caf%')
+		             AND p.category ILIKE '%caf%'
 		       ), 0) AS total_coffees,
 		       COALESCE((
 		           SELECT SUM(COALESCE(s.redeemed_coffees, 0))
