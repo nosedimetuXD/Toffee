@@ -299,25 +299,60 @@ func (h *CustomerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var c models.Customer
-	err = h.DB.QueryRow(r.Context(), `
+	tag, err := h.DB.Exec(r.Context(), `
 		UPDATE customers
 		SET first_name = $1, last_name = $2, phone = $3, email = $4, notes = $5, updated_at = now()
 		WHERE id = $6
-		RETURNING id, first_name, last_name, phone, email, notes, created_by, created_by_username, created_at, updated_at
-	`, req.FirstName, strings.TrimSpace(req.LastName), strings.TrimSpace(req.Phone), strings.TrimSpace(req.Email), strings.TrimSpace(req.Notes), customerID).Scan(
-		&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt,
-	)
+	`, req.FirstName, strings.TrimSpace(req.LastName), strings.TrimSpace(req.Phone), strings.TrimSpace(req.Email), strings.TrimSpace(req.Notes), customerID)
+	if err != nil {
+		log.Printf("error actualizando cliente: %v", err)
+		http.Error(w, "error actualizando cliente", http.StatusInternalServerError)
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		http.Error(w, "cliente no encontrado", http.StatusNotFound)
+		return
+	}
+
+	var c models.Customer
+	err = h.DB.QueryRow(r.Context(), `
+		SELECT c.id, c.first_name, COALESCE(c.last_name, ''), COALESCE(c.phone, ''), 
+		       COALESCE(c.email, ''), COALESCE(c.notes, ''), c.created_by, COALESCE(c.created_by_username, ''),
+		       c.created_at, c.updated_at,
+		       COALESCE((SELECT SUM(s.total) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada'), 0) AS total_spent,
+		       COALESCE((SELECT COUNT(s.id) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada'), 0) AS total_orders,
+		       COALESCE((SELECT SUM(s.pending_amount) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada'), 0) AS total_debt,
+		       (SELECT MAX(s.created_at) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada') AS last_order_date,
+		       COALESCE((
+		           SELECT SUM(si.quantity)
+		           FROM sale_items si
+		           JOIN sales s ON si.sale_id = s.id
+		           LEFT JOIN products p ON si.product_id = p.id
+		           WHERE s.customer_id = c.id 
+		             AND s.status != 'cancelada'
+		             AND (p.category ILIKE '%caf%' OR si.product_name ILIKE '%caf%')
+		       ), 0) AS total_coffees,
+		       COALESCE((
+		           SELECT SUM(COALESCE(s.redeemed_coffees, 0))
+		           FROM sales s
+		           WHERE s.customer_id = c.id AND s.status != 'cancelada'
+		       ), 0) AS redeemed_coffees
+		FROM customers c
+		WHERE c.id = $1
+	`, customerID).Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate, &c.TotalCoffees, &c.RedeemedCoffees)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		http.Error(w, "cliente no encontrado", http.StatusNotFound)
 		return
 	}
 	if err != nil {
-		log.Printf("error actualizando cliente: %v", err)
-		http.Error(w, "error actualizando cliente", http.StatusInternalServerError)
+		log.Printf("error obteniendo cliente actualizado: %v", err)
+		http.Error(w, "error obteniendo cliente actualizado", http.StatusInternalServerError)
 		return
 	}
+
+	c.AvailableFreeCoffees = int(math.Max(0, float64((c.TotalCoffees/10)-c.RedeemedCoffees)))
+	c.CoffeeProgress = c.TotalCoffees % 10
 
 	if h.Hub != nil {
 		h.Hub.Publish("customer_updated", c)
