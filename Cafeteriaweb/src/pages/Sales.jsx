@@ -208,6 +208,9 @@ export default function Sales() {
     setCartItems((prev) => prev.filter((item) => item.product.id !== productId))
   }
 
+  // Fidelización 10 cafés = 1 café gratis
+  const [redeemedCoffeeProductId, setRedeemedCoffeeProductId] = useState(null)
+
   function clearCart() {
     setCartItems([])
     setTableNumber('')
@@ -217,6 +220,7 @@ export default function Sales() {
     setDiscountReason('')
     setSelectedCustomerId(null)
     setSelectedCustomerObj(null)
+    setRedeemedCoffeeProductId(null)
     setIsMobileCartOpen(false)
   }
 
@@ -228,13 +232,35 @@ export default function Sales() {
     return cartItems.reduce((sum, it) => sum + it.quantity, 0)
   }, [cartItems])
 
-  const calculatedDiscountAmount = useMemo(() => {
-    if (!isOwner) return 0
-    if (discountPercent > 0) {
-      return cartSubtotal * (discountPercent / 100)
+  const coffeeItemsInCart = useMemo(() => {
+    return cartItems.filter(
+      (it) => (it.product.category || '').toLowerCase().includes('caf') || it.product.name.toLowerCase().includes('caf')
+    )
+  }, [cartItems])
+
+  useEffect(() => {
+    if (redeemedCoffeeProductId && !cartItems.some((it) => it.product.id === redeemedCoffeeProductId)) {
+      setRedeemedCoffeeProductId(null)
     }
-    return Math.min(cartSubtotal, discountAmount)
-  }, [isOwner, discountPercent, discountAmount, cartSubtotal])
+  }, [cartItems, redeemedCoffeeProductId])
+
+  const loyaltyDiscountAmount = useMemo(() => {
+    if (!redeemedCoffeeProductId) return 0
+    const item = cartItems.find((it) => it.product.id === redeemedCoffeeProductId)
+    return item ? item.product.price : 0
+  }, [redeemedCoffeeProductId, cartItems])
+
+  const calculatedDiscountAmount = useMemo(() => {
+    let manualDiscount = 0
+    if (isOwner) {
+      if (discountPercent > 0) {
+        manualDiscount = cartSubtotal * (discountPercent / 100)
+      } else if (discountAmount > 0) {
+        manualDiscount = Math.min(cartSubtotal, discountAmount)
+      }
+    }
+    return Math.min(cartSubtotal, manualDiscount + loyaltyDiscountAmount)
+  }, [isOwner, discountPercent, discountAmount, cartSubtotal, loyaltyDiscountAmount])
 
   const cartTotal = useMemo(() => {
     const afterDiscount = Math.max(0, cartSubtotal - calculatedDiscountAmount)
@@ -298,6 +324,7 @@ export default function Sales() {
   function handleClearCustomer() {
     setSelectedCustomerId(null)
     setSelectedCustomerObj(null)
+    setRedeemedCoffeeProductId(null)
     setCustomerName('')
     setCustomerQuery('')
     setIsCustomerDropdownOpen(false)
@@ -306,6 +333,7 @@ export default function Sales() {
   function handleUseCustomCustomerName(name) {
     setSelectedCustomerId(null)
     setSelectedCustomerObj(null)
+    setRedeemedCoffeeProductId(null)
     setCustomerName(name.trim())
     setCustomerQuery(name.trim())
     setIsCustomerDropdownOpen(false)
@@ -379,6 +407,7 @@ export default function Sales() {
     setIsMobileCartOpen(false)
     setSelectedCustomerId(null)
     setSelectedCustomerObj(null)
+    setRedeemedCoffeeProductId(null)
     setCustomerName('')
     setCustomerQuery('')
     setIsCustomerDropdownOpen(false)
@@ -547,6 +576,7 @@ export default function Sales() {
     }
 
     try {
+      const finalDiscountReason = discountReason.trim() || (redeemedCoffeeProductId ? 'Fidelización 10 cafés (Café Gratis)' : '')
       const payload = {
         customer_id: selectedCustomerId || null,
         customer_name: finalCustomer,
@@ -557,7 +587,8 @@ export default function Sales() {
         bank_details: bankDetailsStr,
         discount_percent: discountPercent,
         discount_amount: calculatedDiscountAmount,
-        discount_reason: discountReason.trim(),
+        discount_reason: finalDiscountReason,
+        redeemed_coffees: redeemedCoffeeProductId ? 1 : 0,
         items: cartItems.map((it) => ({
           product_id: it.product.id,
           quantity: it.quantity,
@@ -585,7 +616,8 @@ export default function Sales() {
         subtotal: cartSubtotal,
         discount_percent: discountPercent,
         discount_amount: calculatedDiscountAmount,
-        discount_reason: discountReason,
+        discount_reason: finalDiscountReason,
+        redeemed_coffees: redeemedCoffeeProductId ? 1 : 0,
         total: cartTotal,
         sold_by_username: user?.username || 'Barista',
         created_at: new Date().toISOString(),
@@ -930,10 +962,17 @@ export default function Sales() {
             <span className="font-bold">${Number(cartSubtotal).toLocaleString('es-CO')}</span>
           </div>
 
-          {calculatedDiscountAmount > 0 && (
+          {loyaltyDiscountAmount > 0 && (
+            <div className="flex items-center justify-between text-xs text-amber-600 dark:text-amber-400 font-bold">
+              <span>☕ Café Fidelización (Gratis):</span>
+              <span>-${Number(loyaltyDiscountAmount).toLocaleString('es-CO')}</span>
+            </div>
+          )}
+
+          {calculatedDiscountAmount > loyaltyDiscountAmount && (
             <div className="flex items-center justify-between text-xs text-red-600 dark:text-red-400 font-bold">
-              <span>Descuento {discountPercent > 0 ? `(${discountPercent}%)` : ''}:</span>
-              <span>-${Number(calculatedDiscountAmount).toLocaleString('es-CO')}</span>
+              <span>Descuento Manual {discountPercent > 0 ? `(${discountPercent}%)` : ''}:</span>
+              <span>-${Number(calculatedDiscountAmount - loyaltyDiscountAmount).toLocaleString('es-CO')}</span>
             </div>
           )}
 
@@ -1137,8 +1176,19 @@ export default function Sales() {
                               </div>
                             </div>
 
-                            {/* Estado / Badge de Deuda y Consumo */}
+                            {/* Estado / Badge de Deuda y Fidelización */}
                             <div className="shrink-0 flex items-center gap-1.5">
+                              {(c.available_free_coffees || 0) > 0 ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200 border border-amber-300 dark:border-amber-700 flex items-center gap-1">
+                                  <Coffee className="w-3 h-3 text-amber-600" />
+                                  <span>{c.available_free_coffees} GRATIS</span>
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold hidden sm:inline">
+                                  ☕ {c.coffee_progress || 0}/10
+                                </span>
+                              )}
+
                               {hasDebt ? (
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-300 dark:border-red-800">
                                   Debe ${Number(c.total_debt).toLocaleString('es-CO')}
@@ -1199,9 +1249,9 @@ export default function Sales() {
                 </div>
               )}
 
-              {/* Ficha rápida del cliente seleccionado */}
+              {/* Ficha rápida del cliente seleccionado + Programa de Fidelización */}
               {selectedCustomerObj && (
-                <div className="mt-2 p-2.5 rounded-xl bg-[#FEE4D7]/30 dark:bg-[#2A150C]/60 border border-[#D4B28E]/50 dark:border-[#9F6839]/30 text-xs space-y-1.5">
+                <div className="mt-2 p-3 rounded-xl bg-[#FEE4D7]/30 dark:bg-[#2A150C]/60 border border-[#D4B28E]/50 dark:border-[#9F6839]/30 text-xs space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <UserCheck className="w-4 h-4 text-[#9F6839] dark:text-[#DABA8C]" />
@@ -1220,14 +1270,98 @@ export default function Sales() {
                       </span>
                     )}
                   </div>
+
                   {Number(selectedCustomerObj.total_debt) > 0 && (
                     <div className="p-2 rounded-lg bg-red-100/70 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 flex items-center gap-2 text-xs text-red-700 dark:text-red-300 font-bold">
                       <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
                       <span>Atención: Cliente con deuda acumulada de ${Number(selectedCustomerObj.total_debt).toLocaleString('es-CO')}</span>
                     </div>
                   )}
+
+                  {/* BANNER DE FIDELIZACIÓN / CAFÉS GRATIS */}
+                  <div className="p-2.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 dark:from-amber-950/60 dark:to-orange-950/50 border border-amber-300 dark:border-amber-700/60 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Coffee className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                        <span className="font-extrabold text-amber-900 dark:text-amber-200 text-xs">
+                          Fidelización (1 Café Gratis c/10 compras)
+                        </span>
+                      </div>
+                      {(selectedCustomerObj.available_free_coffees || 0) > 0 ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white shadow-xs">
+                          ¡{(selectedCustomerObj.available_free_coffees || 0)} Café(s) Gratis!
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                          {selectedCustomerObj.coffee_progress || 0}/10 cafés
+                        </span>
+                      )}
+                    </div>
+
+                    {(selectedCustomerObj.available_free_coffees || 0) > 0 ? (
+                      <div className="space-y-1.5 pt-1 border-t border-amber-200/80 dark:border-amber-800/50">
+                        <p className="text-[11px] font-bold text-amber-900 dark:text-amber-100">
+                          🎉 ¡Este cliente tiene {(selectedCustomerObj.available_free_coffees || 0)} café(s) gratis acumulado(s)!
+                        </p>
+                        {coffeeItemsInCart.length > 0 ? (
+                          <div className="space-y-1.5">
+                            <span className="text-[10px] font-semibold text-amber-800 dark:text-amber-300 block">
+                              Selecciona cuál café entregar gratis en esta orden:
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {coffeeItemsInCart.map((it) => {
+                                const isChosen = redeemedCoffeeProductId === it.product.id
+                                return (
+                                  <button
+                                    key={it.product.id}
+                                    type="button"
+                                    onClick={() => {
+                                      if (isChosen) {
+                                        setRedeemedCoffeeProductId(null)
+                                      } else {
+                                        setRedeemedCoffeeProductId(it.product.id)
+                                      }
+                                    }}
+                                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                      isChosen
+                                        ? 'bg-amber-600 text-white shadow-xs'
+                                        : 'bg-white dark:bg-[#1E0F08] text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 hover:bg-amber-100'
+                                    }`}
+                                  >
+                                    <Coffee className="w-3.5 h-3.5" />
+                                    <span>{it.product.name} {isChosen ? '(GRATIS - Aplicado)' : `(Redimir -$${Number(it.product.price).toLocaleString('es-CO')})`}</span>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-amber-700 dark:text-amber-300 italic">
+                            💡 Agrega un producto de la categoría Café al carrito para redimir el café gratis en esta venta.
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-1 pt-1 border-t border-amber-200/60 dark:border-amber-800/40">
+                        <div className="flex items-center justify-between text-[10px] text-amber-800 dark:text-amber-300 font-medium">
+                          <span>Progreso hacia próximo café gratis:</span>
+                          <span className="font-bold">{selectedCustomerObj.coffee_progress || 0}/10 cafés</span>
+                        </div>
+                        <div className="w-full bg-white dark:bg-[#1E0F08] h-2 rounded-full overflow-hidden border border-amber-200 dark:border-amber-900/60">
+                          <div
+                            className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full transition-all duration-300"
+                            style={{ width: `${Math.min(100, ((selectedCustomerObj.coffee_progress || 0) / 10) * 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80">
+                          Le faltan {10 - (selectedCustomerObj.coffee_progress || 0)} cafés para ganar 1 café gratis.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
                   {selectedCustomerObj.notes && (
-                    <div className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] flex items-center gap-1 pl-6">
+                    <div className="text-[10px] text-[#9F6839] dark:text-[#DABA8C] flex items-center gap-1 pl-1">
                       <Sparkles className="w-3 h-3 text-[#9F6839] dark:text-[#DABA8C] shrink-0" />
                       <span><strong>Preferencia:</strong> {selectedCustomerObj.notes}</span>
                     </div>

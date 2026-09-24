@@ -661,10 +661,20 @@ export default function Customers() {
                       <h3 className="font-bold text-xs sm:text-sm text-[#432414] dark:text-[#FEE4D7] leading-tight truncate">
                         {fullName}
                       </h3>
-                      <div className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] truncate mt-0.5">
+                      <div className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] truncate mt-0.5 flex items-center gap-1.5 flex-wrap">
                         <span>{c.phone || 'Sin teléfono'}</span>
-                        <span className="mx-1.5 opacity-40">·</span>
+                        <span className="opacity-40">·</span>
                         <span>{c.total_orders || 0} pedido(s)</span>
+                        <span className="opacity-40">·</span>
+                        <span className="font-bold text-amber-700 dark:text-amber-300 inline-flex items-center gap-0.5">
+                          <Coffee className="w-3 h-3 text-amber-600" />
+                          <span>{c.coffee_progress ?? 0}/10 cafés</span>
+                        </span>
+                        {(c.available_free_coffees || 0) > 0 && (
+                          <span className="px-1.5 py-0.2 rounded-md text-[10px] font-black bg-amber-500 text-white shadow-2xs">
+                            ¡{c.available_free_coffees} GRATIS!
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -707,6 +717,40 @@ export default function Customers() {
                         <span className="text-xs sm:text-sm font-black text-[#432414] dark:text-[#FEE4D7] tabular-nums block mt-0.5">
                           {c.total_orders || 0} compras
                         </span>
+                      </div>
+                    </div>
+
+                    {/* Tarjeta de Fidelización de Café */}
+                    <div className="p-3 bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-amber-950/40 dark:to-orange-950/40 border border-amber-300/60 dark:border-amber-700/50 rounded-xl space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <Coffee className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                          <span>Fidelización (1 Café Gratis c/10 compras)</span>
+                        </span>
+                        {(c.available_free_coffees || 0) > 0 ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white shadow-xs">
+                            ¡{c.available_free_coffees} Café(s) Gratis para Redimir!
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                            Faltan {10 - (c.coffee_progress || 0)} para el próximo
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-white dark:bg-[#1E0F08] h-2.5 rounded-full overflow-hidden border border-amber-200 dark:border-amber-900/60">
+                          <div 
+                            className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full transition-all duration-300"
+                            style={{ width: `${Math.min(100, ((c.coffee_progress || 0) / 10) * 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-black text-amber-900 dark:text-amber-200 tabular-nums">
+                          {c.coffee_progress || 0}/10
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-[10px] text-amber-700/80 dark:text-amber-400/70 pt-0.5 font-medium">
+                        <span>Total cafés comprados: <strong>{c.total_coffees || 0}</strong></span>
+                        <span>Redimidos: <strong>{c.redeemed_coffees || 0}</strong></span>
                       </div>
                     </div>
 

@@ -56,6 +56,7 @@ func NewCustomerHandler(db *pgxpool.Pool, hub *events.Hub) *CustomerHandler {
 			created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 		);
 		CREATE INDEX IF NOT EXISTS idx_customer_payments_customer_id ON customer_payments(customer_id);
+		ALTER TABLE sales ADD COLUMN IF NOT EXISTS redeemed_coffees INT DEFAULT 0;
 	`)
 
 	return &CustomerHandler{DB: db, Hub: hub}
@@ -72,7 +73,21 @@ func (h *CustomerHandler) List(w http.ResponseWriter, r *http.Request) {
 		       COALESCE((SELECT SUM(s.total) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada'), 0) AS total_spent,
 		       COALESCE((SELECT COUNT(s.id) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada'), 0) AS total_orders,
 		       COALESCE((SELECT SUM(s.pending_amount) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada'), 0) AS total_debt,
-		       (SELECT MAX(s.created_at) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada') AS last_order_date
+		       (SELECT MAX(s.created_at) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada') AS last_order_date,
+		       COALESCE((
+		           SELECT SUM(si.quantity)
+		           FROM sale_items si
+		           JOIN sales s ON si.sale_id = s.id
+		           LEFT JOIN products p ON si.product_id = p.id
+		           WHERE s.customer_id = c.id 
+		             AND s.status != 'cancelada'
+		             AND (p.category ILIKE '%caf%' OR si.product_name ILIKE '%caf%')
+		       ), 0) AS total_coffees,
+		       COALESCE((
+		           SELECT SUM(COALESCE(s.redeemed_coffees, 0))
+		           FROM sales s
+		           WHERE s.customer_id = c.id AND s.status != 'cancelada'
+		       ), 0) AS redeemed_coffees
 		FROM customers c
 	`
 
@@ -101,11 +116,13 @@ func (h *CustomerHandler) List(w http.ResponseWriter, r *http.Request) {
 	var customers []models.Customer
 	for rows.Next() {
 		var c models.Customer
-		if err := rows.Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate); err != nil {
+		if err := rows.Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate, &c.TotalCoffees, &c.RedeemedCoffees); err != nil {
 			log.Printf("error leyendo cliente: %v", err)
 			http.Error(w, "error leyendo cliente", http.StatusInternalServerError)
 			return
 		}
+		c.AvailableFreeCoffees = int(math.Max(0, float64((c.TotalCoffees/10)-c.RedeemedCoffees)))
+		c.CoffeeProgress = c.TotalCoffees % 10
 		customers = append(customers, c)
 	}
 
@@ -134,10 +151,24 @@ func (h *CustomerHandler) Get(w http.ResponseWriter, r *http.Request) {
 		       COALESCE((SELECT SUM(s.total) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada'), 0) AS total_spent,
 		       COALESCE((SELECT COUNT(s.id) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada'), 0) AS total_orders,
 		       COALESCE((SELECT SUM(s.pending_amount) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada'), 0) AS total_debt,
-		       (SELECT MAX(s.created_at) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada') AS last_order_date
+		       (SELECT MAX(s.created_at) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada') AS last_order_date,
+		       COALESCE((
+		           SELECT SUM(si.quantity)
+		           FROM sale_items si
+		           JOIN sales s ON si.sale_id = s.id
+		           LEFT JOIN products p ON si.product_id = p.id
+		           WHERE s.customer_id = c.id 
+		             AND s.status != 'cancelada'
+		             AND (p.category ILIKE '%caf%' OR si.product_name ILIKE '%caf%')
+		       ), 0) AS total_coffees,
+		       COALESCE((
+		           SELECT SUM(COALESCE(s.redeemed_coffees, 0))
+		           FROM sales s
+		           WHERE s.customer_id = c.id AND s.status != 'cancelada'
+		       ), 0) AS redeemed_coffees
 		FROM customers c
 		WHERE c.id = $1
-	`, customerID).Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate)
+	`, customerID).Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate, &c.TotalCoffees, &c.RedeemedCoffees)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		http.Error(w, "cliente no encontrado", http.StatusNotFound)
@@ -148,6 +179,8 @@ func (h *CustomerHandler) Get(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error interno", http.StatusInternalServerError)
 		return
 	}
+	c.AvailableFreeCoffees = int(math.Max(0, float64((c.TotalCoffees/10)-c.RedeemedCoffees)))
+	c.CoffeeProgress = c.TotalCoffees % 10
 
 	salesRows, err := h.DB.Query(r.Context(), `
 		SELECT s.id, COALESCE(s.sold_by, '00000000-0000-0000-0000-000000000000'::uuid), 
@@ -341,10 +374,24 @@ func (h *CustomerHandler) GetAccount(w http.ResponseWriter, r *http.Request) {
 		       COALESCE((SELECT SUM(s.total) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada'), 0) AS total_spent,
 		       COALESCE((SELECT COUNT(s.id) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada'), 0) AS total_orders,
 		       COALESCE((SELECT SUM(s.pending_amount) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada'), 0) AS total_debt,
-		       (SELECT MAX(s.created_at) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada') AS last_order_date
+		       (SELECT MAX(s.created_at) FROM sales s WHERE s.customer_id = c.id AND s.status != 'cancelada') AS last_order_date,
+		       COALESCE((
+		           SELECT SUM(si.quantity)
+		           FROM sale_items si
+		           JOIN sales s ON si.sale_id = s.id
+		           LEFT JOIN products p ON si.product_id = p.id
+		           WHERE s.customer_id = c.id 
+		             AND s.status != 'cancelada'
+		             AND (p.category ILIKE '%caf%' OR si.product_name ILIKE '%caf%')
+		       ), 0) AS total_coffees,
+		       COALESCE((
+		           SELECT SUM(COALESCE(s.redeemed_coffees, 0))
+		           FROM sales s
+		           WHERE s.customer_id = c.id AND s.status != 'cancelada'
+		       ), 0) AS redeemed_coffees
 		FROM customers c
 		WHERE c.id = $1
-	`, customerID).Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate)
+	`, customerID).Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate, &c.TotalCoffees, &c.RedeemedCoffees)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		http.Error(w, "cliente no encontrado", http.StatusNotFound)
@@ -355,6 +402,8 @@ func (h *CustomerHandler) GetAccount(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error interno", http.StatusInternalServerError)
 		return
 	}
+	c.AvailableFreeCoffees = int(math.Max(0, float64((c.TotalCoffees/10)-c.RedeemedCoffees)))
+	c.CoffeeProgress = c.TotalCoffees % 10
 
 	// 1. Obtener ventas pendientes con saldo deudor
 	pendingRows, err := h.DB.Query(ctx, `

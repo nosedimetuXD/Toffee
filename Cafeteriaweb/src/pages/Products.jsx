@@ -445,23 +445,18 @@ export default function Products() {
             />
           </div>
 
-          {/* Toggle Requiere Preparación en Cocina */}
-          <div className="p-3 bg-[#FEE4D7]/40 dark:bg-[#2A160D] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-xl space-y-1">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="requires-prep-check"
-                checked={requiresPreparation}
-                onChange={(e) => setRequiresPreparation(e.target.checked)}
-                className="w-4 h-4 rounded text-[#9F6839] cursor-pointer"
-              />
-              <label htmlFor="requires-prep-check" className="text-xs font-bold text-[#432414] dark:text-[#FEE4D7] cursor-pointer">
-                ¿Requiere preparación en barra/cocina? (Aparece en Comandas KDS)
-              </label>
-            </div>
-            <p className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] pl-6 leading-tight">
-              Desmarca esta opción si el producto ya está listo (ej. buñuelos, gaseosas o empaquetados) para que se venda normalmente sin generar comanda en la pantalla de cocina.
-            </p>
+          {/* Toggle Requiere Preparación */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="requires-prep-check"
+              checked={requiresPreparation}
+              onChange={(e) => setRequiresPreparation(e.target.checked)}
+              className="w-4 h-4 rounded text-[#9F6839] cursor-pointer"
+            />
+            <label htmlFor="requires-prep-check" className="text-xs font-bold text-[#432414] dark:text-[#FEE4D7] cursor-pointer">
+              ¿Requiere preparación?
+            </label>
           </div>
 
           <div className="flex items-center gap-2">

@@ -17,10 +17,14 @@ type Customer struct {
 	CreatedByUsername string     `json:"created_by_username"`
 	CreatedAt         time.Time  `json:"created_at"`
 	UpdatedAt         time.Time  `json:"updated_at"`
-	TotalSpent        float64    `json:"total_spent"`
-	TotalOrders       int        `json:"total_orders"`
-	TotalDebt         float64    `json:"total_debt"`
-	LastOrderDate     *time.Time `json:"last_order_date,omitempty"`
+	TotalSpent           float64    `json:"total_spent"`
+	TotalOrders          int        `json:"total_orders"`
+	TotalDebt            float64    `json:"total_debt"`
+	LastOrderDate        *time.Time `json:"last_order_date,omitempty"`
+	TotalCoffees         int        `json:"total_coffees"`
+	RedeemedCoffees      int        `json:"redeemed_coffees"`
+	AvailableFreeCoffees int        `json:"available_free_coffees"`
+	CoffeeProgress       int        `json:"coffee_progress"`
 }
 
 type CustomerPayment struct {

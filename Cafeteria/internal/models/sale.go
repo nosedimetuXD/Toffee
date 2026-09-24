@@ -27,6 +27,7 @@ type Sale struct {
 	DiscountPercent float64    `json:"discount_percent"`
 	DiscountAmount  float64    `json:"discount_amount"`
 	DiscountReason  string     `json:"discount_reason,omitempty"`
+	RedeemedCoffees int        `json:"redeemed_coffees"`
 	Total           float64    `json:"total"`
 	PaidAmount      float64    `json:"paid_amount"`
 	PendingAmount   float64    `json:"pending_amount"`
