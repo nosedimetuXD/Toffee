@@ -97,7 +97,12 @@ func (h *CustomerHandler) List(w http.ResponseWriter, r *http.Request) {
 	if search != "" {
 		pattern := "%" + search + "%"
 		query := baseQuery + `
-			WHERE c.first_name ILIKE $1 OR c.last_name ILIKE $1 OR c.phone ILIKE $1 OR c.email ILIKE $1 OR c.notes ILIKE $1
+			WHERE translate(LOWER(c.first_name), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN') ILIKE translate(LOWER($1), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN')
+			   OR translate(LOWER(COALESCE(c.last_name, '')), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN') ILIKE translate(LOWER($1), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN')
+			   OR translate(LOWER(c.first_name || ' ' || COALESCE(c.last_name, '')), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN') ILIKE translate(LOWER($1), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN')
+			   OR COALESCE(c.phone, '') ILIKE $1 
+			   OR COALESCE(c.email, '') ILIKE $1 
+			   OR translate(LOWER(COALESCE(c.notes, '')), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN') ILIKE translate(LOWER($1), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN')
 			ORDER BY total_spent DESC, c.first_name ASC
 		`
 		rows, err = h.DB.Query(r.Context(), query, pattern)

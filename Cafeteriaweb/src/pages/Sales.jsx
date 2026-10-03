@@ -38,6 +38,14 @@ const COMMON_BANKS = ['Bre-B/Llave', 'Nequi', 'Daviplata', 'Bancolombia', 'Nu', 
 const DISCOUNT_PRESETS = [5, 10, 15, 20, 50]
 const DISCOUNT_REASONS = ['Promoción del día', 'Cliente Frecuente', 'Cortesía de la casa', 'Amigo / Familiar', 'Convenio']
 
+function normalizeText(str) {
+  if (!str) return ''
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+}
+
 export default function Sales() {
   const { user } = useAuth()
   const isOwner = (user?.role || '').toLowerCase() === 'owner' || (user?.role || '').toLowerCase() === 'dueño'
@@ -69,10 +77,10 @@ export default function Sales() {
   const [quickCustomerError, setQuickCustomerError] = useState('')
 
   const filteredCustomers = useMemo(() => {
-    const q = customerQuery.trim().toLowerCase()
+    const q = normalizeText(customerQuery.trim())
     if (!q) return crmCustomers.slice(0, 8)
     return crmCustomers.filter((c) => {
-      const fullName = `${c.first_name} ${c.last_name || ''}`.toLowerCase()
+      const fullName = normalizeText(`${c.first_name} ${c.last_name || ''}`)
       const phone = (c.phone || '').toLowerCase()
       return fullName.includes(q) || phone.includes(q)
     }).slice(0, 10)
@@ -159,22 +167,45 @@ export default function Sales() {
     }
   }, [])
 
-  // Función para resaltar coincidencias de texto
+  // Función para resaltar coincidencias de texto ignorando tildes y mayúsculas
   function highlightMatches(text, query) {
     if (!text) return ''
     if (!query || !query.trim()) return text
-    const escaped = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const regex = new RegExp(`(${escaped})`, 'gi')
-    const parts = text.split(regex)
-    return parts.map((part, i) =>
-      regex.test(part) ? (
-        <strong key={i} className="font-black text-[#9F6839] dark:text-[#DABA8C]">
-          {part}
-        </strong>
-      ) : (
-        part
+
+    const accentMap = {
+      a: '[aáàäâAÁÀÄÂ]',
+      e: '[eéèëêEÉÈËÊ]',
+      i: '[iíìïîIÍÌÏÎ]',
+      o: '[oóòöôOÓÒÖÔ]',
+      u: '[uúùüûUÚÙÜÛüÜ]',
+      n: '[nñNÑ]'
+    }
+
+    const cleanQuery = normalizeText(query.trim())
+    let pattern = ''
+    for (const char of cleanQuery) {
+      if (accentMap[char]) {
+        pattern += accentMap[char]
+      } else {
+        pattern += char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      }
+    }
+
+    try {
+      const regex = new RegExp(`(${pattern})`, 'gi')
+      const parts = text.split(regex)
+      return parts.map((part, i) =>
+        regex.test(part) ? (
+          <strong key={i} className="font-black text-[#9F6839] dark:text-[#DABA8C]">
+            {part}
+          </strong>
+        ) : (
+          part
+        )
       )
-    )
+    } catch (e) {
+      return text
+    }
   }
 
   function addToCart(product, qtyToAdd = 1) {
@@ -296,10 +327,11 @@ export default function Sales() {
   }
 
   const filteredProducts = useMemo(() => {
+    const cleanSearch = normalizeText(searchQuery.trim())
     return products.filter((p) => {
       if (!isProductActive(p)) return false
       const matchesCategory = selectedCategory === 'Todos' || p.category === selectedCategory
-      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesSearch = !cleanSearch || normalizeText(p.name).includes(cleanSearch)
       return matchesCategory && matchesSearch
     })
   }, [products, selectedCategory, searchQuery])
@@ -1210,7 +1242,7 @@ export default function Sales() {
                   )}
 
                   {/* Opción de Crear Nuevo Cliente en Base de Datos */}
-                  {customerQuery.trim() && !crmCustomers.some(c => `${c.first_name} ${c.last_name || ''}`.trim().toLowerCase() === customerQuery.trim().toLowerCase()) && (
+                  {customerQuery.trim() && !crmCustomers.some(c => normalizeText(`${c.first_name} ${c.last_name || ''}`).trim() === normalizeText(customerQuery.trim())) && (
                     <div className="border-t border-[#D4B28E]/60 dark:border-[#9F6839]/40 divide-y divide-[#FEE4D7]/60 dark:divide-[#2A150C]">
                       <div
                         onClick={() => handleOpenQuickCustomerModal(customerQuery)}

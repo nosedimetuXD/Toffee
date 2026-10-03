@@ -427,121 +427,123 @@ export default function SalesHistory() {
         </div>
       </div>
 
-      {/* Unified Metrics Bar — Compact 2:1 Hero Layout with Dynamic Trend Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {/* Left: Compact Hero Metric Card with Dynamic Trend Chart */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
-          {/* Header Row: Title & Total + Badge */}
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
-                <DollarSign className="w-3.5 h-3.5 opacity-70" />
-                <span>Total Facturado</span>
+      {/* Unified Metrics Bar — Compact 2:1 Hero Layout with Dynamic Trend Chart (Solo Dueños y Admins) */}
+      {!isEmployee && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          {/* Left: Compact Hero Metric Card with Dynamic Trend Chart */}
+          <div className="lg:col-span-2 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs">
+            {/* Header Row: Title & Total + Badge */}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C]">
+                  <DollarSign className="w-3.5 h-3.5 opacity-70" />
+                  <span>Total Facturado</span>
+                </div>
+                <div className="mt-0.5 text-2xl sm:text-3xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+                  ${Number(totalBilled).toLocaleString('es-CO')}
+                </div>
               </div>
-              <div className="mt-0.5 text-2xl sm:text-3xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-                ${Number(totalBilled).toLocaleString('es-CO')}
+
+              <div className="text-right">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  {displayLabel}
+                </span>
+                <p className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-1">
+                  Evolución de Facturación ({salesTrendData.length} registros)
+                </p>
               </div>
             </div>
 
-            <div className="text-right">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                {displayLabel}
-              </span>
-              <p className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/70 mt-1">
-                Evolución de Facturación ({salesTrendData.length} registros)
-              </p>
+            {/* Center Body: Full-Width MetricLineChart (Image 4 reference) */}
+            <div className="my-2.5 py-1 w-full">
+              <MetricLineChart
+                data={salesTrendData}
+                line1Color="#9F6839"
+                line1Label="Facturado"
+                formatValue={(v) => `$${Number(v).toLocaleString('es-CO')}`}
+                height={125}
+              />
+            </div>
+
+            {/* Sub-breakdown row at bottom */}
+            <div className="mt-3 pt-2.5 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 grid grid-cols-3 gap-2">
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
+                  Efectivo
+                </span>
+                <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+                  ${Number(totalCollectedInCash).toLocaleString('es-CO')}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
+                  Transferencias
+                </span>
+                <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+                  ${Number(totalCollectedInTransfer).toLocaleString('es-CO')}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
+                  Ticket Promedio
+                </span>
+                <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+                  ${Number(averageTicket).toLocaleString('es-CO')}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Center Body: Full-Width MetricLineChart (Image 4 reference) */}
-          <div className="my-2.5 py-1 w-full">
-            <MetricLineChart
-              data={salesTrendData}
-              line1Color="#9F6839"
-              line1Label="Facturado"
-              formatValue={(v) => `$${Number(v).toLocaleString('es-CO')}`}
-              height={125}
-            />
-          </div>
+          {/* Right: Stacked Secondary Metric Cards */}
+          <div className="lg:col-span-1 flex flex-col gap-2">
+            {/* Card 1: Recaudado en Caja */}
+            <div className="flex-1 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex items-center justify-between shadow-xs">
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
+                  Recaudado en Caja
+                </span>
+                <div className="text-base sm:text-lg font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums mt-0.5">
+                  ${Number(totalCollectedInCash + totalCollectedInTransfer).toLocaleString('es-CO')}
+                </div>
+              </div>
+              <div className="p-2 rounded-lg bg-[#FEE4D7]/50 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/30">
+                <Wallet className="w-3.5 h-3.5" />
+              </div>
+            </div>
 
-          {/* Sub-breakdown row at bottom */}
-          <div className="mt-3 pt-2.5 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 grid grid-cols-3 gap-2">
-            <div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
-                Efectivo
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-                ${Number(totalCollectedInCash).toLocaleString('es-CO')}
-              </span>
+            {/* Card 2: Por Cobrar (Cartera) */}
+            <div className="flex-1 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex items-center justify-between shadow-xs">
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
+                  Por Cobrar (Cartera)
+                </span>
+                <div className={`text-base sm:text-lg font-black tracking-tight tabular-nums mt-0.5 ${totalPendingDebt > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
+                  ${Number(totalPendingDebt).toLocaleString('es-CO')}
+                </div>
+              </div>
+              <div className="p-2 rounded-lg bg-[#FEE4D7]/50 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/30">
+                <Coins className="w-3.5 h-3.5" />
+              </div>
             </div>
-            <div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
-                Transferencias
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-                ${Number(totalCollectedInTransfer).toLocaleString('es-CO')}
-              </span>
-            </div>
-            <div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
-                Ticket Promedio
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-[#432414] dark:text-[#FEE4D7] tabular-nums">
-                ${Number(averageTicket).toLocaleString('es-CO')}
-              </span>
+
+            {/* Card 3: Transacciones */}
+            <div className="flex-1 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex items-center justify-between shadow-xs">
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
+                  Transacciones
+                </span>
+                <div className="text-base sm:text-lg font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums mt-0.5">
+                  {totalSalesCount} <span className="text-xs font-normal text-[#9F6839] dark:text-[#DABA8C]">ventas</span>
+                </div>
+              </div>
+              <div className="p-2 rounded-lg bg-[#FEE4D7]/50 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/30">
+                <ShoppingBag className="w-3.5 h-3.5" />
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Right: Stacked Secondary Metric Cards */}
-        <div className="lg:col-span-1 flex flex-col gap-2">
-          {/* Card 1: Recaudado en Caja */}
-          <div className="flex-1 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex items-center justify-between shadow-xs">
-            <div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
-                Recaudado en Caja
-              </span>
-              <div className="text-base sm:text-lg font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums mt-0.5">
-                ${Number(totalCollectedInCash + totalCollectedInTransfer).toLocaleString('es-CO')}
-              </div>
-            </div>
-            <div className="p-2 rounded-lg bg-[#FEE4D7]/50 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/30">
-              <Wallet className="w-3.5 h-3.5" />
-            </div>
-          </div>
-
-          {/* Card 2: Por Cobrar (Cartera) */}
-          <div className="flex-1 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex items-center justify-between shadow-xs">
-            <div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
-                Por Cobrar (Cartera)
-              </span>
-              <div className={`text-base sm:text-lg font-black tracking-tight tabular-nums mt-0.5 ${totalPendingDebt > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
-                ${Number(totalPendingDebt).toLocaleString('es-CO')}
-              </div>
-            </div>
-            <div className="p-2 rounded-lg bg-[#FEE4D7]/50 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/30">
-              <Coins className="w-3.5 h-3.5" />
-            </div>
-          </div>
-
-          {/* Card 3: Transacciones */}
-          <div className="flex-1 bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-xl p-2.5 sm:p-3 flex items-center justify-between shadow-xs">
-            <div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] block">
-                Transacciones
-              </span>
-              <div className="text-base sm:text-lg font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums mt-0.5">
-                {totalSalesCount} <span className="text-xs font-normal text-[#9F6839] dark:text-[#DABA8C]">ventas</span>
-              </div>
-            </div>
-            <div className="p-2 rounded-lg bg-[#FEE4D7]/50 dark:bg-[#2A160D] text-[#9F6839] dark:text-[#DABA8C] border border-[#D4B28E]/30">
-              <ShoppingBag className="w-3.5 h-3.5" />
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Buscador y Filtros */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
