@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { api } from '../api/client'
+import { api, API_URL } from '../api/client'
 import Modal from '../components/Modal'
 import { AVAILABLE_UNITS, convertQuantity } from '../utils/unitConverter'
 import {
@@ -20,11 +20,34 @@ import {
   Tag,
   ShoppingBag,
   FileSpreadsheet,
-  ChevronDown
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Coins,
+  Landmark,
+  ArrowDownRight,
+  ArrowUpRight,
+  SlidersHorizontal
 } from 'lucide-react'
 import { exportAccountingToCSV, exportAccountingToExcel } from '../utils/csvExport'
 import { useAuth } from '../context/AuthContext'
 import MetricLineChart from '../components/MetricLineChart'
+
+const MONTH_NAMES = [
+  { num: 1, short: 'ene.', full: 'Enero' },
+  { num: 2, short: 'feb.', full: 'Febrero' },
+  { num: 3, short: 'mar.', full: 'Marzo' },
+  { num: 4, short: 'abr.', full: 'Abril' },
+  { num: 5, short: 'may.', full: 'Mayo' },
+  { num: 6, short: 'jun.', full: 'Junio' },
+  { num: 7, short: 'jul.', full: 'Julio' },
+  { num: 8, short: 'ago.', full: 'Agosto' },
+  { num: 9, short: 'sep.', full: 'Septiembre' },
+  { num: 10, short: 'oct.', full: 'Octubre' },
+  { num: 11, short: 'nov.', full: 'Noviembre' },
+  { num: 12, short: 'dic.', full: 'Diciembre' }
+]
 
 const EXPENSE_CATEGORIES = [
   { value: 'insumos', label: 'Insumos / Café / Ingredientes', icon: Package },
@@ -48,14 +71,26 @@ export default function Accounting() {
   const [summary, setSummary] = useState(null)
   const [expenses, setExpenses] = useState([])
   const [incomes, setIncomes] = useState([])
+  const [adjustments, setAdjustments] = useState([])
   const [ingredients, setIngredients] = useState([])
-  const [activeTab, setActiveTab] = useState('expenses') // 'expenses' | 'incomes'
-  const [period, setPeriod] = useState('month') // 'today' | 'week' | 'month' | 'year' | 'all'
+  const [activeTab, setActiveTab] = useState('expenses') // 'expenses' | 'incomes' | 'adjustments'
   const [incomeFilter, setIncomeFilter] = useState('all') // 'all' | 'sale' | 'manual'
   const [loading, setLoading] = useState(true)
   const [pageError, setPageError] = useState('')
   const [expandedExpenseId, setExpandedExpenseId] = useState(null)
   const [expandedIncomeId, setExpandedIncomeId] = useState(null)
+  const [expandedAdjustmentId, setExpandedAdjustmentId] = useState(null)
+
+  // Filtros de Rango de Fecha (como en Historial de Ventas)
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
+  const [filterTab, setFilterTab] = useState('preset') // 'preset' | 'month' | 'custom'
+  const [period, setPeriod] = useState('month') // 'today' | 'week' | 'month' | 'prev_month' | 'year' | 'all'
+  const [displayLabel, setDisplayLabel] = useState('Este Mes')
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [activeFilterParams, setActiveFilterParams] = useState({ period: 'month' })
 
   // Modal Crear / Editar Gasto
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
@@ -86,20 +121,44 @@ export default function Accounting() {
   const [incomeSubmitting, setIncomeSubmitting] = useState(false)
   const [incomeError, setIncomeError] = useState('')
 
-  async function loadData() {
+  // Modal Crear Ajuste de Caja
+  const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false)
+  const [adjustmentForm, setAdjustmentForm] = useState({
+    type: 'in', // 'in' (fondeo/entrada) | 'out' (retiro/salida)
+    target: 'cash', // 'cash' | 'bank'
+    amount: '',
+    reason: '',
+    created_at: ''
+  })
+  const [adjustmentSubmitting, setAdjustmentSubmitting] = useState(false)
+  const [adjustmentError, setAdjustmentError] = useState('')
+
+  async function loadData(params = activeFilterParams) {
     setLoading(true)
     setPageError('')
     try {
-      const [sumData, expData, ingData, incData] = await Promise.all([
-        api.get(`/accounting/summary?period=${period}`).catch(() => null),
-        api.get(`/expenses?period=${period}`).catch(() => []),
+      let queryStr = ''
+      const targetPeriod = params.period || (params.startDate || params.year ? '' : period)
+      if (params.startDate && params.endDate) {
+        queryStr = `start_date=${params.startDate}&end_date=${params.endDate}`
+      } else if (params.year && params.monthNum) {
+        queryStr = `year=${params.year}&month_num=${params.monthNum}`
+      } else {
+        queryStr = `period=${targetPeriod || 'month'}`
+      }
+
+      const [sumData, expData, ingData, incData, adjData] = await Promise.all([
+        api.get(`/accounting/summary?${queryStr}`).catch(() => null),
+        api.get(`/expenses?${queryStr}`).catch(() => []),
         api.get('/ingredients').catch(() => []),
-        api.get(`/incomes?period=${period}`).catch(() => [])
+        api.get(`/incomes?${queryStr}`).catch(() => []),
+        api.get(`/cash-adjustments?${queryStr}`).catch(() => [])
       ])
       setSummary(sumData)
       setExpenses(Array.isArray(expData) ? expData : [])
       setIngredients(Array.isArray(ingData) ? ingData : [])
       setIncomes(Array.isArray(incData) ? incData : [])
+      setAdjustments(Array.isArray(adjData) ? adjData : [])
     } catch (err) {
       console.error('Error cargando contabilidad:', err)
       setPageError('No se pudo cargar la información de contabilidad')
@@ -109,8 +168,59 @@ export default function Accounting() {
   }
 
   useEffect(() => {
-    loadData()
-  }, [period])
+    loadData(activeFilterParams)
+
+    // SSE en tiempo real
+    const eventSource = new EventSource(`${API_URL}/events`)
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        if (
+          data.type === 'accounting_updated' ||
+          data.type === 'expense_created' ||
+          data.type === 'expense_deleted' ||
+          data.type === 'income_created' ||
+          data.type === 'cash_adjustment_created' ||
+          data.type === 'sale_created'
+        ) {
+          loadData(activeFilterParams)
+        }
+      } catch (e) {}
+    }
+
+    return () => {
+      eventSource.close()
+    }
+  }, [activeFilterParams])
+
+  function handleSelectPreset(presetKey, label) {
+    setPeriod(presetKey)
+    setDisplayLabel(label)
+    setIsFilterModalOpen(false)
+    const newParams = { period: presetKey }
+    setActiveFilterParams(newParams)
+  }
+
+  function handleSelectMonthYear(year, monthNum, monthFull) {
+    setSelectedYear(year)
+    setSelectedMonth(monthNum)
+    setDisplayLabel(`${monthFull} de ${year}`)
+    setIsFilterModalOpen(false)
+    const newParams = { year, monthNum }
+    setActiveFilterParams(newParams)
+  }
+
+  function handleApplyCustomRange(e) {
+    e.preventDefault()
+    if (!startDate || !endDate) {
+      alert('Por favor selecciona una fecha de inicio y de fin')
+      return
+    }
+    setDisplayLabel(`${startDate} al ${endDate}`)
+    setIsFilterModalOpen(false)
+    const newParams = { startDate, endDate }
+    setActiveFilterParams(newParams)
+  }
 
   function handleOpenCreateExpense() {
     setEditingExpense(null)
@@ -273,6 +383,61 @@ export default function Accounting() {
     }
   }
 
+  function handleOpenCreateAdjustment() {
+    setAdjustmentForm({
+      type: 'in',
+      target: 'cash',
+      amount: '',
+      reason: '',
+      created_at: new Date().toISOString().substring(0, 16)
+    })
+    setAdjustmentError('')
+    setIsAdjustmentModalOpen(true)
+  }
+
+  async function handleSaveAdjustment(e) {
+    e.preventDefault()
+    const amt = parseFloat(adjustmentForm.amount)
+    if (!adjustmentForm.reason.trim() || isNaN(amt) || amt <= 0) {
+      setAdjustmentError('Ingresa un motivo/justificación y un monto válido.')
+      return
+    }
+
+    try {
+      setAdjustmentSubmitting(true)
+      setAdjustmentError('')
+
+      const payload = {
+        type: adjustmentForm.type,
+        target: adjustmentForm.target,
+        amount: amt,
+        reason: adjustmentForm.reason.trim(),
+        created_at: adjustmentForm.created_at ? new Date(adjustmentForm.created_at).toISOString() : undefined
+      }
+
+      await api.post('/cash-adjustments', payload)
+      setIsAdjustmentModalOpen(false)
+      loadData(activeFilterParams)
+    } catch (err) {
+      setAdjustmentError(err.message || 'Error registrando ajuste de caja')
+    } finally {
+      setAdjustmentSubmitting(false)
+    }
+  }
+
+  async function handleDeleteAdjustment(adj) {
+    if (!isOwner) return
+    const tipoLabel = adj.type === 'in' ? 'Entrada/Fondeo' : 'Retiro/Salida'
+    if (!confirm(`¿Eliminar el ajuste (${tipoLabel}) por $${Number(adj.amount).toLocaleString('es-CO')}?`)) return
+    try {
+      await api.delete(`/cash-adjustments/${adj.id}`)
+      setAdjustments((prev) => prev.filter((a) => a.id !== adj.id))
+      loadData(activeFilterParams)
+    } catch (err) {
+      alert('Error eliminando ajuste: ' + (err.message || 'Error'))
+    }
+  }
+
   const salesIncomes = useMemo(() => incomes.filter((i) => i.type === 'sale'), [incomes])
   const manualIncomes = useMemo(() => incomes.filter((i) => (i.type || 'manual') === 'manual'), [incomes])
 
@@ -334,13 +499,24 @@ export default function Accounting() {
                 Contabilidad & Flujo de Caja
               </h1>
               <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
-                Control de ingresos, gastos clasificados, balance neto y exportación contable.
+                Control de ingresos, gastos clasificados, tesorería (efectivo y banco) y arqueo.
               </p>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+          {/* Selector de Rango de Fechas (Idéntico a Historial de Ventas) */}
+          <button
+            type="button"
+            onClick={() => setIsFilterModalOpen(true)}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-white dark:bg-[#2A150C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#3E2114] text-[#432414] dark:text-[#FEE4D7] rounded-xl text-xs font-bold transition-colors cursor-pointer border border-[#D4B28E]/70 dark:border-[#9F6839]/40 shadow-xs"
+          >
+            <Calendar className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C]" />
+            <span>{displayLabel}</span>
+            <ChevronDown className="w-3.5 h-3.5 text-[#9F6839] dark:text-[#DABA8C]" />
+          </button>
+
           {/* Grupo Exportacion */}
           <div className="inline-flex items-center p-0.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/70 dark:border-[#9F6839]/40 rounded-xl shadow-xs">
             <button type="button"
@@ -365,19 +541,106 @@ export default function Accounting() {
           {/* Grupo Acciones Principales */}
           <div className="inline-flex items-center gap-2">
             <button type="button"
-              onClick={handleOpenCreateIncome}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer whitespace-nowrap"
+              onClick={handleOpenCreateAdjustment}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#432414] dark:bg-[#2E180E] hover:bg-[#2F190E] text-[#FEE4D7] border border-[#D4B28E]/60 dark:border-[#9F6839]/50 rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer whitespace-nowrap"
+              title="Registrar ajuste de caja o banco (no afecta la gráfica de ingresos y gastos)"
             >
-              <Plus className="w-4 h-4" />
+              <SlidersHorizontal className="w-3.5 h-3.5 text-[#DABA8C]" />
+              <span>Ajuste Caja</span>
+            </button>
+
+            <button type="button"
+              onClick={handleOpenCreateIncome}
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer whitespace-nowrap"
+            >
+              <Plus className="w-3.5 h-3.5" />
               <span>Ingreso</span>
             </button>
 
             <button type="button"
               onClick={handleOpenCreateExpense}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#9F6839] hover:bg-[#835229] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#9F6839] hover:bg-[#835229] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer whitespace-nowrap"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span>Gasto</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Sección Tesorería & Saldos de Disponibilidad (Efectivo vs Cuenta de Banco) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Tarjeta 1: Efectivo en Caja */}
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 shadow-xs relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] flex items-center gap-1.5">
+                <Coins className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                Efectivo en Caja
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                Caja Física
+              </span>
+            </div>
+            <div className="mt-2 text-2xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+              ${Number(summary?.cash_balance ?? 0).toLocaleString('es-CO')}
+            </div>
+          </div>
+          <div className="mt-3 pt-2 border-t border-[#D4B28E]/25 dark:border-[#9F6839]/20 flex items-center justify-between text-[10px] text-[#9F6839] dark:text-[#DABA8C]">
+            <span className="text-emerald-700 dark:text-emerald-400 font-medium">Entradas: +${Number(summary?.cash_income ?? 0).toLocaleString('es-CO')}</span>
+            <span className="text-rose-600 dark:text-rose-400 font-medium">Salidas: -${Number(summary?.cash_expenses ?? 0).toLocaleString('es-CO')}</span>
+          </div>
+        </div>
+
+        {/* Tarjeta 2: Cuenta de Banco / Transferencias */}
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl p-4 shadow-xs relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] flex items-center gap-1.5">
+                <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                Cuenta de Banco
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
+                Transferencias / POS
+              </span>
+            </div>
+            <div className="mt-2 text-2xl font-black tracking-tight text-[#432414] dark:text-[#FEE4D7] tabular-nums">
+              ${Number(summary?.bank_balance ?? 0).toLocaleString('es-CO')}
+            </div>
+          </div>
+          <div className="mt-3 pt-2 border-t border-[#D4B28E]/25 dark:border-[#9F6839]/20 flex items-center justify-between text-[10px] text-[#9F6839] dark:text-[#DABA8C]">
+            <span className="text-emerald-700 dark:text-emerald-400 font-medium">Entradas: +${Number(summary?.bank_income ?? 0).toLocaleString('es-CO')}</span>
+            <span className="text-rose-600 dark:text-rose-400 font-medium">Salidas: -${Number(summary?.bank_expenses ?? 0).toLocaleString('es-CO')}</span>
+          </div>
+        </div>
+
+        {/* Tarjeta 3: Saldo Total Disponible */}
+        <div className="bg-gradient-to-br from-[#432414] to-[#2A150C] text-[#FEE4D7] border border-[#9F6839]/40 rounded-2xl p-4 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#DABA8C] flex items-center gap-1.5">
+                <Wallet className="w-4 h-4 text-[#DABA8C]" />
+                Saldo Total Disponible
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-white/10 text-[#FEE4D7] border border-white/20">
+                Caja + Banco
+              </span>
+            </div>
+            <div className="mt-2 text-2xl font-black tracking-tight text-white tabular-nums">
+              ${Number(summary?.total_balance ?? ((summary?.cash_balance || 0) + (summary?.bank_balance || 0))).toLocaleString('es-CO')}
+            </div>
+          </div>
+          <div className="mt-3 pt-2 border-t border-white/10 flex items-center justify-between text-[11px]">
+            <span className="text-[#DABA8C]/80">
+              {adjustments.length} ajustes realizados
+            </span>
+            <button
+              type="button"
+              onClick={handleOpenCreateAdjustment}
+              className="inline-flex items-center gap-1 font-bold text-amber-300 hover:text-white transition-colors cursor-pointer"
+            >
+              <Plus className="w-3 h-3" />
+              <span>Nuevo Ajuste</span>
             </button>
           </div>
         </div>
@@ -500,12 +763,12 @@ export default function Accounting() {
         </div>
       </div>
 
-      {/* Tabs y Periodos */}
+      {/* Tabs Principales */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30 pb-2">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 overflow-x-auto">
           <button type="button"
             onClick={() => setActiveTab('expenses')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'expenses'
                 ? 'bg-[#9F6839] text-white font-bold'
                 : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A160D]'
@@ -515,7 +778,7 @@ export default function Accounting() {
           </button>
           <button type="button"
             onClick={() => setActiveTab('incomes')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'incomes'
                 ? 'bg-[#9F6839] text-white font-bold'
                 : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A160D]'
@@ -523,29 +786,21 @@ export default function Accounting() {
           >
             Ingresos ({incomes.length})
           </button>
+          <button type="button"
+            onClick={() => setActiveTab('adjustments')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'adjustments'
+                ? 'bg-[#9F6839] text-white font-bold'
+                : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 dark:hover:bg-[#2A160D]'
+            }`}
+          >
+            Ajustes de Caja ({adjustments.length})
+          </button>
         </div>
 
-        {/* Selector de Periodo */}
-        <div className="flex items-center gap-1 bg-white dark:bg-[#1E0F08] p-0.5 rounded-lg border border-[#D4B28E]/40 dark:border-[#9F6839]/30 self-start sm:self-auto overflow-x-auto">
-          {[
-            { id: 'today', label: 'Hoy' },
-            { id: 'week', label: '7 Días' },
-            { id: 'month', label: 'Este Mes' },
-            { id: 'year', label: 'Este Año' },
-            { id: 'all', label: 'Todo' }
-          ].map((p) => (
-            <button type="button"
-              key={p.id}
-              onClick={() => setPeriod(p.id)}
-              className={`px-2.5 py-1 rounded-md text-xs transition-all cursor-pointer whitespace-nowrap ${
-                period === p.id
-                  ? 'bg-[#9F6839] text-white font-bold'
-                  : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50 font-medium'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
+        <div className="text-[11px] font-semibold text-[#9F6839] dark:text-[#DABA8C] flex items-center gap-1.5">
+          <Calendar className="w-3.5 h-3.5" />
+          <span>Filtro activo: <strong>{displayLabel}</strong></span>
         </div>
       </div>
 
@@ -1029,6 +1284,205 @@ export default function Accounting() {
         </div>
       )}
 
+      {/* TAB AJUSTES DE CAJA */}
+      {activeTab === 'adjustments' && (
+        <div className="bg-white dark:bg-[#1E0F08] border border-[#D4B28E]/50 dark:border-[#9F6839]/30 rounded-2xl overflow-hidden">
+          {/* Sub-barra de Ajustes */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-[#FEE4D7]/20 dark:bg-[#201009] border-b border-[#D4B28E]/40 dark:border-[#9F6839]/30">
+            <div className="text-xs text-[#9F6839] dark:text-[#DABA8C]">
+              Movimientos internos de arqueo, fondeos de caja y retiros (no computan como gastos ni ventas).
+            </div>
+
+            <button
+              type="button"
+              onClick={handleOpenCreateAdjustment}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#9F6839] hover:bg-[#835229] text-white font-semibold text-xs cursor-pointer ml-auto whitespace-nowrap"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Registrar Ajuste</span>
+            </button>
+          </div>
+
+          {adjustments.length === 0 ? (
+            <div className="p-12 text-center text-[#9F6839] dark:text-[#DABA8C]">
+              <SlidersHorizontal className="w-10 h-10 mx-auto mb-2 opacity-40" />
+              <p className="font-semibold text-xs">No hay ajustes registrados en este período</p>
+            </div>
+          ) : (
+            <>
+              {/* MOBILE VIEW FOR AJUSTES */}
+              <div className="block md:hidden divide-y divide-[#D4B28E]/20 dark:divide-[#9F6839]/20">
+                {adjustments.map((adj) => {
+                  const isExpanded = expandedAdjustmentId === adj.id
+                  const isEntry = adj.type === 'in'
+                  const isCash = (adj.target || 'cash') === 'cash'
+
+                  return (
+                    <div key={adj.id} className="transition-colors">
+                      <div
+                        onClick={() => setExpandedAdjustmentId(isExpanded ? null : adj.id)}
+                        className="p-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#FEE4D7]/15 transition-colors select-none"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className={`w-9 h-9 rounded-full ${isEntry ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-500/30' : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-500/30'} font-black text-xs flex items-center justify-center border shrink-0`}>
+                            {isEntry ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-xs text-[#432414] dark:text-[#FEE4D7] truncate">
+                              {adj.reason}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#9F6839] dark:text-[#DABA8C]">
+                                {isCash ? 'Caja Efectivo' : 'Cuenta Banco'}
+                              </span>
+                              <span className="text-[10px] text-[#9F6839]/60 dark:text-[#DABA8C]/50 tabular-nums">
+                                · {new Date(adj.created_at).toLocaleDateString('es-CO')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`font-bold text-xs sm:text-sm tabular-nums ${isEntry ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                            {isEntry ? '+' : '-'}${Number(adj.amount).toLocaleString('es-CO')}
+                          </span>
+                          <ChevronDown
+                            className={`w-4 h-4 text-[#9F6839] dark:text-[#DABA8C] transition-transform duration-200 ${
+                              isExpanded ? 'rotate-180' : ''
+                            }`}
+                          />
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="px-4 pb-4 pt-2 bg-[#FEE4D7]/10 dark:bg-[#201009]/50 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20 space-y-3 animate-in fade-in duration-150">
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="p-2 rounded-xl bg-white/70 dark:bg-[#150904]/70 border border-[#D4B28E]/30 dark:border-[#9F6839]/20">
+                              <span className="text-[10px] uppercase font-semibold text-[#9F6839] dark:text-[#DABA8C] block">
+                                Tipo de Movimiento
+                              </span>
+                              <span className="font-medium text-[#432414] dark:text-[#FEE4D7] block mt-0.5">
+                                {isEntry ? 'Entrada / Fondeo (+)' : 'Salida / Retiro (-)'}
+                              </span>
+                            </div>
+                            <div className="p-2 rounded-xl bg-white/70 dark:bg-[#150904]/70 border border-[#D4B28E]/30 dark:border-[#9F6839]/20">
+                              <span className="text-[10px] uppercase font-semibold text-[#9F6839] dark:text-[#DABA8C] block">
+                                Cuenta de Destino
+                              </span>
+                              <span className="font-medium text-[#432414] dark:text-[#FEE4D7] block mt-0.5">
+                                {isCash ? 'Efectivo en Caja' : 'Cuenta de Banco'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 tabular-nums">
+                            Fecha y hora exacta: {new Date(adj.created_at).toLocaleString('es-CO')}
+                          </div>
+
+                          {isOwner && (
+                            <div className="pt-2 border-t border-[#D4B28E]/20 dark:border-[#9F6839]/20">
+                              <button
+                                type="button"
+                                onClick={(ev) => {
+                                  ev.stopPropagation()
+                                  handleDeleteAdjustment(adj)
+                                }}
+                                className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Eliminar Ajuste</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* DESKTOP TABLE VIEW FOR AJUSTES */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#D4B28E]/60 dark:border-[#9F6839]/40 bg-[#FEE4D7]/40 dark:bg-[#201009] text-[10px] uppercase tracking-wider text-[#9F6839] dark:text-[#DABA8C] font-semibold">
+                      <th className="py-2.5 px-3">Fecha y Hora</th>
+                      <th className="py-2.5 px-3">Tipo</th>
+                      <th className="py-2.5 px-3">Cuenta Afectada</th>
+                      <th className="py-2.5 px-3">Motivo / Justificación</th>
+                      <th className="py-2.5 px-3 text-right">Monto</th>
+                      <th className="py-2.5 px-3 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#D4B28E]/30 dark:divide-[#9F6839]/20">
+                    {adjustments.map((adj) => {
+                      const isEntry = adj.type === 'in'
+                      const isCash = (adj.target || 'cash') === 'cash'
+
+                      return (
+                        <tr key={adj.id} className="hover:bg-[#FEE4D7]/20 dark:hover:bg-[#2A150C]/40 transition-colors">
+                          <td className="py-2.5 px-3 whitespace-nowrap text-[#432414] dark:text-[#FEE4D7]">
+                            <span className="font-semibold">{new Date(adj.created_at).toLocaleDateString('es-CO')}</span>
+                            <span className="text-[10px] text-[#9F6839]/70 dark:text-[#DABA8C]/60 font-normal tabular-nums ml-1">
+                              {new Date(adj.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 whitespace-nowrap">
+                            {isEntry ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                                <ArrowUpRight className="w-3 h-3 text-emerald-600" />
+                                Entrada / Fondeo
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                                <ArrowDownRight className="w-3 h-3 text-amber-600" />
+                                Salida / Retiro
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 whitespace-nowrap font-medium text-[#432414] dark:text-[#FEE4D7]">
+                            {isCash ? (
+                              <span className="inline-flex items-center gap-1 text-[#9F6839] dark:text-[#DABA8C]">
+                                <Coins className="w-3.5 h-3.5" /> Efectivo en Caja
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                                <Landmark className="w-3.5 h-3.5" /> Cuenta de Banco
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 text-[#432414] dark:text-[#FEE4D7] font-medium">
+                            {adj.reason}
+                          </td>
+                          <td className={`py-2.5 px-3 text-right whitespace-nowrap font-bold text-xs tabular-nums ${isEntry ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                            {isEntry ? '+' : '-'}${Number(adj.amount).toLocaleString('es-CO')}
+                          </td>
+                          <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                            {isOwner ? (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAdjustment(adj)}
+                                className="p-1 text-[#9F6839] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors cursor-pointer"
+                                title="Eliminar Ajuste"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-[#9F6839]/30">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {/* MODAL CREAR / EDITAR GASTO */}
       {isExpenseModalOpen && (
         <Modal
@@ -1286,6 +1740,246 @@ export default function Accounting() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* MODAL CREAR AJUSTE DE CAJA */}
+      {isAdjustmentModalOpen && (
+        <Modal
+          isOpen={isAdjustmentModalOpen}
+          onClose={() => !adjustmentSubmitting && setIsAdjustmentModalOpen(false)}
+          title="Registrar Ajuste de Caja / Arqueo"
+        >
+          <form onSubmit={handleSaveAdjustment} className="space-y-4 text-[#432414] dark:text-[#FEE4D7]">
+            <p className="text-xs text-[#9F6839] dark:text-[#DABA8C]">
+              Los ajustes no alteran la gráfica de P&L ni se registran como venta o gasto operativo; ajustan directamente el saldo disponible de caja o banco.
+            </p>
+
+            {adjustmentError && (
+              <div className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-2xl text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{adjustmentError}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
+                  Tipo de Movimiento *
+                </label>
+                <select
+                  value={adjustmentForm.type}
+                  onChange={(e) => setAdjustmentForm({ ...adjustmentForm, type: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] font-semibold focus:outline-none"
+                >
+                  <option value="in">Entrada / Fondeo (+)</option>
+                  <option value="out">Salida / Retiro (-)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
+                  Cuenta / Destino *
+                </label>
+                <select
+                  value={adjustmentForm.target}
+                  onChange={(e) => setAdjustmentForm({ ...adjustmentForm, target: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] font-semibold focus:outline-none"
+                >
+                  <option value="cash">Efectivo en Caja</option>
+                  <option value="bank">Cuenta de Banco / Transferencias</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
+                  Monto ($) *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={adjustmentForm.amount}
+                  onChange={(e) => setAdjustmentForm({ ...adjustmentForm, amount: e.target.value })}
+                  placeholder="Ej. 100000"
+                  className="w-full px-3.5 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839] font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
+                  Fecha y Hora
+                </label>
+                <input
+                  type="datetime-local"
+                  value={adjustmentForm.created_at}
+                  onChange={(e) => setAdjustmentForm({ ...adjustmentForm, created_at: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#432414] dark:text-[#FEE4D7] uppercase tracking-wider mb-1.5">
+                Motivo / Justificación *
+              </label>
+              <input
+                type="text"
+                required
+                value={adjustmentForm.reason}
+                onChange={(e) => setAdjustmentForm({ ...adjustmentForm, reason: e.target.value })}
+                placeholder="Ej. Arqueo de inicio de turno, retiro de caja chica, ajuste por sobrante..."
+                className="w-full px-3.5 py-2.5 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7] focus:outline-none focus:border-[#9F6839]"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#D4B28E]/60 dark:border-[#9F6839]/30">
+              <button
+                type="button"
+                onClick={() => setIsAdjustmentModalOpen(false)}
+                className="px-4 py-2.5 text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7] rounded-xl text-xs font-bold cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={adjustmentSubmitting}
+                className="px-5 py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all disabled:opacity-50"
+              >
+                {adjustmentSubmitting ? 'Guardando...' : 'Aplicar Ajuste'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* MODAL FILTRO DE FECHAS (Idéntico a Historial de Ventas) */}
+      {isFilterModalOpen && (
+        <Modal
+          isOpen={isFilterModalOpen}
+          onClose={() => setIsFilterModalOpen(false)}
+          title="Filtrar Período Contable"
+        >
+          <div className="space-y-4 text-[#432414] dark:text-[#FEE4D7]">
+            <div className="flex items-center gap-2 border-b border-[#D4B28E]/60 dark:border-[#9F6839]/30 pb-2">
+              <button
+                type="button"
+                onClick={() => setFilterTab('preset')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                  filterTab === 'preset'
+                    ? 'bg-[#9F6839] text-white'
+                    : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50'
+                }`}
+              >
+                Rápidos
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterTab('month')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                  filterTab === 'month'
+                    ? 'bg-[#9F6839] text-white'
+                    : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50'
+                }`}
+              >
+                Mes Específico
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterTab('custom')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+                  filterTab === 'custom'
+                    ? 'bg-[#9F6839] text-white'
+                    : 'text-[#9F6839] dark:text-[#DABA8C] hover:bg-[#FEE4D7]/50'
+                }`}
+              >
+                Rango Libre
+              </button>
+            </div>
+
+            {filterTab === 'preset' && (
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { key: 'today', label: 'Hoy' },
+                  { key: 'week', label: 'Últimos 7 días' },
+                  { key: 'month', label: 'Este Mes' },
+                  { key: 'prev_month', label: 'Mes Anterior' },
+                  { key: 'year', label: 'Este Año' },
+                  { key: 'all', label: 'Histórico Total' }
+                ].map((item) => (
+                  <button type="button"
+                    key={item.key}
+                    onClick={() => handleSelectPreset(item.key, item.label)}
+                    className="p-3 bg-[#FEE4D7]/40 dark:bg-[#2A150C] hover:bg-[#9F6839] hover:text-white border border-[#D4B28E]/60 dark:border-[#9F6839]/30 rounded-xl text-left text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {filterTab === 'month' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <button type="button"
+                    onClick={() => setSelectedYear(selectedYear - 1)}
+                    className="p-1 rounded-lg hover:bg-[#FEE4D7]"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="font-extrabold text-sm">{selectedYear}</span>
+                  <button type="button"
+                    onClick={() => setSelectedYear(selectedYear + 1)}
+                    className="p-1 rounded-lg hover:bg-[#FEE4D7]"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {MONTH_NAMES.map((m) => (
+                    <button type="button"
+                      key={m.num}
+                      onClick={() => handleSelectMonthYear(selectedYear, m.num, m.full)}
+                      className="p-2.5 bg-[#FEE4D7]/40 dark:bg-[#2A150C] hover:bg-[#9F6839] hover:text-white border border-[#D4B28E]/60 dark:border-[#9F6839]/30 rounded-xl text-xs font-bold text-center cursor-pointer transition-colors"
+                    >
+                      {m.full}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {filterTab === 'custom' && (
+              <form onSubmit={handleApplyCustomRange} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-1">Fecha Inicio</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#9F6839] dark:text-[#DABA8C] mb-1">Fecha Fin</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-white dark:bg-[#2A150C] border border-[#D4B28E]/80 dark:border-[#9F6839]/40 rounded-xl text-xs text-[#432414] dark:text-[#FEE4D7]"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-2.5 bg-[#9F6839] hover:bg-[#835229] text-white rounded-xl text-xs font-bold cursor-pointer transition-all"
+                >
+                  Aplicar Rango
+                </button>
+              </form>
+            )}
+          </div>
         </Modal>
       )}
     </div>

@@ -39,6 +39,17 @@ func NewAccountingHandler(db *pgxpool.Pool, hub *events.Hub) *AccountingHandler 
 			created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 		);
 		CREATE INDEX IF NOT EXISTS idx_incomes_created_at ON incomes(created_at DESC);
+
+		CREATE TABLE IF NOT EXISTS cash_adjustments (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			amount NUMERIC(10,2) NOT NULL CHECK (amount > 0),
+			type VARCHAR(20) NOT NULL, -- 'in' (ingreso/entrada) o 'out' (retiro/salida)
+			target VARCHAR(50) NOT NULL DEFAULT 'efectivo', -- 'efectivo' o 'banco'
+			reason TEXT NOT NULL,
+			registered_by UUID REFERENCES users(id) ON DELETE SET NULL,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+		);
+		CREATE INDEX IF NOT EXISTS idx_cash_adjustments_created_at ON cash_adjustments(created_at DESC);
 	`)
 
 	return &AccountingHandler{DB: db, Hub: hub}
@@ -104,12 +115,19 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 
 	// 2. Ingresos manuales extraordinarios
 	var cashManual, transferManual, manualIncomes float64
-	incQuery := "SELECT COALESCE(SUM(amount), 0), COUNT(id), COALESCE(SUM(CASE WHEN payment_method = 'efectivo' THEN amount ELSE 0 END), 0), COALESCE(SUM(CASE WHEN payment_method != 'efectivo' THEN amount ELSE 0 END), 0) FROM incomes WHERE " + timeCondition
+	incQuery := "SELECT COALESCE(SUM(amount), 0), COUNT(id), COALESCE(SUM(CASE WHEN LOWER(payment_method) = 'efectivo' THEN amount ELSE 0 END), 0), COALESCE(SUM(CASE WHEN LOWER(payment_method) != 'efectivo' THEN amount ELSE 0 END), 0) FROM incomes WHERE " + timeCondition
 	_ = h.DB.QueryRow(r.Context(), incQuery).Scan(&manualIncomes, &summary.IncomesCount, &cashManual, &transferManual)
 
+	// 2.1 Abonos de clientes (cartera pagada)
+	var cashAbonos, transferAbonos float64
+	_ = h.DB.QueryRow(r.Context(), `SELECT 
+		COALESCE(SUM(CASE WHEN LOWER(payment_method) = 'efectivo' THEN amount ELSE 0 END), 0),
+		COALESCE(SUM(CASE WHEN LOWER(payment_method) != 'efectivo' THEN amount ELSE 0 END), 0)
+		FROM customer_payments WHERE `+timeCondition).Scan(&cashAbonos, &transferAbonos)
+
 	summary.TotalIncome = totalSales + manualIncomes
-	summary.IncomeByPaymentMethod["efectivo"] = cashSales + cashManual
-	summary.IncomeByPaymentMethod["transferencia"] = transferSales + transferManual
+	summary.IncomeByPaymentMethod["efectivo"] = cashSales + cashManual + cashAbonos
+	summary.IncomeByPaymentMethod["transferencia"] = transferSales + transferManual + transferAbonos
 
 	// 3. Gastos
 	expensesQuery := "SELECT COALESCE(SUM(amount), 0), COUNT(id) FROM expenses WHERE " + timeCondition
@@ -119,6 +137,13 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error calculando gastos", http.StatusInternalServerError)
 		return
 	}
+
+	// 3.1 Gastos por método de pago (efectivo vs banco)
+	var cashExpenses, bankExpenses float64
+	_ = h.DB.QueryRow(r.Context(), `SELECT 
+		COALESCE(SUM(CASE WHEN LOWER(payment_method) = 'efectivo' THEN amount ELSE 0 END), 0),
+		COALESCE(SUM(CASE WHEN LOWER(payment_method) != 'efectivo' THEN amount ELSE 0 END), 0)
+		FROM expenses WHERE `+timeCondition).Scan(&cashExpenses, &bankExpenses)
 
 	catQuery := "SELECT category, COALESCE(SUM(amount), 0) FROM expenses WHERE " + timeCondition + " GROUP BY category"
 	rows, err := h.DB.Query(r.Context(), catQuery)
@@ -134,6 +159,32 @@ func (h *AccountingHandler) GetSummary(w http.ResponseWriter, r *http.Request) {
 	}
 
 	summary.NetBalance = summary.TotalIncome - summary.TotalExpenses
+
+	// 4. Ajustes de caja y banco (NO afectan ganancias ni gastos operativos)
+	var cashAdjIn, cashAdjOut, bankAdjIn, bankAdjOut float64
+	var adjustmentsCount int
+	adjQuery := `SELECT 
+		COALESCE(SUM(CASE WHEN LOWER(target) = 'efectivo' AND LOWER(type) = 'in' THEN amount ELSE 0 END), 0),
+		COALESCE(SUM(CASE WHEN LOWER(target) = 'efectivo' AND LOWER(type) = 'out' THEN amount ELSE 0 END), 0),
+		COALESCE(SUM(CASE WHEN LOWER(target) != 'efectivo' AND LOWER(type) = 'in' THEN amount ELSE 0 END), 0),
+		COALESCE(SUM(CASE WHEN LOWER(target) != 'efectivo' AND LOWER(type) = 'out' THEN amount ELSE 0 END), 0),
+		COUNT(id)
+	FROM cash_adjustments WHERE ` + timeCondition
+	_ = h.DB.QueryRow(r.Context(), adjQuery).Scan(&cashAdjIn, &cashAdjOut, &bankAdjIn, &bankAdjOut, &adjustmentsCount)
+
+	// 5. Consolidación de tesorería (Efectivo disponible y Cuentas de Banco)
+	summary.CashIncome = cashSales + cashManual + cashAbonos
+	summary.CashExpenses = cashExpenses
+	summary.CashAdjustments = cashAdjIn - cashAdjOut
+	summary.CashBalance = summary.CashIncome - summary.CashExpenses + summary.CashAdjustments
+
+	summary.BankIncome = transferSales + transferManual + transferAbonos
+	summary.BankExpenses = bankExpenses
+	summary.BankAdjustments = bankAdjIn - bankAdjOut
+	summary.BankBalance = summary.BankIncome - summary.BankExpenses + summary.BankAdjustments
+
+	summary.TotalBalance = summary.CashBalance + summary.BankBalance
+	summary.AdjustmentsCount = adjustmentsCount
 
 	roleVal := r.Context().Value(custommw.ContextRole)
 	var userRole models.UserRole
@@ -767,5 +818,190 @@ func (h *AccountingHandler) DeleteIncome(w http.ResponseWriter, r *http.Request)
 	}
 
 	h.Hub.Publish("income_deleted", map[string]string{"id": idStr})
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// GET /cash-adjustments?period=today|week|month|all&start_date=...&end_date=...&year=...&month_num=...
+func (h *AccountingHandler) ListAdjustments(w http.ResponseWriter, r *http.Request) {
+	period := r.URL.Query().Get("period")
+	startDate := strings.TrimSpace(r.URL.Query().Get("start_date"))
+	endDate := strings.TrimSpace(r.URL.Query().Get("end_date"))
+	yearParam := strings.TrimSpace(r.URL.Query().Get("year"))
+	monthParam := strings.TrimSpace(r.URL.Query().Get("month_num"))
+
+	timeCondition := "WHERE " + getTimeCondition("ca.created_at", period, startDate, endDate, yearParam, monthParam)
+
+	query := fmt.Sprintf(`
+		SELECT ca.id, ca.amount, ca.type, ca.target, ca.reason, ca.registered_by,
+		       COALESCE(u.username, 'Personal'), ca.created_at
+		FROM cash_adjustments ca
+		LEFT JOIN users u ON ca.registered_by = u.id
+		%s
+		ORDER BY ca.created_at DESC
+	`, timeCondition)
+
+	rows, err := h.DB.Query(r.Context(), query)
+	if err != nil {
+		log.Printf("error consultando ajustes de caja: %v", err)
+		http.Error(w, "error consultando ajustes de caja", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var adjustments []models.CashAdjustment
+	for rows.Next() {
+		var a models.CashAdjustment
+		if err := rows.Scan(&a.ID, &a.Amount, &a.Type, &a.Target, &a.Reason, &a.RegisteredBy, &a.RegistererName, &a.CreatedAt); err != nil {
+			log.Printf("error leyendo ajustes de caja: %v", err)
+			http.Error(w, "error leyendo ajustes", http.StatusInternalServerError)
+			return
+		}
+		adjustments = append(adjustments, a)
+	}
+
+	if adjustments == nil {
+		adjustments = []models.CashAdjustment{}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(adjustments)
+}
+
+type createAdjustmentRequest struct {
+	Amount    float64 `json:"amount"`
+	Type      string  `json:"type"`   // "in" o "out"
+	Target    string  `json:"target"` // "efectivo" o "banco"
+	Reason    string  `json:"reason"`
+	CreatedAt string  `json:"created_at,omitempty"`
+}
+
+// POST /cash-adjustments
+func (h *AccountingHandler) CreateAdjustment(w http.ResponseWriter, r *http.Request) {
+	var req createAdjustmentRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "cuerpo inválido", http.StatusBadRequest)
+		return
+	}
+
+	if req.Amount <= 0 {
+		http.Error(w, "el monto debe ser mayor a 0", http.StatusBadRequest)
+		return
+	}
+
+	req.Type = strings.ToLower(strings.TrimSpace(req.Type))
+	if req.Type != "in" && req.Type != "out" && req.Type != "ingreso" && req.Type != "retiro" {
+		http.Error(w, "tipo de ajuste inválido (in/out)", http.StatusBadRequest)
+		return
+	}
+	if req.Type == "ingreso" {
+		req.Type = "in"
+	} else if req.Type == "retiro" {
+		req.Type = "out"
+	}
+
+	req.Target = strings.ToLower(strings.TrimSpace(req.Target))
+	if req.Target != "efectivo" && req.Target != "banco" {
+		req.Target = "efectivo"
+	}
+
+	req.Reason = strings.TrimSpace(req.Reason)
+	if req.Reason == "" {
+		http.Error(w, "el motivo del ajuste es obligatorio", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	userVal := ctx.Value(custommw.ContextUserID)
+	var registeredBy *uuid.UUID
+	if userVal != nil {
+		if id, ok := userVal.(uuid.UUID); ok {
+			registeredBy = &id
+		} else if idStr, ok := userVal.(string); ok {
+			if parsed, err := uuid.Parse(idStr); err == nil {
+				registeredBy = &parsed
+			}
+		}
+	}
+
+	parsedDate := time.Now()
+	if req.CreatedAt != "" {
+		if t, err := time.Parse(time.RFC3339, req.CreatedAt); err == nil {
+			parsedDate = t
+		}
+	}
+
+	var a models.CashAdjustment
+	err := h.DB.QueryRow(ctx, `
+		INSERT INTO cash_adjustments (amount, type, target, reason, registered_by, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, amount, type, target, reason, registered_by, created_at
+	`, req.Amount, req.Type, req.Target, req.Reason, registeredBy, parsedDate).Scan(
+		&a.ID, &a.Amount, &a.Type, &a.Target, &a.Reason, &a.RegisteredBy, &a.CreatedAt,
+	)
+
+	if err != nil {
+		log.Printf("error guardando ajuste de caja: %v", err)
+		http.Error(w, "error guardando ajuste de caja", http.StatusInternalServerError)
+		return
+	}
+
+	if registeredBy != nil {
+		_ = h.DB.QueryRow(ctx, `SELECT username FROM users WHERE id = $1`, *registeredBy).Scan(&a.RegistererName)
+	}
+	if a.RegistererName == "" {
+		a.RegistererName = "Personal"
+	}
+
+	if h.Hub != nil {
+		h.Hub.Publish("accounting_updated", map[string]interface{}{
+			"type":   "cash_adjustment",
+			"action": "created",
+			"id":     a.ID,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(a)
+}
+
+// DELETE /cash-adjustments/{id} — solo dueños
+func (h *AccountingHandler) DeleteAdjustment(w http.ResponseWriter, r *http.Request) {
+	roleVal := r.Context().Value(custommw.ContextRole)
+	userRole := ""
+	if roleVal != nil {
+		userRole = strings.ToLower(fmt.Sprintf("%v", roleVal))
+	}
+	if userRole != "owner" && userRole != "dueño" {
+		http.Error(w, "solo los dueños pueden eliminar ajustes de caja", http.StatusForbidden)
+		return
+	}
+
+	idStr := chi.URLParam(r, "id")
+	adjID, err := uuid.Parse(idStr)
+	if err != nil {
+		http.Error(w, "id inválido", http.StatusBadRequest)
+		return
+	}
+
+	tag, err := h.DB.Exec(r.Context(), `DELETE FROM cash_adjustments WHERE id = $1`, adjID)
+	if err != nil {
+		log.Printf("error eliminando ajuste: %v", err)
+		http.Error(w, "error eliminando ajuste", http.StatusInternalServerError)
+		return
+	}
+	if tag.RowsAffected() == 0 {
+		http.Error(w, "ajuste no encontrado", http.StatusNotFound)
+		return
+	}
+
+	if h.Hub != nil {
+		h.Hub.Publish("accounting_updated", map[string]interface{}{
+			"type":   "cash_adjustment",
+			"action": "deleted",
+			"id":     adjID,
+		})
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }

@@ -195,12 +195,18 @@ func main() {
 		r.Patch("/tasks/{id}/status", taskHandler.UpdateStatus)
 	})
 
-	// Crear, editar y borrar tareas: solo owner y admin
+	// Crear y editar tareas: solo owner y admin
 	r.Group(func(r chi.Router) {
 		r.Use(custommw.RequireAuth)
 		r.Use(custommw.RequireRole(models.RoleOwner, models.RoleAdmin))
 		r.Post("/tasks", taskHandler.Create)
 		r.Put("/tasks/{id}", taskHandler.Update)
+	})
+
+	// Borrar tareas: EXCLUSIVO solo dueño (Owner)
+	r.Group(func(r chi.Router) {
+		r.Use(custommw.RequireAuth)
+		r.Use(custommw.RequireRole(models.RoleOwner))
 		r.Delete("/tasks/{id}", taskHandler.Delete)
 	})
 
@@ -230,6 +236,10 @@ func main() {
 		r.Post("/incomes", accountingHandler.CreateIncome)
 		r.Put("/incomes/{id}", accountingHandler.UpdateIncome)
 		r.Delete("/incomes/{id}", accountingHandler.DeleteIncome)
+
+		r.Get("/cash-adjustments", accountingHandler.ListAdjustments)
+		r.Post("/cash-adjustments", accountingHandler.CreateAdjustment)
+		r.Delete("/cash-adjustments/{id}", accountingHandler.DeleteAdjustment)
 	})
 
 	log.Println("servidor corriendo en :8080")

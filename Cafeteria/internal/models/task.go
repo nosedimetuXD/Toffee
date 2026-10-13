@@ -24,6 +24,7 @@ type Task struct {
 	CreatedByName  string     `json:"created_by_name,omitempty"`
 	Status         TaskStatus `json:"status"`
 	DueDate        *time.Time `json:"due_date,omitempty"`
+	IsDaily        bool       `json:"is_daily"`
 	CreatedAt      time.Time  `json:"created_at"`
 	UpdatedAt      time.Time  `json:"updated_at"`
 }

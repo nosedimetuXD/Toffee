@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react'
 import { api, API_URL } from '../api/client'
 import Modal from '../components/Modal'
-import { CheckSquare, Plus, CheckCircle2, User, AlertTriangle } from 'lucide-react'
+import { CheckSquare, Plus, CheckCircle2, User, AlertTriangle, Trash2, RotateCcw } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
 export default function Tasks() {
+  const { user } = useAuth()
+  const userRole = (user?.role || '').toLowerCase()
+  const isOwner = userRole === 'owner' || userRole === 'dueño'
+  const isAdmin = userRole === 'admin' || userRole === 'administrador'
+  const isEmployee = !isOwner && !isAdmin
+
   const [tasks, setTasks] = useState([])
   const [users, setUsers] = useState([])
   const [selectedShift, setSelectedShift] = useState('Todos')
@@ -15,6 +22,7 @@ export default function Tasks() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [assignedTo, setAssignedTo] = useState('')
+  const [isDaily, setIsDaily] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
 
@@ -22,7 +30,7 @@ export default function Tasks() {
     try {
       const [tasksData, usersData] = await Promise.all([
         api.get('/tasks'),
-        api.get('/users')
+        api.get('/users').catch(() => [])
       ])
       setTasks(tasksData || [])
       setUsers(usersData || [])
@@ -41,7 +49,12 @@ export default function Tasks() {
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
-        if (data.type === 'task_created' || data.type === 'task_status_updated') {
+        if (
+          data.type === 'task_created' ||
+          data.type === 'task_status_updated' ||
+          data.type === 'task_deleted' ||
+          data.type === 'task_updated'
+        ) {
           loadData()
         }
       } catch (e) {}
@@ -56,6 +69,7 @@ export default function Tasks() {
     setTitle('')
     setDescription('')
     setAssignedTo('')
+    setIsDaily(false)
     setFormError('')
     setIsModalOpen(true)
   }
@@ -69,7 +83,8 @@ export default function Tasks() {
       await api.post('/tasks', {
         title,
         description,
-        assigned_to: assignedTo ? assignedTo : null
+        assigned_to: assignedTo ? assignedTo : null,
+        is_daily: isDaily
       })
 
       setIsModalOpen(false)
@@ -78,6 +93,17 @@ export default function Tasks() {
       setFormError(err.message || 'No se pudo crear la tarea')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handleDeleteTask(taskId, taskTitle) {
+    if (!isOwner) return
+    if (!confirm(`¿Eliminar la tarea "${taskTitle}"?`)) return
+    try {
+      await api.delete(`/tasks/${taskId}`)
+      setTasks((prev) => prev.filter((t) => t.id !== taskId))
+    } catch (err) {
+      alert('Error al eliminar tarea: ' + (err.message || 'Error'))
     }
   }
 
@@ -114,16 +140,20 @@ export default function Tasks() {
             Tareas & Checklists de Turno
           </h2>
           <p className="text-xs font-semibold text-[#9F6839] dark:text-[#DABA8C] mt-0.5">
-            Protocolos operativos de apertura, calibración de barra y cierre de cafetería
+            {isEmployee
+              ? 'Tus tareas y protocolos operativos asignados para hoy'
+              : 'Protocolos operativos de apertura, calibración de barra y cierre de cafetería'}
           </p>
         </div>
 
-        <button type="button"
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4" /> Nueva Tarea
-        </button>
+        {!isEmployee && (
+          <button type="button"
+            onClick={openCreateModal}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white font-extrabold text-xs shadow-md transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" /> Nueva Tarea
+          </button>
+        )}
       </div>
 
       {pageError && (
@@ -138,7 +168,7 @@ export default function Tasks() {
         <div className="flex items-center justify-between text-xs font-bold text-[#432414] dark:text-[#FEE4D7] mb-2">
           <span className="flex items-center gap-2">
             <CheckSquare className="w-4 h-4 text-[#9F6839]" />
-            Progreso Operativo del Día
+            {isEmployee ? 'Tu Progreso Operativo del Día' : 'Progreso Operativo del Día'}
           </span>
           <span className="text-[#9F6839] font-mono">
             {completedCount} de {tasks.length} completadas ({progressPercent}%)
@@ -183,7 +213,7 @@ export default function Tasks() {
                   : 'bg-white dark:bg-[#201009] border-[#D4B28E] dark:border-[#9F6839]/40 hover:border-[#9F6839]'
               }`}
             >
-              <div className="flex items-start gap-3.5 min-w-0">
+              <div className="flex items-start gap-3.5 min-w-0 flex-1">
                 <div
                   className={`w-6 h-6 rounded-xl flex items-center justify-center shrink-0 mt-0.5 border transition-colors ${
                     isDone
@@ -194,10 +224,20 @@ export default function Tasks() {
                   <CheckCircle2 className="w-4 h-4 fill-current" />
                 </div>
 
-                <div>
-                  <h4 className={`text-sm font-bold tracking-tight ${isDone ? 'line-through text-[#9F6839]' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
-                    {t.title}
-                  </h4>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className={`text-sm font-bold tracking-tight ${isDone ? 'line-through text-[#9F6839]' : 'text-[#432414] dark:text-[#FEE4D7]'}`}>
+                      {t.title}
+                    </h4>
+
+                    {t.is_daily && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20" title="Tarea diaria recurrente (se reinicia automáticamente cada día)">
+                        <RotateCcw className="w-2.5 h-2.5" />
+                        Diaria
+                      </span>
+                    )}
+                  </div>
+
                   {t.description && (
                     <p className="text-xs text-[#9F6839] dark:text-[#DABA8C] mt-1">{t.description}</p>
                   )}
@@ -212,93 +252,132 @@ export default function Tasks() {
                 </div>
               </div>
 
-              {isDone && (
-                <span className="text-[10px] text-emerald-600 font-extrabold shrink-0">
-                  Completada
-                </span>
-              )}
+              <div className="flex items-center gap-2 shrink-0">
+                {isDone && (
+                  <span className="text-[10px] text-emerald-600 font-extrabold">
+                    Completada
+                  </span>
+                )}
+
+                {/* Opción de eliminar tarea exclusiva para dueños */}
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteTask(t.id, t.title)
+                    }}
+                    className="p-1.5 text-[#9F6839] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer"
+                    title="Eliminar tarea (exclusivo dueño)"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
           )
         })}
         {filteredTasks.length === 0 && (
           <p className="text-xs text-[#9F6839] text-center py-8 font-semibold">
-            No hay tareas en esta categoría.
+            {isEmployee ? 'No tienes tareas asignadas en esta categoría.' : 'No hay tareas en esta categoría.'}
           </p>
         )}
       </div>
 
       {/* Modal Crear Tarea */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Crear Nueva Tarea Operativa">
-        <form onSubmit={handleCreateTask} className="space-y-4">
-          {formError && (
-            <div className="p-3.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 text-xs font-bold">
-              {formError}
+      {!isEmployee && (
+        <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Crear Nueva Tarea Operativa">
+          <form onSubmit={handleCreateTask} className="space-y-4">
+            {formError && (
+              <div className="p-3.5 rounded-2xl bg-red-50 text-red-700 border border-red-200 text-xs font-bold">
+                {formError}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-bold text-[#432414] dark:text-[#DABA8C] uppercase tracking-wider mb-1">
+                Título de la Tarea *
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ej. Calibrar molino de café / Limpieza de filtros"
+                required
+                className="w-full px-3.5 py-2.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] text-sm font-semibold text-[#432414] dark:text-[#FEE4D7]"
+              />
             </div>
-          )}
 
-          <div>
-            <label className="block text-xs font-bold text-[#432414] dark:text-[#DABA8C] uppercase tracking-wider mb-1">
-              Título de la Tarea
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej. Calibrar molino de café / Limpieza de filtros"
-              required
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] text-sm font-semibold text-[#432414] dark:text-[#FEE4D7]"
-            />
-          </div>
+            <div>
+              <label className="block text-xs font-bold text-[#432414] dark:text-[#DABA8C] uppercase tracking-wider mb-1">
+                Instrucciones / Detalles
+              </label>
+              <textarea
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Descripción del protocolo o procedimiento a seguir..."
+                className="w-full px-3.5 py-2.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] text-sm font-semibold text-[#432414] dark:text-[#FEE4D7]"
+              />
+            </div>
 
-          <div>
-            <label className="block text-xs font-bold text-[#432414] dark:text-[#DABA8C] uppercase tracking-wider mb-1">
-              Instrucciones / Detalles
-            </label>
-            <textarea
-              rows={2}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descripción del protocolo o procedimiento a seguir..."
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] text-sm font-semibold text-[#432414] dark:text-[#FEE4D7]"
-            />
-          </div>
+            <div>
+              <label className="block text-xs font-bold text-[#432414] dark:text-[#DABA8C] uppercase tracking-wider mb-1">
+                Asignar a Empleado / Cajero (Opcional)
+              </label>
+              <select
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] text-sm font-semibold text-[#432414] dark:text-[#FEE4D7]"
+              >
+                <option value="">Todo el Equipo (General)</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.username} ({u.role})
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-xs font-bold text-[#432414] dark:text-[#DABA8C] uppercase tracking-wider mb-1">
-              Asignar a Empleado / Cajero (Opcional)
-            </label>
-            <select
-              value={assignedTo}
-              onChange={(e) => setAssignedTo(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-white dark:bg-[#150904] border border-[#D4B28E] text-sm font-semibold text-[#432414] dark:text-[#FEE4D7]"
-            >
-              <option value="">Todo el Equipo (General)</option>
-              {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.username} ({u.role})
-                </option>
-              ))}
-            </select>
-          </div>
+            {/* Checkbox Tarea Diaria Recurrente */}
+            <div className="p-3 bg-[#FEE4D7]/40 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="is_daily_task"
+                checked={isDaily}
+                onChange={(e) => setIsDaily(e.target.checked)}
+                className="mt-0.5 w-4 h-4 text-[#9F6839] rounded border-[#D4B28E] focus:ring-[#9F6839] cursor-pointer"
+              />
+              <label htmlFor="is_daily_task" className="text-xs text-[#432414] dark:text-[#FEE4D7] cursor-pointer">
+                <span className="font-bold flex items-center gap-1.5">
+                  <RotateCcw className="w-3.5 h-3.5 text-[#9F6839]" />
+                  Tarea Diaria Recurrente
+                </span>
+                <span className="text-[11px] text-[#9F6839] dark:text-[#DABA8C] block mt-0.5">
+                  Se reinicia automáticamente a pendiente al inicio de cada nuevo día para garantizar que los empleados cumplan con los protocolos de rutina.
+                </span>
+              </label>
+            </div>
 
-          <div className="flex gap-3 justify-end pt-3">
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="px-4 py-2.5 rounded-2xl bg-white dark:bg-[#201009] border border-[#D4B28E] text-xs font-bold text-[#432414] dark:text-[#FEE4D7] cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-5 py-2.5 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white text-xs font-extrabold shadow-md cursor-pointer disabled:opacity-50"
-            >
-              {submitting ? 'Creando...' : 'Crear Tarea'}
-            </button>
-          </div>
-        </form>
-      </Modal>
+            <div className="flex gap-3 justify-end pt-3">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2.5 rounded-2xl bg-white dark:bg-[#201009] border border-[#D4B28E] text-xs font-bold text-[#432414] dark:text-[#FEE4D7] cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-5 py-2.5 rounded-2xl bg-[#9F6839] hover:bg-[#835229] text-white text-xs font-extrabold shadow-md cursor-pointer disabled:opacity-50"
+              >
+                {submitting ? 'Creando...' : 'Crear Tarea'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   )
 }

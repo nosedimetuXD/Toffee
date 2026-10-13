@@ -72,14 +72,35 @@ type MonthlyStats struct {
 	TopBanks           []TopBankStat    `json:"top_banks"`
 }
 
+type CashAdjustment struct {
+	ID             uuid.UUID  `json:"id"`
+	Amount         float64    `json:"amount"`
+	Type           string     `json:"type"`   // "in" (ingreso/entrada) or "out" (retiro/salida)
+	Target         string     `json:"target"` // "efectivo" or "banco"
+	Reason         string     `json:"reason"`
+	RegisteredBy   *uuid.UUID `json:"registered_by,omitempty"`
+	RegistererName string     `json:"registerer_name,omitempty"`
+	CreatedAt      time.Time  `json:"created_at"`
+}
+
 type AccountingSummary struct {
 	TotalIncome           float64            `json:"total_income"`
 	TotalExpenses         float64            `json:"total_expenses"`
 	NetBalance            float64            `json:"net_balance"`
+	CashBalance           float64            `json:"cash_balance"`
+	BankBalance           float64            `json:"bank_balance"`
+	TotalBalance          float64            `json:"total_balance"`
+	CashIncome            float64            `json:"cash_income"`
+	CashExpenses          float64            `json:"cash_expenses"`
+	CashAdjustments       float64            `json:"cash_adjustments"`
+	BankIncome            float64            `json:"bank_income"`
+	BankExpenses          float64            `json:"bank_expenses"`
+	BankAdjustments       float64            `json:"bank_adjustments"`
 	IncomeByPaymentMethod map[string]float64 `json:"income_by_payment_method"`
 	ExpensesByCategory    map[string]float64 `json:"expenses_by_category"`
 	SalesCount            int                `json:"sales_count"`
 	IncomesCount          int                `json:"incomes_count"`
 	ExpensesCount         int                `json:"expenses_count"`
+	AdjustmentsCount      int                `json:"adjustments_count"`
 	MonthlyStats          *MonthlyStats      `json:"monthly_stats,omitempty"`
 }
