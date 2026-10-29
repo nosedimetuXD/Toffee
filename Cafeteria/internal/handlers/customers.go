@@ -25,6 +25,30 @@ type CustomerHandler struct {
 	Hub *events.Hub
 }
 
+const LoyaltyThreshold = 6
+
+// CalculateLoyalty calcula los cafés gratis disponibles y el progreso en el ciclo actual (0 a 6).
+// Si el cliente tiene cafés de cortesía disponibles (availFree > 0), el ciclo actual se muestra completo (progress = 6).
+// Al redimir un café, el ciclo se reinicia en 0 (progress = 0) más los puntos acumulados posteriores.
+func CalculateLoyalty(totalCoffees, bonusCoffees, redeemedCoffees int) (availFree int, progress int) {
+	totalPoints := totalCoffees + bonusCoffees
+	earned := totalPoints / LoyaltyThreshold
+	availFree = earned - redeemedCoffees
+	if availFree < 0 {
+		availFree = 0
+	}
+	if availFree > 0 {
+		progress = LoyaltyThreshold
+	} else {
+		unclaimed := totalPoints - (redeemedCoffees * LoyaltyThreshold)
+		if unclaimed < 0 {
+			unclaimed = 0
+		}
+		progress = unclaimed % LoyaltyThreshold
+	}
+	return availFree, progress
+}
+
 func NewCustomerHandler(db *pgxpool.Pool, hub *events.Hub) *CustomerHandler {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -87,7 +111,9 @@ func (h *CustomerHandler) List(w http.ResponseWriter, r *http.Request) {
 		           SELECT SUM(COALESCE(s.redeemed_coffees, 0))
 		           FROM sales s
 		           WHERE s.customer_id = c.id AND s.status != 'cancelada'
-		       ), 0) AS redeemed_coffees
+		       ), 0) AS redeemed_coffees,
+		       COALESCE(c.bonus_coffees, 0) AS bonus_coffees,
+		       COALESCE(c.welcome_bonus_granted, false) AS welcome_bonus_granted
 		FROM customers c
 	`
 
@@ -121,13 +147,12 @@ func (h *CustomerHandler) List(w http.ResponseWriter, r *http.Request) {
 	var customers []models.Customer
 	for rows.Next() {
 		var c models.Customer
-		if err := rows.Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate, &c.TotalCoffees, &c.RedeemedCoffees); err != nil {
+		if err := rows.Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate, &c.TotalCoffees, &c.RedeemedCoffees, &c.BonusCoffees, &c.WelcomeBonusGranted); err != nil {
 			log.Printf("error leyendo cliente: %v", err)
 			http.Error(w, "error leyendo cliente", http.StatusInternalServerError)
 			return
 		}
-		c.AvailableFreeCoffees = int(math.Max(0, float64((c.TotalCoffees/10)-c.RedeemedCoffees)))
-		c.CoffeeProgress = c.TotalCoffees % 10
+		c.AvailableFreeCoffees, c.CoffeeProgress = CalculateLoyalty(c.TotalCoffees, c.BonusCoffees, c.RedeemedCoffees)
 		customers = append(customers, c)
 	}
 
@@ -170,10 +195,12 @@ func (h *CustomerHandler) Get(w http.ResponseWriter, r *http.Request) {
 		           SELECT SUM(COALESCE(s.redeemed_coffees, 0))
 		           FROM sales s
 		           WHERE s.customer_id = c.id AND s.status != 'cancelada'
-		       ), 0) AS redeemed_coffees
+		       ), 0) AS redeemed_coffees,
+		       COALESCE(c.bonus_coffees, 0) AS bonus_coffees,
+		       COALESCE(c.welcome_bonus_granted, false) AS welcome_bonus_granted
 		FROM customers c
 		WHERE c.id = $1
-	`, customerID).Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate, &c.TotalCoffees, &c.RedeemedCoffees)
+	`, customerID).Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate, &c.TotalCoffees, &c.RedeemedCoffees, &c.BonusCoffees, &c.WelcomeBonusGranted)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		http.Error(w, "cliente no encontrado", http.StatusNotFound)
@@ -184,8 +211,7 @@ func (h *CustomerHandler) Get(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error interno", http.StatusInternalServerError)
 		return
 	}
-	c.AvailableFreeCoffees = int(math.Max(0, float64((c.TotalCoffees/10)-c.RedeemedCoffees)))
-	c.CoffeeProgress = c.TotalCoffees % 10
+	c.AvailableFreeCoffees, c.CoffeeProgress = CalculateLoyalty(c.TotalCoffees, c.BonusCoffees, c.RedeemedCoffees)
 
 	salesRows, err := h.DB.Query(r.Context(), `
 		SELECT s.id, COALESCE(s.sold_by, '00000000-0000-0000-0000-000000000000'::uuid), 
@@ -341,10 +367,12 @@ func (h *CustomerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		           SELECT SUM(COALESCE(s.redeemed_coffees, 0))
 		           FROM sales s
 		           WHERE s.customer_id = c.id AND s.status != 'cancelada'
-		       ), 0) AS redeemed_coffees
+		       ), 0) AS redeemed_coffees,
+		       COALESCE(c.bonus_coffees, 0) AS bonus_coffees,
+		       COALESCE(c.welcome_bonus_granted, false) AS welcome_bonus_granted
 		FROM customers c
 		WHERE c.id = $1
-	`, customerID).Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate, &c.TotalCoffees, &c.RedeemedCoffees)
+	`, customerID).Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate, &c.TotalCoffees, &c.RedeemedCoffees, &c.BonusCoffees, &c.WelcomeBonusGranted)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		http.Error(w, "cliente no encontrado", http.StatusNotFound)
@@ -356,8 +384,7 @@ func (h *CustomerHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c.AvailableFreeCoffees = int(math.Max(0, float64((c.TotalCoffees/10)-c.RedeemedCoffees)))
-	c.CoffeeProgress = c.TotalCoffees % 10
+	c.AvailableFreeCoffees, c.CoffeeProgress = CalculateLoyalty(c.TotalCoffees, c.BonusCoffees, c.RedeemedCoffees)
 
 	if h.Hub != nil {
 		h.Hub.Publish("customer_updated", c)
@@ -428,10 +455,12 @@ func (h *CustomerHandler) GetAccount(w http.ResponseWriter, r *http.Request) {
 		           SELECT SUM(COALESCE(s.redeemed_coffees, 0))
 		           FROM sales s
 		           WHERE s.customer_id = c.id AND s.status != 'cancelada'
-		       ), 0) AS redeemed_coffees
+		       ), 0) AS redeemed_coffees,
+		       COALESCE(c.bonus_coffees, 0) AS bonus_coffees,
+		       COALESCE(c.welcome_bonus_granted, false) AS welcome_bonus_granted
 		FROM customers c
 		WHERE c.id = $1
-	`, customerID).Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate, &c.TotalCoffees, &c.RedeemedCoffees)
+	`, customerID).Scan(&c.ID, &c.FirstName, &c.LastName, &c.Phone, &c.Email, &c.Notes, &c.CreatedBy, &c.CreatedByUsername, &c.CreatedAt, &c.UpdatedAt, &c.TotalSpent, &c.TotalOrders, &c.TotalDebt, &c.LastOrderDate, &c.TotalCoffees, &c.RedeemedCoffees, &c.BonusCoffees, &c.WelcomeBonusGranted)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		http.Error(w, "cliente no encontrado", http.StatusNotFound)
@@ -442,8 +471,7 @@ func (h *CustomerHandler) GetAccount(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error interno", http.StatusInternalServerError)
 		return
 	}
-	c.AvailableFreeCoffees = int(math.Max(0, float64((c.TotalCoffees/10)-c.RedeemedCoffees)))
-	c.CoffeeProgress = c.TotalCoffees % 10
+	c.AvailableFreeCoffees, c.CoffeeProgress = CalculateLoyalty(c.TotalCoffees, c.BonusCoffees, c.RedeemedCoffees)
 
 	// 1. Obtener ventas pendientes con saldo deudor
 	pendingRows, err := h.DB.Query(ctx, `

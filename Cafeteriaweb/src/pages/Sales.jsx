@@ -239,7 +239,7 @@ export default function Sales() {
     setCartItems((prev) => prev.filter((item) => item.product.id !== productId))
   }
 
-  // Fidelización 10 cafés = 1 café gratis
+  // Fidelización 6 cafés = 7.º café gratis
   const [redeemedCoffeeProductId, setRedeemedCoffeeProductId] = useState(null)
 
   function clearCart() {
@@ -608,7 +608,7 @@ export default function Sales() {
     }
 
     try {
-      const finalDiscountReason = discountReason.trim() || (redeemedCoffeeProductId ? 'Fidelización 10 cafés (Café Gratis)' : '')
+      const finalDiscountReason = discountReason.trim() || (redeemedCoffeeProductId ? 'Fidelización 6 cafés (7.º Café Gratis)' : '')
       const payload = {
         customer_id: selectedCustomerId || null,
         customer_name: finalCustomer,
@@ -639,6 +639,7 @@ export default function Sales() {
       const completedOrder = {
         id: response?.id || Date.now(),
         order_number: response?.order_number || '',
+        welcome_bonus_awarded: Boolean(response?.welcome_bonus_awarded),
         customer_name: finalCustomer,
         payment_method: saleType === 'credito' ? 'credito' : paymentMethod,
         paid_amount: response?.paid_amount ?? effectivePaidAmount,
@@ -1320,14 +1321,44 @@ export default function Sales() {
                         </span>
                       </div>
                       {(selectedCustomerObj.available_free_coffees || 0) > 0 ? (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white shadow-xs">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white shadow-xs animate-pulse">
                           ¡{(selectedCustomerObj.available_free_coffees || 0)} Café(s) Gratis!
                         </span>
                       ) : (
                         <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300">
-                          {selectedCustomerObj.coffee_progress || 0}/10 cafés
+                          {selectedCustomerObj.coffee_progress || 0}/6 cafés
                         </span>
                       )}
+                    </div>
+
+                    {/* Tarjeta Visual de Sellos (6 casillas + 7.º café gratis) */}
+                    <div className="grid grid-cols-7 gap-1 pt-1 border-t border-amber-200/70 dark:border-amber-800/40">
+                      {[1, 2, 3, 4, 5, 6].map((step) => {
+                        const isStamped = (selectedCustomerObj.coffee_progress || 0) >= step
+                        return (
+                          <div
+                            key={step}
+                            className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-lg border text-center transition-all ${
+                              isStamped
+                                ? 'bg-amber-500/25 border-amber-500 text-amber-900 dark:text-amber-100 font-black shadow-2xs'
+                                : 'bg-white/40 dark:bg-[#201009]/40 border-amber-300/40 dark:border-amber-800/40 text-amber-800/40 dark:text-amber-400/40 border-dashed'
+                            }`}
+                          >
+                            <Coffee className={`w-3.5 h-3.5 ${isStamped ? 'text-amber-700 dark:text-amber-300 fill-amber-500/50' : 'opacity-40'}`} />
+                            <span className="text-[8px] font-bold mt-0.5 leading-none">{step}</span>
+                          </div>
+                        )
+                      })}
+                      <div
+                        className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-lg border text-center transition-all ${
+                          (selectedCustomerObj.available_free_coffees || 0) > 0
+                            ? 'bg-amber-500 border-amber-600 text-white font-black shadow-xs ring-2 ring-amber-400/80 animate-pulse'
+                            : 'bg-amber-500/10 border-amber-400/40 text-amber-800/60 dark:text-amber-300/60 border-dashed'
+                        }`}
+                      >
+                        <Sparkles className={`w-3.5 h-3.5 ${(selectedCustomerObj.available_free_coffees || 0) > 0 ? 'text-white' : 'text-amber-600/70'}`} />
+                        <span className="text-[8px] font-black mt-0.5 leading-none">¡GRATIS!</span>
+                      </div>
                     </div>
 
                     {(selectedCustomerObj.available_free_coffees || 0) > 0 ? (
@@ -1377,17 +1408,36 @@ export default function Sales() {
                       <div className="space-y-1 pt-1 border-t border-amber-200/60 dark:border-amber-800/40">
                         <div className="flex items-center justify-between text-[10px] text-amber-800 dark:text-amber-300 font-medium">
                           <span>Progreso hacia próximo café gratis:</span>
-                          <span className="font-bold">{selectedCustomerObj.coffee_progress || 0}/10 cafés</span>
+                          <span className="font-bold">{selectedCustomerObj.coffee_progress || 0}/6 cafés</span>
                         </div>
                         <div className="w-full bg-white dark:bg-[#1E0F08] h-2 rounded-full overflow-hidden border border-amber-200 dark:border-amber-900/60">
                           <div
                             className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full transition-all duration-300"
-                            style={{ width: `${Math.min(100, ((selectedCustomerObj.coffee_progress || 0) / 10) * 100)}%` }}
+                            style={{ width: `${Math.min(100, ((selectedCustomerObj.coffee_progress || 0) / 6) * 100)}%` }}
                           />
                         </div>
                         <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80">
-                          Le faltan {10 - (selectedCustomerObj.coffee_progress || 0)} cafés para ganar 1 café gratis.
+                          Le faltan {6 - (selectedCustomerObj.coffee_progress || 0)} cafés para ganar 1 café gratis.
                         </p>
+                      </div>
+                    )}
+
+                    {/* Banner informativo de Bono de Bienvenida */}
+                    {!selectedCustomerObj.welcome_bonus_granted && (selectedCustomerObj.total_orders || 0) === 0 && (
+                      <div className="p-2.5 bg-amber-500/15 border border-amber-400/50 rounded-xl text-xs text-amber-900 dark:text-amber-100 flex items-start gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-extrabold text-[11px] block">✨ ¡Bono de Bienvenida disponible!</span>
+                          <span className="text-[10px] text-amber-800 dark:text-amber-200">
+                            En su primera compra de café se acreditarán <strong>+2 sellos de regalo</strong> (iniciará con <strong>3/6 sellos</strong>, restando solo 3 compras para su café gratis).
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {(selectedCustomerObj.bonus_coffees || 0) > 0 && (
+                      <div className="px-2 py-1 rounded-md bg-amber-500/15 border border-amber-400/30 text-[10px] text-amber-800 dark:text-amber-200 font-semibold flex items-center gap-1.5">
+                        <Sparkles className="w-3 h-3 text-amber-600 shrink-0" />
+                        <span>Bono de bienvenida acreditado (+2 sellos de regalo)</span>
                       </div>
                     )}
                   </div>
@@ -1616,6 +1666,23 @@ export default function Sales() {
                 </p>
               </div>
             </div>
+
+            {lastOrder.welcome_bonus_awarded && (
+              <div className="p-3 bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-amber-500/20 border border-amber-400 dark:border-amber-600 rounded-2xl flex items-center gap-3">
+                <div className="p-2 bg-amber-500 text-white rounded-xl text-lg shadow-sm shrink-0">
+                  🎁
+                </div>
+                <div className="min-w-0">
+                  <h5 className="font-extrabold text-xs text-amber-900 dark:text-amber-100 flex items-center gap-1.5 flex-wrap">
+                    <span>¡Bono de Bienvenida Otorgado!</span>
+                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-amber-500 text-white uppercase">+2 Sellos</span>
+                  </h5>
+                  <p className="text-[11px] text-amber-800 dark:text-amber-200 mt-0.5">
+                    ¡Esta primera compra incluyó <strong>+2 sellos de regalo</strong>! El cliente acumuló <strong>3 / 6 sellos</strong> (¡solo le restan <strong>3 compras</strong> para desbloquear su café de cortesía!).
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="p-4 bg-[#FEE4D7]/40 dark:bg-[#2A150C] border border-[#D4B28E]/60 dark:border-[#9F6839]/40 rounded-2xl text-xs space-y-2 text-[#432414] dark:text-[#FEE4D7]">
               <div className="flex justify-between">

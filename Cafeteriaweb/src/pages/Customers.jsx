@@ -668,7 +668,7 @@ export default function Customers() {
                         <span className="opacity-40">·</span>
                         <span className="font-bold text-amber-700 dark:text-amber-300 inline-flex items-center gap-0.5">
                           <Coffee className="w-3 h-3 text-amber-600" />
-                          <span>{c.coffee_progress ?? 0}/10 cafés</span>
+                          <span>{c.coffee_progress ?? 0}/6 cafés</span>
                         </span>
                         {(c.available_free_coffees || 0) > 0 && (
                           <span className="px-1.5 py-0.2 rounded-md text-[10px] font-black bg-amber-500 text-white shadow-2xs">
@@ -720,36 +720,87 @@ export default function Customers() {
                       </div>
                     </div>
 
-                    {/* Tarjeta de Fidelización de Café */}
-                    <div className="p-3 bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-amber-950/40 dark:to-orange-950/40 border border-amber-300/60 dark:border-amber-700/50 rounded-xl space-y-1.5">
+                    {/* Tarjeta de Fidelización de Café (Meta: 6 cafés = 7.º gratis) */}
+                    <div className="p-3 bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-amber-950/40 dark:to-orange-950/40 border border-amber-300/60 dark:border-amber-700/50 rounded-xl space-y-2.5">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
                           <Coffee className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                          <span>Fidelización</span>
+                          <span>Fidelización (6 cafés = 7.º gratis)</span>
                         </span>
                         {(c.available_free_coffees || 0) > 0 ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white shadow-xs">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white shadow-xs animate-pulse">
                             ¡{c.available_free_coffees} Café(s) Gratis para Redimir!
                           </span>
                         ) : (
                           <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400">
-                            Faltan {10 - (c.coffee_progress || 0)} para el próximo
+                            Faltan {6 - (c.coffee_progress || 0)} para el próximo
                           </span>
                         )}
                       </div>
+
+                      {/* Tarjeta Visual de Sellos (6 casillas + 7.ª Recompensa) */}
+                      <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+                        {[1, 2, 3, 4, 5, 6].map((step) => {
+                          const isStamped = (c.coffee_progress || 0) >= step
+                          return (
+                            <div
+                              key={step}
+                              className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-lg border text-center transition-all ${
+                                isStamped
+                                  ? 'bg-amber-500/25 border-amber-500 text-amber-900 dark:text-amber-100 font-black shadow-2xs'
+                                  : 'bg-white/40 dark:bg-[#201009]/40 border-amber-300/40 dark:border-amber-800/40 text-amber-800/40 dark:text-amber-400/40 border-dashed'
+                              }`}
+                            >
+                              <Coffee className={`w-3.5 h-3.5 ${isStamped ? 'text-amber-700 dark:text-amber-300 fill-amber-500/50' : 'opacity-40'}`} />
+                              <span className="text-[9px] font-bold mt-0.5 leading-none">{step}</span>
+                            </div>
+                          )
+                        })}
+                        {/* 7.ª Casilla: Café de Cortesía */}
+                        <div
+                          className={`flex flex-col items-center justify-center py-1 px-0.5 rounded-lg border text-center transition-all ${
+                            (c.available_free_coffees || 0) > 0
+                              ? 'bg-amber-500 border-amber-600 text-white font-black shadow-xs ring-2 ring-amber-400/80 animate-pulse'
+                              : 'bg-amber-500/10 border-amber-400/40 text-amber-800/60 dark:text-amber-300/60 border-dashed'
+                          }`}
+                        >
+                          <Sparkles className={`w-3.5 h-3.5 ${(c.available_free_coffees || 0) > 0 ? 'text-white' : 'text-amber-600/70'}`} />
+                          <span className="text-[8px] font-black mt-0.5 leading-none">¡GRATIS!</span>
+                        </div>
+                      </div>
+
+                      {/* Barra de Progreso */}
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-white dark:bg-[#1E0F08] h-2.5 rounded-full overflow-hidden border border-amber-200 dark:border-amber-900/60">
+                        <div className="flex-1 bg-white dark:bg-[#1E0F08] h-2 rounded-full overflow-hidden border border-amber-200 dark:border-amber-900/60">
                           <div 
                             className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full transition-all duration-300"
-                            style={{ width: `${Math.min(100, ((c.coffee_progress || 0) / 10) * 100)}%` }}
+                            style={{ width: `${Math.min(100, ((c.coffee_progress || 0) / 6) * 100)}%` }}
                           />
                         </div>
                         <span className="text-xs font-black text-amber-900 dark:text-amber-200 tabular-nums">
-                          {c.coffee_progress || 0}/10
+                          {c.coffee_progress || 0}/6
                         </span>
                       </div>
-                      <div className="flex justify-between text-[10px] text-amber-700/80 dark:text-amber-400/70 pt-0.5 font-medium">
+
+                      {/* Feedback informativo de Bono de Bienvenida */}
+                      {(c.bonus_coffees || 0) > 0 && (
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/15 border border-amber-400/40 text-[10px] text-amber-900 dark:text-amber-200 font-semibold">
+                          <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                          <span>Bono de bienvenida acreditado (+2 sellos de regalo)</span>
+                        </div>
+                      )}
+                      {!c.welcome_bonus_granted && (c.total_orders || 0) === 0 && (
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/15 border border-amber-400/40 text-[10px] text-amber-900 dark:text-amber-200 font-semibold">
+                          <Sparkles className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                          <span>¡Nuevo cliente! Su primera compra de café incluirá +2 sellos de bienvenida.</span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between text-[10px] text-amber-700/80 dark:text-amber-400/70 pt-0.5 font-medium flex-wrap gap-1">
                         <span>Total cafés comprados: <strong>{c.total_coffees || 0}</strong></span>
+                        {(c.bonus_coffees || 0) > 0 && (
+                          <span className="text-amber-700 dark:text-amber-300">Bono bienvenida: <strong>+{c.bonus_coffees}</strong></span>
+                        )}
                         <span>Redimidos: <strong>{c.redeemed_coffees || 0}</strong></span>
                       </div>
                     </div>

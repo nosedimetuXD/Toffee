@@ -38,6 +38,9 @@ func NewSaleHandler(db *pgxpool.Pool, hub *events.Hub) *SaleHandler {
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(10,2) DEFAULT 0`)
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS discount_reason TEXT DEFAULT ''`)
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS redeemed_coffees INT DEFAULT 0`)
+	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS welcome_bonus_awarded BOOLEAN DEFAULT false`)
+	_, _ = db.Exec(ctx, `ALTER TABLE customers ADD COLUMN IF NOT EXISTS welcome_bonus_granted BOOLEAN DEFAULT false`)
+	_, _ = db.Exec(ctx, `ALTER TABLE customers ADD COLUMN IF NOT EXISTS bonus_coffees INT DEFAULT 0`)
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_id UUID`)
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS paid_amount NUMERIC(10,2) DEFAULT 0`)
 	_, _ = db.Exec(ctx, `ALTER TABLE sales ADD COLUMN IF NOT EXISTS pending_amount NUMERIC(10,2) DEFAULT 0`)
@@ -168,6 +171,7 @@ func (h *SaleHandler) List(w http.ResponseWriter, r *http.Request) {
 		        COALESCE(s.discount_amount, 0),
 		        COALESCE(s.discount_reason, ''),
 		        COALESCE(s.redeemed_coffees, 0),
+		        COALESCE(s.welcome_bonus_awarded, false),
 		        s.total,
 		        COALESCE(s.paid_amount, s.total),
 		        COALESCE(s.pending_amount, 0),
@@ -203,7 +207,7 @@ func (h *SaleHandler) List(w http.ResponseWriter, r *http.Request) {
 		if err := rows.Scan(&s.ID, &s.SoldBy, &s.SoldByUsername, &s.CustomerID, &s.CustomerName,
 			&s.PaymentMethod, &s.CashAmount, &s.TransferAmount, &s.BankDetails,
 			&s.Subtotal, &s.DiscountPercent, &s.DiscountAmount, &s.DiscountReason,
-			&s.RedeemedCoffees,
+			&s.RedeemedCoffees, &s.WelcomeBonusAwarded,
 			&s.Total, &s.PaidAmount, &s.PendingAmount, &s.PaymentStatus,
 			&s.Status, &s.CreatedAt, &itemsJSON); err != nil {
 			log.Printf("error leyendo ventas: %v", err)
@@ -245,6 +249,7 @@ func (h *SaleHandler) Get(w http.ResponseWriter, r *http.Request) {
 		        COALESCE(s.discount_amount, 0),
 		        COALESCE(s.discount_reason, ''),
 		        COALESCE(s.redeemed_coffees, 0),
+		        COALESCE(s.welcome_bonus_awarded, false),
 		        s.total,
 		        COALESCE(s.paid_amount, s.total),
 		        COALESCE(s.pending_amount, 0),
@@ -256,7 +261,7 @@ func (h *SaleHandler) Get(w http.ResponseWriter, r *http.Request) {
 	).Scan(&s.ID, &s.SoldBy, &s.SoldByUsername, &s.CustomerID, &s.CustomerName,
 		&s.PaymentMethod, &s.CashAmount, &s.TransferAmount, &s.BankDetails,
 		&s.Subtotal, &s.DiscountPercent, &s.DiscountAmount, &s.DiscountReason,
-		&s.RedeemedCoffees,
+		&s.RedeemedCoffees, &s.WelcomeBonusAwarded,
 		&s.Total, &s.PaidAmount, &s.PendingAmount, &s.PaymentStatus, &s.CreatedAt)
 
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -384,17 +389,23 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		UnitPrice           float64
 		Notes               string
 		RequiresPreparation bool
+		Category            string
 	}
 	var resolved []resolvedItem
+	var coffeeItemsInOrder int
 
 	for _, item := range req.Items {
 		var name string
 		var price float64
 		var active bool
 		var requiresPrep bool
+		var category string
 		err := tx.QueryRow(ctx,
-			`SELECT name, price, active, COALESCE(requires_preparation, true) FROM products WHERE id = $1`, item.ProductID,
-		).Scan(&name, &price, &active, &requiresPrep)
+			`SELECT name, price, active, COALESCE(requires_preparation, true), COALESCE(category, '') FROM products WHERE id = $1`, item.ProductID,
+		).Scan(&name, &price, &active, &requiresPrep, &category)
+		if strings.Contains(strings.ToLower(category), "caf") {
+			coffeeItemsInOrder += item.Quantity
+		}
 		if errors.Is(err, pgx.ErrNoRows) {
 			http.Error(w, fmt.Sprintf("producto %s no existe", item.ProductID), http.StatusBadRequest)
 			return
@@ -417,6 +428,7 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 			UnitPrice:           price,
 			Notes:               item.Notes,
 			RequiresPreparation: requiresPrep,
+			Category:            category,
 		})
 	}
 
@@ -526,11 +538,67 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		soldByName = "Personal"
 	}
 
+	welcomeBonusAwarded := false
+	if req.CustomerID != nil {
+		var welcomeBonusGranted bool
+		var currentBonusCoffees, currentTotalCoffees, currentRedeemedCoffees int
+		err = tx.QueryRow(ctx, `
+			SELECT COALESCE(c.welcome_bonus_granted, false),
+			       COALESCE(c.bonus_coffees, 0),
+			       COALESCE((
+			           SELECT SUM(si.quantity)
+			           FROM sale_items si
+			           JOIN sales s ON si.sale_id = s.id
+			           LEFT JOIN products p ON si.product_id = p.id
+			           WHERE s.customer_id = c.id AND s.status != 'cancelada' AND p.category ILIKE '%caf%'
+			       ), 0),
+			       COALESCE((
+			           SELECT SUM(COALESCE(s.redeemed_coffees, 0))
+			           FROM sales s
+			           WHERE s.customer_id = c.id AND s.status != 'cancelada'
+			       ), 0)
+			FROM customers c
+			WHERE c.id = $1
+			FOR UPDATE
+		`, req.CustomerID).Scan(&welcomeBonusGranted, &currentBonusCoffees, &currentTotalCoffees, &currentRedeemedCoffees)
+		if err != nil {
+			log.Printf("error verificando fidelización de cliente: %v", err)
+			http.Error(w, "cliente no encontrado", http.StatusBadRequest)
+			return
+		}
+
+		// 1. Verificación atómica de disponibilidad de cafés gratis para redimir
+		if req.RedeemedCoffees > 0 {
+			availFree, _ := CalculateLoyalty(currentTotalCoffees, currentBonusCoffees, currentRedeemedCoffees)
+			if availFree < req.RedeemedCoffees {
+				http.Error(w, "el cliente no tiene suficientes cafés gratis disponibles para redimir", http.StatusBadRequest)
+				return
+			}
+		}
+
+		// 2. Bonificación de bienvenida (Onboarding Bonus: +2 puntos en primera compra de café)
+		if !welcomeBonusGranted && coffeeItemsInOrder > 0 {
+			welcomeBonusAwarded = true
+			_, err = tx.Exec(ctx, `
+				UPDATE customers 
+				SET welcome_bonus_granted = true, 
+				    bonus_coffees = bonus_coffees + 2, 
+				    updated_at = now() 
+				WHERE id = $1
+			`, req.CustomerID)
+			if err != nil {
+				log.Printf("error aplicando bono de bienvenida: %v", err)
+				http.Error(w, "error aplicando bono de bienvenida", http.StatusInternalServerError)
+				return
+			}
+		}
+	}
+
 	var saleID uuid.UUID
 	err = tx.QueryRow(ctx,
-		`INSERT INTO sales (sold_by, sold_by_name, customer_id, customer_name, payment_method, cash_amount, transfer_amount, bank_details, subtotal, discount_percent, discount_amount, discount_reason, redeemed_coffees, total, paid_amount, pending_amount, payment_status, created_at) 
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, now()) RETURNING id`,
-		soldBy, soldByName, req.CustomerID, customerName, paymentMethod, cashAmount, transferAmount, strings.TrimSpace(req.BankDetails), subtotal, discountPercent, discountAmount, strings.TrimSpace(req.DiscountReason), req.RedeemedCoffees, total, paidAmount, pendingAmount, paymentStatus,
+		`INSERT INTO sales (sold_by, sold_by_name, customer_id, customer_name, payment_method, cash_amount, transfer_amount, bank_details, subtotal, discount_percent, discount_amount, discount_reason, redeemed_coffees, welcome_bonus_awarded, total, paid_amount, pending_amount, payment_status, created_at) 
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, now()) RETURNING id`,
+		soldBy, soldByName, req.CustomerID, customerName, paymentMethod, cashAmount, transferAmount, strings.TrimSpace(req.BankDetails), subtotal, discountPercent, discountAmount, strings.TrimSpace(req.DiscountReason), req.RedeemedCoffees, welcomeBonusAwarded, total, paidAmount, pendingAmount, paymentStatus,
 	).Scan(&saleID)
 	if err != nil {
 		log.Printf("error creando venta: %v", err)
@@ -554,9 +622,9 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 				END $$;
 			`)
 			err = tx.QueryRow(ctx,
-				`INSERT INTO sales (sold_by, sold_by_name, customer_id, customer_name, payment_method, cash_amount, transfer_amount, bank_details, subtotal, discount_percent, discount_amount, discount_reason, redeemed_coffees, total, paid_amount, pending_amount, payment_status, created_at) 
-				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, now()) RETURNING id`,
-				soldBy, soldByName, req.CustomerID, customerName, paymentMethod, cashAmount, transferAmount, strings.TrimSpace(req.BankDetails), subtotal, discountPercent, discountAmount, strings.TrimSpace(req.DiscountReason), req.RedeemedCoffees, total, paidAmount, pendingAmount, paymentStatus,
+				`INSERT INTO sales (sold_by, sold_by_name, customer_id, customer_name, payment_method, cash_amount, transfer_amount, bank_details, subtotal, discount_percent, discount_amount, discount_reason, redeemed_coffees, welcome_bonus_awarded, total, paid_amount, pending_amount, payment_status, created_at) 
+				 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, now()) RETURNING id`,
+				soldBy, soldByName, req.CustomerID, customerName, paymentMethod, cashAmount, transferAmount, strings.TrimSpace(req.BankDetails), subtotal, discountPercent, discountAmount, strings.TrimSpace(req.DiscountReason), req.RedeemedCoffees, welcomeBonusAwarded, total, paidAmount, pendingAmount, paymentStatus,
 			).Scan(&saleID)
 		}
 		if err != nil {
@@ -638,23 +706,11 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Hub.Publish("sale_created", map[string]interface{}{
-		"id":              saleID,
-		"customer_id":     req.CustomerID,
-		"customer_name":   customerName,
-		"payment_method":  paymentMethod,
-		"subtotal":        subtotal,
-		"discount_amount": discountAmount,
-		"redeemed_coffees": req.RedeemedCoffees,
-		"total":           total,
-		"paid_amount":     paidAmount,
-		"pending_amount":  pendingAmount,
-		"payment_status":  paymentStatus,
-	})
-
+	var createdAvailFree, createdProgress int
 	if req.CustomerID != nil {
 		var newDebt float64
-		var totalCoffees, redeemedCoffees int
+		var totalCoffees, redeemedCoffees, bonusCoffees int
+		var bonusGranted bool
 		_ = h.DB.QueryRow(ctx, `
 			SELECT COALESCE(SUM(s.pending_amount), 0),
 			       COALESCE((
@@ -669,22 +725,40 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 			           SELECT SUM(COALESCE(s3.redeemed_coffees, 0))
 			           FROM sales s3
 			           WHERE s3.customer_id = $1 AND s3.status != 'cancelada'
-			       ), 0)
+			       ), 0),
+			       COALESCE((SELECT bonus_coffees FROM customers WHERE id = $1), 0),
+			       COALESCE((SELECT welcome_bonus_granted FROM customers WHERE id = $1), false)
 			FROM sales s WHERE s.customer_id = $1 AND s.status != 'cancelada'
-		`, req.CustomerID).Scan(&newDebt, &totalCoffees, &redeemedCoffees)
+		`, req.CustomerID).Scan(&newDebt, &totalCoffees, &redeemedCoffees, &bonusCoffees, &bonusGranted)
 
-		availFree := int(math.Max(0, float64((totalCoffees/10)-redeemedCoffees)))
-		progress := totalCoffees % 10
+		createdAvailFree, createdProgress = CalculateLoyalty(totalCoffees, bonusCoffees, redeemedCoffees)
 
 		h.Hub.Publish("customer_updated", map[string]interface{}{
 			"id":                     req.CustomerID,
 			"total_debt":             newDebt,
 			"total_coffees":          totalCoffees,
+			"bonus_coffees":          bonusCoffees,
+			"welcome_bonus_granted":  bonusGranted,
 			"redeemed_coffees":       redeemedCoffees,
-			"available_free_coffees": availFree,
-			"coffee_progress":        progress,
+			"available_free_coffees": createdAvailFree,
+			"coffee_progress":        createdProgress,
 		})
 	}
+
+	h.Hub.Publish("sale_created", map[string]interface{}{
+		"id":                     saleID,
+		"customer_id":            req.CustomerID,
+		"customer_name":          customerName,
+		"payment_method":         paymentMethod,
+		"subtotal":               subtotal,
+		"discount_amount":        discountAmount,
+		"redeemed_coffees":       req.RedeemedCoffees,
+		"welcome_bonus_awarded":  welcomeBonusAwarded,
+		"total":                  total,
+		"paid_amount":            paidAmount,
+		"pending_amount":         pendingAmount,
+		"payment_status":         paymentStatus,
+	})
 
 	if len(prepItems) > 0 {
 		h.Hub.Publish("comanda_created", map[string]interface{}{
@@ -702,16 +776,19 @@ func (h *SaleHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"id":              saleID,
-		"comanda_id":      comandaID,
-		"order_number":    orderNumber,
-		"customer_name":   customerName,
-		"subtotal":        subtotal,
-		"discount_amount": discountAmount,
-		"total":           total,
-		"paid_amount":     paidAmount,
-		"pending_amount":  pendingAmount,
-		"payment_status":  paymentStatus,
+		"id":                     saleID,
+		"comanda_id":             comandaID,
+		"order_number":           orderNumber,
+		"customer_name":          customerName,
+		"subtotal":               subtotal,
+		"discount_amount":        discountAmount,
+		"total":                  total,
+		"paid_amount":            paidAmount,
+		"pending_amount":         pendingAmount,
+		"payment_status":         paymentStatus,
+		"welcome_bonus_awarded":  welcomeBonusAwarded,
+		"available_free_coffees": createdAvailFree,
+		"coffee_progress":        createdProgress,
 	})
 }
 
@@ -958,7 +1035,8 @@ func (h *SaleHandler) Update(w http.ResponseWriter, r *http.Request) {
 	})
 	if req.CustomerID != nil {
 		var newDebt float64
-		var totalCoffees, redeemedCoffees int
+		var totalCoffees, redeemedCoffees, bonusCoffees int
+		var bonusGranted bool
 		_ = h.DB.QueryRow(ctx, `
 			SELECT COALESCE(SUM(s.pending_amount), 0),
 			       COALESCE((
@@ -973,17 +1051,20 @@ func (h *SaleHandler) Update(w http.ResponseWriter, r *http.Request) {
 			           SELECT SUM(COALESCE(s3.redeemed_coffees, 0))
 			           FROM sales s3
 			           WHERE s3.customer_id = $1 AND s3.status != 'cancelada'
-			       ), 0)
+			       ), 0),
+			       COALESCE((SELECT bonus_coffees FROM customers WHERE id = $1), 0),
+			       COALESCE((SELECT welcome_bonus_granted FROM customers WHERE id = $1), false)
 			FROM sales s WHERE s.customer_id = $1 AND s.status != 'cancelada'
-		`, req.CustomerID).Scan(&newDebt, &totalCoffees, &redeemedCoffees)
+		`, req.CustomerID).Scan(&newDebt, &totalCoffees, &redeemedCoffees, &bonusCoffees, &bonusGranted)
 
-		availFree := int(math.Max(0, float64((totalCoffees/10)-redeemedCoffees)))
-		progress := totalCoffees % 10
+		availFree, progress := CalculateLoyalty(totalCoffees, bonusCoffees, redeemedCoffees)
 
 		h.Hub.Publish("customer_updated", map[string]interface{}{
 			"id":                     req.CustomerID,
 			"total_debt":             newDebt,
 			"total_coffees":          totalCoffees,
+			"bonus_coffees":          bonusCoffees,
+			"welcome_bonus_granted":  bonusGranted,
 			"redeemed_coffees":       redeemedCoffees,
 			"available_free_coffees": availFree,
 			"coffee_progress":        progress,
@@ -1023,7 +1104,8 @@ func (h *SaleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback(ctx)
 
 	var customerID *uuid.UUID
-	_ = tx.QueryRow(ctx, `SELECT customer_id FROM sales WHERE id = $1`, saleID).Scan(&customerID)
+	var wasBonusAwarded bool
+	_ = tx.QueryRow(ctx, `SELECT customer_id, COALESCE(welcome_bonus_awarded, false) FROM sales WHERE id = $1`, saleID).Scan(&customerID, &wasBonusAwarded)
 
 	var status string
 	_ = tx.QueryRow(ctx, `SELECT COALESCE(status, 'completada') FROM comandas WHERE sale_id = $1`, saleID).Scan(&status)
@@ -1082,7 +1164,8 @@ func (h *SaleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	if customerID != nil {
 		var newDebt float64
-		var totalCoffees, redeemedCoffees int
+		var totalCoffees, redeemedCoffees, bonusCoffees int
+		var bonusGranted bool
 		_ = h.DB.QueryRow(r.Context(), `
 			SELECT COALESCE(SUM(s.pending_amount), 0),
 			       COALESCE((
@@ -1097,17 +1180,20 @@ func (h *SaleHandler) Delete(w http.ResponseWriter, r *http.Request) {
 			           SELECT SUM(COALESCE(s3.redeemed_coffees, 0))
 			           FROM sales s3
 			           WHERE s3.customer_id = $1 AND s3.status != 'cancelada'
-			       ), 0)
+			       ), 0),
+			       COALESCE((SELECT bonus_coffees FROM customers WHERE id = $1), 0),
+			       COALESCE((SELECT welcome_bonus_granted FROM customers WHERE id = $1), false)
 			FROM sales s WHERE s.customer_id = $1 AND s.status != 'cancelada'
-		`, customerID).Scan(&newDebt, &totalCoffees, &redeemedCoffees)
+		`, customerID).Scan(&newDebt, &totalCoffees, &redeemedCoffees, &bonusCoffees, &bonusGranted)
 
-		availFree := int(math.Max(0, float64((totalCoffees/10)-redeemedCoffees)))
-		progress := totalCoffees % 10
+		availFree, progress := CalculateLoyalty(totalCoffees, bonusCoffees, redeemedCoffees)
 
 		h.Hub.Publish("customer_updated", map[string]interface{}{
 			"id":                     customerID,
 			"total_debt":             newDebt,
 			"total_coffees":          totalCoffees,
+			"bonus_coffees":          bonusCoffees,
+			"welcome_bonus_granted":  bonusGranted,
 			"redeemed_coffees":       redeemedCoffees,
 			"available_free_coffees": availFree,
 			"coffee_progress":        progress,
